@@ -1,0 +1,7 @@
+services:
+  web:
+    build: .
+    container_name: dot-mag-app
+    restart: always
+    ports:
+      - "3000:3000"
