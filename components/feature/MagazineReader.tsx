@@ -278,7 +278,9 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
                     <span className="text-primary text-4xl font-black">.</span>
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-black mb-2">دات مگ</h2>
+                  <h2 className="text-3xl md:text-4xl font-black mb-2">
+                    دات مگ
+                  </h2>
                   <p className="text-khaki text-lg mb-4">{magazine.subtitle}</p>
                   <p className="text-deep-black/50 text-sm">{magazine.title}</p>
                 </>
@@ -289,7 +291,9 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                   <h2 className="text-2xl font-bold mb-8">فهرست مطالب</h2>
                   <div className="w-full max-w-sm space-y-4">
                     {magazine.pages
-                      .filter((p) => p.type === "article" || p.type === "editorial")
+                      .filter(
+                        (p) => p.type === "article" || p.type === "editorial",
+                      )
                       .map((page) => (
                         <div
                           key={page.number}
@@ -387,7 +391,9 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                   }`}
                 >
                   <div className="w-full h-full bg-cream flex items-center justify-center">
-                    <span className="text-xs text-deep-black/50">{page.number}</span>
+                    <span className="text-xs text-deep-black/50">
+                      {page.number}
+                    </span>
                   </div>
                 </button>
               ))}

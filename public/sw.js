@@ -13,7 +13,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(PRECACHE_URLS);
-    })
+    }),
   );
   self.skipWaiting();
 });
@@ -25,9 +25,9 @@ self.addEventListener("activate", (event) => {
       return Promise.all(
         cacheNames
           .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+          .map((name) => caches.delete(name)),
       );
-    })
+    }),
   );
   self.clients.claim();
 });
@@ -40,7 +40,7 @@ self.addEventListener("fetch", (event) => {
         return caches.open(CACHE_NAME).then((cache) => {
           return cache.match(OFFLINE_URL);
         });
-      })
+      }),
     );
     return;
   }
@@ -60,6 +60,6 @@ self.addEventListener("fetch", (event) => {
       })
       .catch(() => {
         return caches.match(event.request);
-      })
+      }),
   );
 });

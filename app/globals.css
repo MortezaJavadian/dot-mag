@@ -3,30 +3,30 @@
 /* Custom Color Palette */
 :root {
   /* Brand Colors */
-  --color-primary: #D73B3A;
-  --color-deep-black: #0B0B0B;
-  --color-cream: #D9CBB8;
-  --color-khaki: #A98964;
-  --color-forest: #3C5247;
+  --color-primary: #d73b3a;
+  --color-deep-black: #0b0b0b;
+  --color-cream: #d9cbb8;
+  --color-khaki: #a98964;
+  --color-forest: #3c5247;
 
   /* Light Mode */
-  --background: #FFFFFF;
-  --background-secondary: #F8F6F3;
-  --foreground: #0B0B0B;
-  --foreground-secondary: #4A4A4A;
-  --card-bg: #FFFFFF;
-  --card-border: #E5E5E5;
-  --muted: #D9CBB8;
+  --background: #ffffff;
+  --background-secondary: #f8f6f3;
+  --foreground: #0b0b0b;
+  --foreground-secondary: #4a4a4a;
+  --card-bg: #ffffff;
+  --card-border: #e5e5e5;
+  --muted: #d9cbb8;
 }
 
 [data-theme="dark"] {
-  --background: #0B0B0B;
+  --background: #0b0b0b;
   --background-secondary: #151515;
-  --foreground: #F5F5F5;
-  --foreground-secondary: #A0A0A0;
-  --card-bg: #1A1A1A;
-  --card-border: #2A2A2A;
-  --muted: #3C5247;
+  --foreground: #f5f5f5;
+  --foreground-secondary: #a0a0a0;
+  --card-bg: #1a1a1a;
+  --card-border: #2a2a2a;
+  --muted: #3c5247;
 }
 
 /* Dark mode logo invert */
@@ -83,7 +83,9 @@ body {
   color: var(--foreground);
   font-family: var(--font-vazir);
   line-height: 1.8;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* RTL Text Utilities */
@@ -92,7 +94,9 @@ body {
 }
 
 /* Persian Text Optimization */
-p, article, .prose {
+p,
+article,
+.prose {
   text-align: justify;
   text-justify: inter-word;
   hyphens: auto;
@@ -136,8 +140,12 @@ a {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
@@ -175,11 +183,21 @@ a {
 }
 
 /* Staggered Animation Delays */
-.delay-100 { animation-delay: 100ms; }
-.delay-200 { animation-delay: 200ms; }
-.delay-300 { animation-delay: 300ms; }
-.delay-400 { animation-delay: 400ms; }
-.delay-500 { animation-delay: 500ms; }
+.delay-100 {
+  animation-delay: 100ms;
+}
+.delay-200 {
+  animation-delay: 200ms;
+}
+.delay-300 {
+  animation-delay: 300ms;
+}
+.delay-400 {
+  animation-delay: 400ms;
+}
+.delay-500 {
+  animation-delay: 500ms;
+}
 
 /* Container */
 .container {
@@ -206,10 +224,18 @@ a {
   margin-bottom: 0.5em;
 }
 
-.prose h1 { font-size: 2.25rem; }
-.prose h2 { font-size: 1.75rem; }
-.prose h3 { font-size: 1.5rem; }
-.prose h4 { font-size: 1.25rem; }
+.prose h1 {
+  font-size: 2.25rem;
+}
+.prose h2 {
+  font-size: 1.75rem;
+}
+.prose h3 {
+  font-size: 1.5rem;
+}
+.prose h4 {
+  font-size: 1.25rem;
+}
 
 .prose p {
   margin-bottom: 1.5em;
@@ -268,7 +294,9 @@ a {
 
 /* Card Hover Effect */
 .card-hover {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .card-hover:hover {

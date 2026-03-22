@@ -17,7 +17,10 @@ interface ArticleCardProps {
   variant?: "default" | "featured" | "horizontal";
 }
 
-export function ArticleCard({ article, variant = "default" }: ArticleCardProps) {
+export function ArticleCard({
+  article,
+  variant = "default",
+}: ArticleCardProps) {
   if (variant === "featured") {
     return (
       <Link href={`/posts/${article.slug}`} className="group block">

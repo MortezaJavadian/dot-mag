@@ -31,8 +31,8 @@ export default function HomePage() {
                 <span className="text-primary">الهام‌بخش</span> هستند
               </h1>
               <p className="text-lg md:text-xl text-foreground-secondary max-w-lg mb-8 leading-relaxed">
-                مجله دات، پلتفرمی برای روایت داستان‌های الهام‌بخش از دنیای طراحی،
-                تکنولوژی و سبک زندگی مدرن.
+                مجله دات، پلتفرمی برای روایت داستان‌های الهام‌بخش از دنیای
+                طراحی، تکنولوژی و سبک زندگی مدرن.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link
@@ -85,10 +85,14 @@ export default function HomePage() {
                           <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
                         </svg>
                       </div>
-                      <p className="text-sm">جلد مجله {latestMagazine?.title}</p>
+                      <p className="text-sm">
+                        جلد مجله {latestMagazine?.title}
+                      </p>
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{latestMagazine?.title}</h3>
+                  <h3 className="text-xl font-bold mb-2">
+                    {latestMagazine?.title}
+                  </h3>
                   <p className="text-foreground-secondary text-sm mb-4">
                     {latestMagazine?.subtitle}
                   </p>
@@ -113,8 +117,9 @@ export default function HomePage() {
             <h2 className="text-2xl md:text-3xl font-bold mb-6">سخن سردبیر</h2>
             <p className="text-lg md:text-xl text-foreground-secondary leading-relaxed">
               در دنیایی که همه چیز با سرعت در حال تغییر است، ما به دنبال لحظه‌ای
-              مکث هستیم. لحظه‌ای برای دیدن زیبایی در جزئیات، برای شنیدن داستان‌های
-              الهام‌بخش، و برای کشف ایده‌های نو. مجله دات، دعوتی است به این سفر.
+              مکث هستیم. لحظه‌ای برای دیدن زیبایی در جزئیات، برای شنیدن
+              داستان‌های الهام‌بخش، و برای کشف ایده‌های نو. مجله دات، دعوتی است
+              به این سفر.
             </p>
             <p className="mt-6 text-khaki font-medium">— تیم مجله دات</p>
           </div>

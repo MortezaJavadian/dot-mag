@@ -8,9 +8,8 @@ interface LogoProps {
 
 export function Logo({ variant = "default", className = "" }: LogoProps) {
   const textColor = variant === "white" ? "text-white" : "text-foreground";
-  const imageClass = variant === "white"
-    ? "brightness-0 invert"
-    : "logo-auto-invert";
+  const imageClass =
+    variant === "white" ? "brightness-0 invert" : "logo-auto-invert";
 
   return (
     <Link href="/" className={`block ${className}`}>

@@ -32,9 +32,20 @@ const teamMembers = [
 const values = [
   {
     title: "کیفیت",
-    description: "ما به کیفیت محتوا و طراحی متعهدیم. هر مقاله و هر صفحه با دقت و وسواس ساخته می‌شود.",
+    description:
+      "ما به کیفیت محتوا و طراحی متعهدیم. هر مقاله و هر صفحه با دقت و وسواس ساخته می‌شود.",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M12 2v4" />
         <path d="m16.2 7.8 2.9-2.9" />
         <path d="M18 12h4" />
@@ -48,9 +59,20 @@ const values = [
   },
   {
     title: "خلاقیت",
-    description: "به دنبال دیدگاه‌های تازه و ایده‌های نو هستیم. از چارچوب‌های سنتی فراتر می‌رویم.",
+    description:
+      "به دنبال دیدگاه‌های تازه و ایده‌های نو هستیم. از چارچوب‌های سنتی فراتر می‌رویم.",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M12 2v8" />
         <path d="m4.93 10.93 1.41 1.41" />
         <path d="M2 18h2" />
@@ -64,9 +86,20 @@ const values = [
   },
   {
     title: "الهام‌بخشی",
-    description: "می‌خواهیم خوانندگان ما از محتوای مجله الهام بگیرند و به عمل برسند.",
+    description:
+      "می‌خواهیم خوانندگان ما از محتوای مجله الهام بگیرند و به عمل برسند.",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
       </svg>
     ),
@@ -221,7 +254,9 @@ export default function AboutPage() {
                 <p className="text-primary text-sm font-medium mb-2">
                   {member.role}
                 </p>
-                <p className="text-foreground-secondary text-sm">{member.bio}</p>
+                <p className="text-foreground-secondary text-sm">
+                  {member.bio}
+                </p>
               </div>
             ))}
           </div>

@@ -8,7 +8,9 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const article = articles.find((a) => a.slug === slug);
 
@@ -93,7 +95,9 @@ export default async function ArticlePage({ params }: PageProps) {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">{article.author}</p>
+                  <p className="font-medium text-foreground">
+                    {article.author}
+                  </p>
                   <p className="text-sm">نویسنده</p>
                 </div>
               </div>
@@ -186,7 +190,9 @@ export default async function ArticlePage({ params }: PageProps) {
                 );
               }
               if (paragraph.startsWith("- ")) {
-                const items = paragraph.split("\n").filter((line) => line.startsWith("- "));
+                const items = paragraph
+                  .split("\n")
+                  .filter((line) => line.startsWith("- "));
                 return (
                   <ul key={index} className="list-disc pr-6 my-6 space-y-2">
                     {items.map((item, i) => (
