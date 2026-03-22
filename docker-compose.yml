@@ -4,4 +4,4 @@ services:
     container_name: dot-mag-app
     restart: always
     ports:
-      - "27.0.0.1:8090:3000"
+      - "127.0.0.1:8090:3000"
