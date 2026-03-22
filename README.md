@@ -1,1 +1,1 @@
-# Dot Mag v1.0.0
+# Dot Mag v1.0.1
