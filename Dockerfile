@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN npm config set registry https://repo.iranserver.com/repository/npm/ && \
+RUN npm config set registry https://hub.megam.ir/npm/ && \
     npm ci
 
 # Copy application code
