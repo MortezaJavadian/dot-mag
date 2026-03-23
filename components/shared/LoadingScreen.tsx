@@ -30,7 +30,7 @@ export function LoadingScreen({ onLoadingComplete }: LoadingScreenProps) {
       className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center min-h-screen transition-opacity duration-500 ${
         isFading ? "opacity-0" : "opacity-100"
       }`}
-      style={{ backgroundColor: "#C41E3A" }}
+      style={{ backgroundColor: "#D73B3A" }}
     >
       {/* Logo from PWA icons */}
       <div className="mb-3">
