@@ -18,7 +18,7 @@ export function LoadingScreen({ onLoadingComplete }: LoadingScreenProps) {
         setIsVisible(false);
         onLoadingComplete?.();
       }, 500);
-    }, 2000);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [onLoadingComplete]);
@@ -27,29 +27,29 @@ export function LoadingScreen({ onLoadingComplete }: LoadingScreenProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-opacity duration-500 ${
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center min-h-screen transition-opacity duration-500 ${
         isFading ? "opacity-0" : "opacity-100"
       }`}
       style={{ backgroundColor: "#C41E3A" }}
     >
       {/* Logo from PWA icons */}
-      <div className="mb-8">
+      <div className="mb-3">
         <Image
           src="/assets/icons/icon-512x512.png"
           alt="Dot Mag"
-          width={160}
-          height={160}
+          width={200}
+          height={200}
           priority
-          className="w-32 h-32 md:w-40 md:h-40"
+          className="w-40 h-40 md:w-50 md:h-50"
         />
       </div>
 
       {/* Brand Text */}
       <div
-        className="text-xl md:text-2xl font-bold tracking-wide"
+        className="text-2xl md:text-4xl font-bold tracking-wide"
         style={{ color: "#1A1A1A" }}
       >
-        [dot • mag]
+        [dot ▪ mag]
       </div>
     </div>
   );
