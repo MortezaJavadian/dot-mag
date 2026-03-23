@@ -108,6 +108,17 @@ const footerLinks = [
 ];
 
 export function Footer() {
+  // Convert Gregorian year to Persian (Shamsi) year
+  // Persian new year starts around March 20-21
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0-11 (0=Jan, 2=Mar)
+  const day = now.getDate();
+
+  // If before March 21, still in previous Persian year
+  const persianYear =
+    month < 2 || (month === 2 && day < 21) ? year - 622 : year - 621;
+
   return (
     <footer className="bg-deep-black text-white">
       <div className="container py-12 md:py-16">
@@ -161,10 +172,10 @@ export function Footer() {
         <div className="pt-8 border-t border-white/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-white/50 text-sm">
-              © {new Date().getFullYear()} مجله دات. تمام حقوق محفوظ است.
+              © {persianYear} مجله دات. تمام حقوق محفوظ است.
             </p>
             <p className="text-white/50 text-sm">
-              طراحی و توسعه با ❤️ در ایران
+              ساخته‌شده با ❤️ در دانشگاه علم‌وصنعت‌ایران
             </p>
           </div>
         </div>
