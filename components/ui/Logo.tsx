@@ -23,9 +23,7 @@ export function Logo({ variant = "default", className = "" }: LogoProps) {
           className={`w-8 h-8 md:w-9 md:h-9 ${imageClass}`}
         />
         {/* Text */}
-        <span className={`text-lg md:text-xl font-bold ${textColor}`}>
-          دات مگ
-        </span>
+        <span className={`text-lg md:text-xl font-bold ${textColor}`}>دات</span>
       </div>
     </Link>
   );

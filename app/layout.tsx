@@ -15,37 +15,37 @@ const vazirmatn = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "دات مگ | مجله دیجیتال طراحی و سبک زندگی",
-    template: "%s | دات مگ",
+    default: "دات | مجله انقلابی",
+    template: "%s | دات",
   },
   description:
     "مجله دات، پلتفرمی برای روایت داستان‌های الهام‌بخش از دنیای طراحی، تکنولوژی و سبک زندگی مدرن.",
   keywords: [
-    "مجله دیجیتال",
+    "مجله انقلابی",
     "طراحی",
     "تکنولوژی",
     "سبک زندگی",
     "هنر",
     "معماری",
-    "دات مگ",
+    "دات",
   ],
-  authors: [{ name: "دات مگ" }],
-  creator: "دات مگ",
-  publisher: "دات مگ",
+  authors: [{ name: "دات" }],
+  creator: "دات",
+  publisher: "دات",
   robots: "index, follow",
   openGraph: {
     type: "website",
     locale: "fa_IR",
     url: "https://dotmag.ir",
-    siteName: "دات مگ",
-    title: "دات مگ | مجله دیجیتال طراحی و سبک زندگی",
+    siteName: "دات",
+    title: "دات | مجله انقلابی",
     description:
       "مجله دات، پلتفرمی برای روایت داستان‌های الهام‌بخش از دنیای طراحی، تکنولوژی و سبک زندگی مدرن.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "دات مگ",
-    description: "مجله دیجیتال طراحی و سبک زندگی",
+    title: "دات",
+    description: "مجله انقلابی",
   },
 };
 

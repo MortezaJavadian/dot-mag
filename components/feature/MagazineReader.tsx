@@ -278,9 +278,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
                     <span className="text-primary text-4xl font-black">.</span>
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-black mb-2">
-                    دات مگ
-                  </h2>
+                  <h2 className="text-3xl md:text-4xl font-black mb-2">دات</h2>
                   <p className="text-khaki text-lg mb-4">{magazine.subtitle}</p>
                   <p className="text-deep-black/50 text-sm">{magazine.title}</p>
                 </>

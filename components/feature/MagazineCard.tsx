@@ -28,7 +28,7 @@ export function MagazineCard({ magazine }: MagazineCardProps) {
             </div>
 
             {/* Title */}
-            <h4 className="text-lg font-bold text-deep-black mb-1">دات مگ</h4>
+            <h4 className="text-lg font-bold text-deep-black mb-1">دات</h4>
             <p className="text-khaki text-sm font-medium mb-4">
               {magazine.subtitle}
             </p>
