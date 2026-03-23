@@ -91,7 +91,7 @@ const footerLinks = [
     title: "صفحات",
     links: [
       { label: "خانه", href: "/" },
-      { label: "مقالات", href: "/posts" },
+      { label: "فرسته", href: "/posts" },
       { label: "آرشیو مجله", href: "/archive" },
       { label: "درباره ما", href: "/about" },
     ],
@@ -99,10 +99,9 @@ const footerLinks = [
   {
     title: "دسته‌بندی‌ها",
     links: [
-      { label: "تکنولوژی", href: "/posts?category=technology" },
-      { label: "طراحی", href: "/posts?category=design" },
-      { label: "سبک زندگی", href: "/posts?category=lifestyle" },
-      { label: "معماری", href: "/posts?category=architecture" },
+      { label: "از ما", href: "/posts?category=from-us" },
+      { label: "از شما", href: "/posts?category=from-you" },
+      { label: "از دیگران", href: "/posts?category=from-others" },
     ],
   },
 ];

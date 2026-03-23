@@ -7,7 +7,7 @@ import { useThemeContext } from "@/components/shared/ThemeProvider";
 
 const navLinks = [
   { href: "/", label: "خانه" },
-  { href: "/posts", label: "مقالات" },
+  { href: "/posts", label: "فرسته" },
   { href: "/archive", label: "آرشیو مجله" },
   { href: "/about", label: "درباره ما" },
 ];
@@ -189,7 +189,7 @@ export function Header() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="جستجو در مقالات..."
+              placeholder="جستجو در فرسته..."
               className="w-full px-5 py-3 pr-12 bg-background-secondary rounded-xl border border-card-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
             />
             <svg

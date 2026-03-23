@@ -271,7 +271,7 @@ export default async function ArticlePage({ params }: PageProps) {
         <section className="py-16 md:py-24 mt-16 bg-background-secondary">
           <div className="container">
             <h2 className="text-2xl md:text-3xl font-bold mb-10">
-              مقالات مرتبط
+              فرسته مرتبط
             </h2>
             <div className="grid md:grid-cols-3 gap-6">
               {relatedArticles.map((related) => (

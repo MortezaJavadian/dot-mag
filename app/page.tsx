@@ -59,7 +59,7 @@ export default function HomePage() {
                   href="/posts"
                   className="inline-flex items-center gap-2 px-8 py-4 bg-foreground/5 text-foreground font-bold rounded-full hover:bg-foreground/10 transition-all"
                 >
-                  مقالات
+                  فرسته
                 </Link>
               </div>
             </div>
@@ -131,7 +131,7 @@ export default function HomePage() {
         <section className="py-16 md:py-24">
           <div className="container">
             <div className="flex items-center justify-between mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold">مقالات ویژه</h2>
+              <h2 className="text-2xl md:text-3xl font-bold">فرسته ویژه</h2>
               <Link
                 href="/posts"
                 className="text-primary font-medium hover:underline hidden md:block"
@@ -157,7 +157,7 @@ export default function HomePage() {
       <section className="py-16 md:py-24 bg-background-secondary">
         <div className="container">
           <div className="flex items-center justify-between mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold">آخرین مقالات</h2>
+            <h2 className="text-2xl md:text-3xl font-bold">آخرین فرسته</h2>
             <Link
               href="/posts"
               className="text-primary font-medium hover:underline"

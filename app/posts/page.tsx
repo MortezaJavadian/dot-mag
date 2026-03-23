@@ -3,18 +3,15 @@ import { ArticleCard } from "@/components/feature/ArticleCard";
 import articles from "@/data/articles.json";
 
 export const metadata: Metadata = {
-  title: "مقالات",
-  description: "آخرین مقالات مجله دات در حوزه طراحی، تکنولوژی و سبک زندگی",
+  title: "فرسته",
+  description: "آخرین فرسته‌های مجله دات در حوزه طراحی، تکنولوژی و سبک زندگی",
 };
 
 const categories = [
   { label: "همه", value: "all" },
-  { label: "تکنولوژی", value: "تکنولوژی" },
-  { label: "طراحی", value: "طراحی" },
-  { label: "معماری", value: "معماری" },
-  { label: "سبک زندگی", value: "سبک زندگی" },
-  { label: "عکاسی", value: "عکاسی" },
-  { label: "مد و لباس", value: "مد و لباس" },
+  { label: "از ما", value: "از ما" },
+  { label: "از شما", value: "از شما" },
+  { label: "از دیگران", value: "از دیگران" },
 ];
 
 export default function PostsPage() {
@@ -24,10 +21,10 @@ export default function PostsPage() {
       <section className="pt-12 pb-8 md:pt-16 md:pb-12 bg-background-secondary">
         <div className="container">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
-            مقالات
+            فرسته
           </h1>
           <p className="text-foreground-secondary text-lg max-w-2xl">
-            جدیدترین مقالات ما درباره طراحی، تکنولوژی، هنر و سبک زندگی مدرن را
+            جدیدترین فرسته‌های ما درباره طراحی، تکنولوژی، هنر و سبک زندگی مدرن را
             بخوانید.
           </p>
         </div>
