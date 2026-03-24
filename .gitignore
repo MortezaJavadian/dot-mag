@@ -38,3 +38,20 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Android / TWA build files
+android-app/
+*.apk
+*.aab
+*.idsig
+android.keystore
+twa-manifest.json
+.gradle/
+gradle/
+gradlew
+gradlew.bat
+build.gradle
+settings.gradle
+gradle.properties
+manifest-checksum.txt
+app/
