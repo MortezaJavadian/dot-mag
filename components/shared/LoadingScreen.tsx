@@ -12,6 +12,23 @@ export function LoadingScreen({ onLoadingComplete }: LoadingScreenProps) {
   const [isFading, setIsFading] = useState(false);
 
   useEffect(() => {
+    // Detect if running in PWA standalone mode
+    const isStandalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true;
+
+    // Check if this is the first app launch in this session
+    const hasLaunchedSession = sessionStorage.getItem("dot_pwa_launched");
+
+    // If PWA first launch, skip React loading (system splash already shown)
+    if (isStandalone && !hasLaunchedSession) {
+      sessionStorage.setItem("dot_pwa_launched", "true");
+      setIsVisible(false);
+      onLoadingComplete?.();
+      return;
+    }
+
+    // Web browser or PWA reload: show React loading with animation
     const timer = setTimeout(() => {
       setIsFading(true);
       setTimeout(() => {
@@ -27,30 +44,19 @@ export function LoadingScreen({ onLoadingComplete }: LoadingScreenProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center min-h-screen transition-opacity duration-500 ${
+      className={`fixed inset-0 z-[9999] flex items-center justify-center min-h-screen transition-opacity duration-500 ${
         isFading ? "opacity-0" : "opacity-100"
       }`}
       style={{ backgroundColor: "#D73B3A" }}
     >
-      {/* Logo from PWA icons */}
-      <div className="mb-3">
-        <Image
-          src="/assets/images/logo-512x512.png"
-          alt="Dot Mag"
-          width={200}
-          height={200}
-          priority
-          className="w-40 h-40 md:w-50 md:h-50"
-        />
-      </div>
-
-      {/* Brand Text */}
-      <div
-        className="text-2xl md:text-4xl font-bold tracking-wide"
-        style={{ color: "#1A1A1A" }}
-      >
-        [dot ▪ mag]
-      </div>
+      <Image
+        src="/assets/images/loading-logo-1024x1024.png"
+        alt="Dot Mag"
+        width={200}
+        height={200}
+        priority
+        className="w-40 h-40 md:w-50 md:h-50"
+      />
     </div>
   );
 }

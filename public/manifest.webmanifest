@@ -1,16 +1,16 @@
 {
-  "name": "دات",
-  "short_name": "دات",
-  "description": "دات",
+  "name": "Dot",
+  "short_name": "Dot",
+  "description": "Dot",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#D73B3A",
+  "background_color": "#000000",
   "theme_color": "#D73B3A",
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "fa",
   "dir": "rtl",
-  "categories": ["magazine", "news", "lifestyle"],
+  "categories": ["magazine", "news"],
   "icons": [
     {
       "src": "/assets/icons/icon-48x48.png",
