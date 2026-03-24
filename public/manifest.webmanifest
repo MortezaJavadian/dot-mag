@@ -12,10 +12,10 @@
   "dir": "rtl",
   "categories": ["magazine", "news"],
   "safe_area_insets": {
-    "top": 17,
-    "bottom": 17,
-    "left": 17,
-    "right": 17
+    "top": 0,
+    "bottom": 0,
+    "left": 20,
+    "right": 20
   },
   "icons": [
     {
