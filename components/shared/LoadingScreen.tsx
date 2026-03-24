@@ -18,8 +18,8 @@ export function LoadingScreen({ onLoadingComplete }: LoadingScreenProps) {
       setTimeout(() => {
         setIsVisible(false);
         onLoadingComplete?.();
-      }, 500);
-    }, 1000);
+      }, 1000);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, [onLoadingComplete]);
@@ -39,7 +39,7 @@ export function LoadingScreen({ onLoadingComplete }: LoadingScreenProps) {
         width={200}
         height={200}
         priority
-        className="w-40 h-40 md:w-50 md:h-50"
+        className="w-40 h-40 md:w-40 md:h-40"
       />
 
       {/* Three-dot loader animation */}
@@ -47,21 +47,21 @@ export function LoadingScreen({ onLoadingComplete }: LoadingScreenProps) {
         <span
           className="w-2 h-2 bg-black rounded-full"
           style={{
-            animation: "bounce 1.4s infinite",
+            animation: "bounce 1.2s infinite",
             animationDelay: "0s",
           }}
         />
         <span
           className="w-2 h-2 bg-black rounded-full"
           style={{
-            animation: "bounce 1.4s infinite",
+            animation: "bounce 1.2s infinite",
             animationDelay: "0.2s",
           }}
         />
         <span
           className="w-2 h-2 bg-black rounded-full"
           style={{
-            animation: "bounce 1.4s infinite",
+            animation: "bounce 1.2s infinite",
             animationDelay: "0.4s",
           }}
         />
