@@ -11,6 +11,12 @@
   "lang": "fa",
   "dir": "rtl",
   "categories": ["magazine", "news"],
+  "safe_area_insets": {
+    "top": 0,
+    "bottom": 0,
+    "left": 12,
+    "right": 12
+  },
   "icons": [
     {
       "src": "/assets/icons/icon-48x48.png",

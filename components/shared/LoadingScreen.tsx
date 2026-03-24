@@ -12,23 +12,7 @@ export function LoadingScreen({ onLoadingComplete }: LoadingScreenProps) {
   const [isFading, setIsFading] = useState(false);
 
   useEffect(() => {
-    // Detect if running in PWA standalone mode
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone === true;
-
-    // Check if this is the first app launch in this session
-    const hasLaunchedSession = sessionStorage.getItem("dot_pwa_launched");
-
-    // If PWA first launch, skip React loading (system splash already shown)
-    if (isStandalone && !hasLaunchedSession) {
-      sessionStorage.setItem("dot_pwa_launched", "true");
-      setIsVisible(false);
-      onLoadingComplete?.();
-      return;
-    }
-
-    // Web browser or PWA reload: show React loading with animation
+    // Show loading screen with animation
     const timer = setTimeout(() => {
       setIsFading(true);
       setTimeout(() => {
@@ -44,7 +28,7 @@ export function LoadingScreen({ onLoadingComplete }: LoadingScreenProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex items-center justify-center min-h-screen transition-opacity duration-500 ${
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center min-h-screen transition-opacity duration-500 ${
         isFading ? "opacity-0" : "opacity-100"
       }`}
       style={{ backgroundColor: "#D73B3A" }}
@@ -57,6 +41,31 @@ export function LoadingScreen({ onLoadingComplete }: LoadingScreenProps) {
         priority
         className="w-40 h-40 md:w-50 md:h-50"
       />
+
+      {/* Three-dot loader animation */}
+      <div className="mt-8 flex gap-2">
+        <span
+          className="w-2 h-2 bg-black rounded-full"
+          style={{
+            animation: "bounce 1.4s infinite",
+            animationDelay: "0s",
+          }}
+        />
+        <span
+          className="w-2 h-2 bg-black rounded-full"
+          style={{
+            animation: "bounce 1.4s infinite",
+            animationDelay: "0.2s",
+          }}
+        />
+        <span
+          className="w-2 h-2 bg-black rounded-full"
+          style={{
+            animation: "bounce 1.4s infinite",
+            animationDelay: "0.4s",
+          }}
+        />
+      </div>
     </div>
   );
 }
