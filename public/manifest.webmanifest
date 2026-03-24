@@ -64,7 +64,7 @@
       "src": "/assets/icons/icon-384x384.png",
       "sizes": "384x384",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/assets/icons/icon-512x512.png",
