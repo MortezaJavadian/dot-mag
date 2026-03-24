@@ -68,7 +68,7 @@ export default function RootLayout({
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.webmanifest" />
-        <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" href="/app/icon.png" />
       </head>
       <body
         className={`${vazirmatn.variable} font-vazir min-h-screen flex flex-col antialiased`}

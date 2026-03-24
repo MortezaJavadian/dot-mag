@@ -1,7 +1,7 @@
 {
-  "name": "دات - مجله انقلابی",
+  "name": "دات",
   "short_name": "دات",
-  "description": "مجله انقلابی",
+  "description": "دات",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#D73B3A",
@@ -12,6 +12,12 @@
   "dir": "rtl",
   "categories": ["magazine", "news", "lifestyle"],
   "icons": [
+    {
+      "src": "/assets/icons/icon-48x48.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/assets/icons/icon-72x72.png",
       "sizes": "72x72",
@@ -47,6 +53,12 @@
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icons/icon-256x256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/assets/icons/icon-384x384.png",

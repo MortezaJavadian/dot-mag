@@ -16,7 +16,7 @@ export function Logo({ variant = "default", className = "" }: LogoProps) {
       <div className="flex items-center gap-2">
         {/* Logo Icon */}
         <Image
-          src="/assets/icons/icon-96x96.png"
+          src="/assets/images/logo-512x512.png"
           alt="Dot Mag"
           width={36}
           height={36}

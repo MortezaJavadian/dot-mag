@@ -35,7 +35,7 @@ export function LoadingScreen({ onLoadingComplete }: LoadingScreenProps) {
       {/* Logo from PWA icons */}
       <div className="mb-3">
         <Image
-          src="/assets/icons/icon-512x512.png"
+          src="/assets/images/logo-512x512.png"
           alt="Dot Mag"
           width={200}
           height={200}
