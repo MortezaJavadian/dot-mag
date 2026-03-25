@@ -1,20 +1,17 @@
 # Android Build Instructions
 
-## Prerequisites
-- Node.js 18+
-- Bubblewrap CLI: `npm install -g @bubblewrap/cli`
-- Java JDK 8+
-
 ## Build Process
 
 ### First Time Setup
 
 1. Navigate to android directory:
+
    ```bash
    cd android
    ```
 
 2. Build APK (bubblewrap will prompt to create keystore):
+
    ```bash
    bubblewrap build
    ```
@@ -28,13 +25,16 @@
    - Key password (remember this!)
 
 4. Extract SHA256 fingerprint:
+
    ```bash
    keytool -list -v -keystore android.keystore -alias dotmag_release
    ```
+
    Enter keystore password when prompted.
    Copy the SHA256 fingerprint (format: AA:BB:CC:DD:EE:FF:...)
 
 5. Update `.env` file in project root:
+
    ```bash
    cd ..
    echo "ANDROID_SHA256_FINGERPRINT=YOUR_FINGERPRINT_HERE" >> .env
@@ -52,20 +52,9 @@ bubblewrap build
 ## Output Files
 
 After build, you'll find:
+
 - `app-release-signed.apk` - Install this on Android devices
 - `app-release-bundle.aab` - Upload this to Google Play Store
-
-## Installation
-
-### Via USB (ADB)
-```bash
-adb install app-release-signed.apk
-```
-
-### Via File Transfer
-1. Copy `app-release-signed.apk` to your Android device
-2. Open the file and tap Install
-3. Allow installation from unknown sources if prompted
 
 ## Troubleshooting
 
@@ -80,9 +69,11 @@ If you see a URL bar and share button when opening the app, it means TWA (Truste
    - No extra spaces or missing colons
 
 2. **Verify Digital Asset Links is working**
+
    ```bash
    curl https://dotmag.ir/.well-known/assetlinks.json
    ```
+
    Should return JSON with your package name and SHA256 fingerprint.
 
 3. **Wait for Google verification**
@@ -101,23 +92,6 @@ If you see a URL bar and share button when opening the app, it means TWA (Truste
    - Install APK and test
    - This helps verify the fingerprint is correct before deploying
 
-### Build Errors
-
-**Java not found:**
-```bash
-brew install openjdk@11
-```
-
-**Bubblewrap not found:**
-```bash
-npm install -g @bubblewrap/cli
-```
-
-**Keystore issues:**
-- If you lost keystore password, you'll need to create a new keystore
-- Delete `android.keystore` and run `bubblewrap build` again
-- You'll get a new SHA256 fingerprint - update `.env` and redeploy
-
 ## Configuration
 
 The build configuration is in `twa-manifest.json`. Key settings:
@@ -135,6 +109,7 @@ The build configuration is in `twa-manifest.json`. Key settings:
 To release a new version:
 
 1. Update version in `twa-manifest.json`:
+
    ```json
    {
      "appVersionCode": 2,
@@ -143,6 +118,7 @@ To release a new version:
    ```
 
 2. Build new APK:
+
    ```bash
    bubblewrap build
    ```
