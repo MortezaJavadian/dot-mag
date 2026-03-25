@@ -40,19 +40,12 @@ yarn-error.log*
 next-env.d.ts
 
 # Android build artifacts (in android/ folder)
-android/*.apk
-android/*.aab
-android/*.idsig
-android/*.keystore
-android/app/
-android/.gradle/
-android/gradle/
-android/gradlew
-android/gradlew.bat
-android/build.gradle
-android/settings.gradle
-android/gradle.properties
-android/manifest-checksum.txt
+android/
+*.apk
+*.aab
+*.idsig
+*.keystore
+.gradle/
 
 # Prevent accidental Android files in root
 /*.apk
