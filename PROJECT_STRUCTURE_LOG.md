@@ -63,25 +63,25 @@ dot-mag/
 
 ### App Directory
 
-| File                                        | Purpose                                                                        |
-| ------------------------------------------- | ------------------------------------------------------------------------------ |
-| `app/layout.tsx`                            | Root layout with RTL direction, Vazirmatn font, ThemeProvider, Header, Footer |
-| `app/globals.css`                           | Custom color palette, Tailwind config, typography, animations                  |
-| `app/page.tsx`                              | Home page with Hero, Editorial, Featured/Latest Articles sections              |
-| `app/posts/page.tsx`                        | Articles listing with category filter                                          |
-| `app/posts/[slug]/page.tsx`                 | Single article with content, meta, related articles                            |
-| `app/archive/page.tsx`                      | Magazine archive grid                                                          |
-| `app/archive/[slug]/page.tsx`               | In-app magazine reader                                                         |
-| `app/about/page.tsx`                        | About page with mission, values, team                                          |
-| `app/api/.well-known/assetlinks.json/route.ts` | Digital Asset Links API for Android TWA verification                       |
+| File                                           | Purpose                                                                       |
+| ---------------------------------------------- | ----------------------------------------------------------------------------- |
+| `app/layout.tsx`                               | Root layout with RTL direction, Vazirmatn font, ThemeProvider, Header, Footer |
+| `app/globals.css`                              | Custom color palette, Tailwind config, typography, animations                 |
+| `app/page.tsx`                                 | Home page with Hero, Editorial, Featured/Latest Articles sections             |
+| `app/posts/page.tsx`                           | Articles listing with category filter                                         |
+| `app/posts/[slug]/page.tsx`                    | Single article with content, meta, related articles                           |
+| `app/archive/page.tsx`                         | Magazine archive grid                                                         |
+| `app/archive/[slug]/page.tsx`                  | In-app magazine reader                                                        |
+| `app/about/page.tsx`                           | About page with mission, values, team                                         |
+| `app/api/.well-known/assetlinks.json/route.ts` | Digital Asset Links API for Android TWA verification                          |
 
 ### Android Directory
 
-| File                            | Purpose                                                  |
-| ------------------------------- | -------------------------------------------------------- |
-| `android/.gitignore`            | Ignores Android build artifacts (APK, AAB, keystore)     |
-| `android/README.md`             | Complete Android build documentation and troubleshooting |
-| `android/twa-manifest.json`     | Bubblewrap TWA configuration for Android app packaging   |
+| File                        | Purpose                                                  |
+| --------------------------- | -------------------------------------------------------- |
+| `android/.gitignore`        | Ignores Android build artifacts (APK, AAB, keystore)     |
+| `android/README.md`         | Complete Android build documentation and troubleshooting |
+| `android/twa-manifest.json` | Bubblewrap TWA configuration for Android app packaging   |
 
 ### Components
 
@@ -112,20 +112,20 @@ dot-mag/
 
 ### Environment & Config
 
-| File              | Purpose                                      |
-| ----------------- | -------------------------------------------- |
-| `.env.example`    | Environment variables template (Android SHA256) |
+| File           | Purpose                                         |
+| -------------- | ----------------------------------------------- |
+| `.env.example` | Environment variables template (Android SHA256) |
 
 ## Change Journal
 
-| Date       | Change                | Reason                                         |
-| ---------- | --------------------- | ---------------------------------------------- |
-| 2026-03-21 | Initial setup         | Project foundation with RTL, font, colors      |
-| 2026-03-21 | Created components    | Header, Footer, Cards, Reader                  |
-| 2026-03-21 | Created all pages     | Home, Posts, Archive, About                    |
-| 2026-03-21 | Added PWA files       | Manifest, SW, offline page                     |
-| 2026-03-25 | Added Android TWA setup | Bubblewrap configuration for Android APK build |
-| 2026-03-25 | Added Digital Asset Links | API route for TWA verification             |
+| Date       | Change                    | Reason                                         |
+| ---------- | ------------------------- | ---------------------------------------------- |
+| 2026-03-21 | Initial setup             | Project foundation with RTL, font, colors      |
+| 2026-03-21 | Created components        | Header, Footer, Cards, Reader                  |
+| 2026-03-21 | Created all pages         | Home, Posts, Archive, About                    |
+| 2026-03-21 | Added PWA files           | Manifest, SW, offline page                     |
+| 2026-03-25 | Added Android TWA setup   | Bubblewrap configuration for Android APK build |
+| 2026-03-25 | Added Digital Asset Links | API route for TWA verification                 |
 
 ## Reuse Decisions
 
