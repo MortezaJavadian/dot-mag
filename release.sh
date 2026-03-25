@@ -124,8 +124,8 @@ update_manifest_version() {
 
     # Update using jq if available, otherwise sed
     if command -v jq >/dev/null 2>&1; then
-        jq --arg name "$version_name" --arg code "$version_code" \
-           '.appVersionName = $name | .appVersionCode = ($code | tonumber)' \
+        jq --arg name "$version_name" --argjson code "$version_code" \
+           '.appVersionName = $name | .appVersionCode = $code' \
            "$MANIFEST_FILE" > "$MANIFEST_FILE.tmp" && \
            mv "$MANIFEST_FILE.tmp" "$MANIFEST_FILE"
     else
@@ -219,17 +219,19 @@ EOF
 
 # Function to update bubblewrap configuration
 update_bubblewrap_config() {
+    local version_name=$1
+
     log "Updating bubblewrap configuration..."
 
     cd "$ANDROID_DIR"
 
-    # Create expect script for update
-    cat > update_expect.exp << 'EOF'
+    # Create expect script for update - pass the version automatically
+    cat > update_expect.exp << EOF
 #!/usr/bin/expect -f
 set timeout 60
 spawn npx bubblewrap update --manifest twa-manifest.json
 expect {
-    "*version*" { send "\r"; exp_continue }
+    "*version*" { send "$version_name\r"; exp_continue }
     "*regenerate*" { send "y\r"; exp_continue }
     eof
 }
@@ -240,7 +242,7 @@ EOF
     rm -f update_expect.exp
 
     cd ..
-    success "Bubblewrap configuration updated"
+    success "Bubblewrap configuration updated with version $version_name"
 }
 
 # Function to clean old APK files
@@ -355,7 +357,7 @@ main() {
     update_manifest_version "$version_name" "$version_code"
 
     # Step 6: Update bubblewrap configuration
-    update_bubblewrap_config
+    update_bubblewrap_config "$version_name"
 
     # Step 7: Clean old APK files
     clean_old_apks
