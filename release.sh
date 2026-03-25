@@ -35,7 +35,7 @@ error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
-# Function to get and increment version code
+# Function to increment version code
 increment_version_code() {
     log "Managing version code..."
 
@@ -50,7 +50,16 @@ increment_version_code() {
     echo "$new_code" > "$VERSION_FILE"
 
     log "Version code incremented: $current_code → $new_code"
-    echo "$new_code"
+    return 0
+}
+
+# Function to get version code
+get_version_code() {
+    if [ -f "$VERSION_FILE" ]; then
+        cat "$VERSION_FILE"
+    else
+        echo "1"
+    fi
 }
 
 # Function to prompt for version name
@@ -63,7 +72,6 @@ prompt_version_name() {
         version_name=${version_name#v}
 
         if [[ $version_name =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            log "Version name set: $version_name"
             echo "$version_name"
             return 0
         else
@@ -226,16 +234,16 @@ update_bubblewrap_config() {
     cd "$ANDROID_DIR"
 
     # Create expect script for update - pass the version automatically
-    cat > update_expect.exp << EOF
+    cat > update_expect.exp << EXPECTEOF
 #!/usr/bin/expect -f
 set timeout 60
 spawn npx bubblewrap update --manifest twa-manifest.json
 expect {
-    "*version*" { send "$version_name\r"; exp_continue }
+    "*version*" { send "${version_name}\r"; exp_continue }
     "*regenerate*" { send "y\r"; exp_continue }
     eof
 }
-EOF
+EXPECTEOF
 
     chmod +x update_expect.exp
     ./update_expect.exp
@@ -342,7 +350,8 @@ main() {
     echo
 
     # Step 1: Increment version code
-    local version_code=$(increment_version_code)
+    increment_version_code
+    local version_code=$(get_version_code)
 
     # Step 2: Get version name from user
     local version_name=$(prompt_version_name)
