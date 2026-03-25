@@ -65,8 +65,7 @@ get_version_code() {
 # Function to prompt for version name
 prompt_version_name() {
     while true; do
-        echo -n "Enter version name (e.g., 1.0.5): "
-        read version_name
+        read -p "Enter version name (e.g., 1.0.5): " version_name
 
         # Remove 'v' prefix if present
         version_name=${version_name#v}
