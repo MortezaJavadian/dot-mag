@@ -10,6 +10,10 @@ dot-mag/
 │   ├── page.tsx                # Home page
 │   ├── about/
 │   │   └── page.tsx            # About Us page
+│   ├── api/
+│   │   └── .well-known/
+│   │       └── assetlinks.json/
+│   │           └── route.ts    # Digital Asset Links for Android TWA
 │   ├── archive/
 │   │   ├── page.tsx            # Magazine archive listing
 │   │   └── [slug]/
@@ -18,6 +22,10 @@ dot-mag/
 │       ├── page.tsx            # Articles listing
 │       └── [slug]/
 │           └── page.tsx        # Single article page
+├── android/
+│   ├── .gitignore              # Ignore Android build artifacts
+│   ├── README.md               # Android build documentation
+│   └── twa-manifest.json       # Bubblewrap TWA configuration
 ├── components/
 │   ├── ui/
 │   │   ├── Logo.tsx            # Logo component
@@ -34,7 +42,6 @@ dot-mag/
 │   ├── articles.json           # Mock article data
 │   └── magazines.json          # Mock magazine data
 ├── hooks/                      # Custom React hooks (empty)
-├── lib/                        # Utilities (empty)
 ├── public/
 │   ├── assets/
 │   │   ├── fonts/
@@ -42,10 +49,11 @@ dot-mag/
 │   │   │       └── Vazirmatn[wght].woff2
 │   │   ├── images/
 │   │   │   └── dot-logo.png
-│   │   └── icons/              # PWA icons (need to be added)
+│   │   └── icons/              # PWA icons
 │   ├── manifest.webmanifest    # PWA manifest
 │   ├── sw.js                   # Service worker
 │   └── offline.html            # Offline fallback page
+├── .env.example                # Environment variables template
 ├── AGENTS.md                   # Architecture rules
 ├── CLAUDE.md                   # Agent instructions
 └── PROJECT_STRUCTURE_LOG.md    # This file
@@ -55,16 +63,25 @@ dot-mag/
 
 ### App Directory
 
-| File                          | Purpose                                                                       |
-| ----------------------------- | ----------------------------------------------------------------------------- |
-| `app/layout.tsx`              | Root layout with RTL direction, Vazirmatn font, ThemeProvider, Header, Footer |
-| `app/globals.css`             | Custom color palette, Tailwind config, typography, animations                 |
-| `app/page.tsx`                | Home page with Hero, Editorial, Featured/Latest Articles sections             |
-| `app/posts/page.tsx`          | Articles listing with category filter                                         |
-| `app/posts/[slug]/page.tsx`   | Single article with content, meta, related articles                           |
-| `app/archive/page.tsx`        | Magazine archive grid                                                         |
-| `app/archive/[slug]/page.tsx` | In-app magazine reader                                                        |
-| `app/about/page.tsx`          | About page with mission, values, team                                         |
+| File                                        | Purpose                                                                        |
+| ------------------------------------------- | ------------------------------------------------------------------------------ |
+| `app/layout.tsx`                            | Root layout with RTL direction, Vazirmatn font, ThemeProvider, Header, Footer |
+| `app/globals.css`                           | Custom color palette, Tailwind config, typography, animations                  |
+| `app/page.tsx`                              | Home page with Hero, Editorial, Featured/Latest Articles sections              |
+| `app/posts/page.tsx`                        | Articles listing with category filter                                          |
+| `app/posts/[slug]/page.tsx`                 | Single article with content, meta, related articles                            |
+| `app/archive/page.tsx`                      | Magazine archive grid                                                          |
+| `app/archive/[slug]/page.tsx`               | In-app magazine reader                                                         |
+| `app/about/page.tsx`                        | About page with mission, values, team                                          |
+| `app/api/.well-known/assetlinks.json/route.ts` | Digital Asset Links API for Android TWA verification                       |
+
+### Android Directory
+
+| File                            | Purpose                                                  |
+| ------------------------------- | -------------------------------------------------------- |
+| `android/.gitignore`            | Ignores Android build artifacts (APK, AAB, keystore)     |
+| `android/README.md`             | Complete Android build documentation and troubleshooting |
+| `android/twa-manifest.json`     | Bubblewrap TWA configuration for Android app packaging   |
 
 ### Components
 
@@ -93,14 +110,22 @@ dot-mag/
 | `public/sw.js`                | Service worker for offline support |
 | `public/offline.html`         | Offline fallback page              |
 
+### Environment & Config
+
+| File              | Purpose                                      |
+| ----------------- | -------------------------------------------- |
+| `.env.example`    | Environment variables template (Android SHA256) |
+
 ## Change Journal
 
-| Date       | Change             | Reason                                    |
-| ---------- | ------------------ | ----------------------------------------- |
-| 2026-03-21 | Initial setup      | Project foundation with RTL, font, colors |
-| 2026-03-21 | Created components | Header, Footer, Cards, Reader             |
-| 2026-03-21 | Created all pages  | Home, Posts, Archive, About               |
-| 2026-03-21 | Added PWA files    | Manifest, SW, offline page                |
+| Date       | Change                | Reason                                         |
+| ---------- | --------------------- | ---------------------------------------------- |
+| 2026-03-21 | Initial setup         | Project foundation with RTL, font, colors      |
+| 2026-03-21 | Created components    | Header, Footer, Cards, Reader                  |
+| 2026-03-21 | Created all pages     | Home, Posts, Archive, About                    |
+| 2026-03-21 | Added PWA files       | Manifest, SW, offline page                     |
+| 2026-03-25 | Added Android TWA setup | Bubblewrap configuration for Android APK build |
+| 2026-03-25 | Added Digital Asset Links | API route for TWA verification             |
 
 ## Reuse Decisions
 
@@ -111,12 +136,16 @@ dot-mag/
 
 ## Pending / TODOs
 
-1. [ ] Add actual PWA icons (72x72 to 512x512)
-2. [ ] Add article/magazine images when available
-3. [ ] Implement actual search functionality (client-side filter)
-4. [ ] Add category filter functionality on /posts
-5. [ ] Enhance magazine reader with actual page images
-6. [ ] Add newsletter subscription backend (when needed)
+1. [x] Add Android TWA build setup
+2. [x] Add Digital Asset Links route
+3. [ ] Complete Android build (requires manual bubblewrap build)
+4. [ ] Extract SHA256 fingerprint and update .env
+5. [ ] Add actual PWA icons (72x72 to 512x512)
+6. [ ] Add article/magazine images when available
+7. [ ] Implement actual search functionality (client-side filter)
+8. [ ] Add category filter functionality on /posts
+9. [ ] Enhance magazine reader with actual page images
+10. [ ] Add newsletter subscription backend (when needed)
 
 ## Known Constraints
 

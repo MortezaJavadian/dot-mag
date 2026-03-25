@@ -1,0 +1,16 @@
+# Android build outputs
+*.apk
+*.aab
+*.idsig
+*.keystore
+
+# Gradle build
+app/
+.gradle/
+gradle/
+gradlew
+gradlew.bat
+local.properties
+
+# Build artifacts
+build/

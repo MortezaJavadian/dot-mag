@@ -39,19 +39,31 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Android / TWA build files
-android-app/
-*.apk
-*.aab
-*.idsig
-android.keystore
-twa-manifest.json
+# Android build artifacts (in android/ folder)
+android/*.apk
+android/*.aab
+android/*.idsig
+android/*.keystore
+android/app/
+android/.gradle/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+android/build.gradle
+android/settings.gradle
+android/gradle.properties
+android/manifest-checksum.txt
+
+# Prevent accidental Android files in root
+/*.apk
+/*.aab
+/*.keystore
 .gradle/
 gradle/
 gradlew
 gradlew.bat
-build.gradle
-settings.gradle
-gradle.properties
-manifest-checksum.txt
-app/
+/build.gradle
+/settings.gradle
+/gradle.properties
+/manifest-checksum.txt
+/twa-manifest.json
