@@ -64,9 +64,9 @@ get_version_code() {
 
 # Function to prompt for version name
 prompt_version_name() {
-    echo
     while true; do
-        read -p "Enter version name (e.g., 1.0.5): " version_name
+        echo -n "Enter version name (e.g., 1.0.5): "
+        read version_name
 
         # Remove 'v' prefix if present
         version_name=${version_name#v}
@@ -75,7 +75,7 @@ prompt_version_name() {
             echo "$version_name"
             return 0
         else
-            error "Invalid format. Use x.y.z (e.g., 1.0.5)"
+            echo "❌ Invalid format. Use x.y.z (e.g., 1.0.5)" >&2
         fi
     done
 }
@@ -295,7 +295,8 @@ EOF
     # Rename APK files with version tag
     log "Renaming APK files with version tag..."
 
-    find . -name "*.apk" -type f | while read apk; do
+    # Find APK files and rename them
+    for apk in $(find . -name "*.apk" -type f 2>/dev/null); do
         dirname=$(dirname "$apk")
         basename=$(basename "$apk" .apk)
         new_name="${dirname}/dotmag-v${version_name}-${basename}.apk"
@@ -303,7 +304,8 @@ EOF
         success "APK renamed: $(basename "$new_name")"
     done
 
-    find . -name "*.aab" -type f | while read aab; do
+    # Find AAB files and rename them
+    for aab in $(find . -name "*.aab" -type f 2>/dev/null); do
         dirname=$(dirname "$aab")
         basename=$(basename "$aab" .aab)
         new_name="${dirname}/dotmag-v${version_name}-${basename}.aab"
@@ -331,11 +333,11 @@ show_summary() {
 
     echo
     log "Built APK files:"
-    find "$ANDROID_DIR" -name "dotmag-v${version_name}-*.apk" -type f | while read apk; do
+    for apk in $(find "$ANDROID_DIR" -name "dotmag-v${version_name}-*.apk" -type f 2>/dev/null); do
         echo "  📱 $(basename "$apk")"
     done
 
-    find "$ANDROID_DIR" -name "dotmag-v${version_name}-*.aab" -type f | while read aab; do
+    for aab in $(find "$ANDROID_DIR" -name "dotmag-v${version_name}-*.aab" -type f 2>/dev/null); do
         echo "  📦 $(basename "$aab")"
     done
 
@@ -349,12 +351,14 @@ main() {
     log "🚀 Starting Complete Release Process"
     echo
 
-    # Step 1: Increment version code
+    # Step 1: Increment version code and get current code
     increment_version_code
     local version_code=$(get_version_code)
 
     # Step 2: Get version name from user
+    echo
     local version_name=$(prompt_version_name)
+    echo
 
     # Step 3: Git workflow (add, commit, push)
     git_workflow "$version_name"
