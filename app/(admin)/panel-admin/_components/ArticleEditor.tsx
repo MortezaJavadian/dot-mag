@@ -45,7 +45,7 @@ export default function ArticleEditor({
         ...formData,
         tags: formData.tags
           .split(",")
-          .map((tag) => tag.trim())
+          .map((tag: string) => tag.trim())
           .filter(Boolean),
         readingTime: parseInt(String(formData.readingTime)),
       };
