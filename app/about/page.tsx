@@ -205,7 +205,7 @@ export default function AboutPage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {values.map((value) => (
+            {values.map((value: any) => (
               <div
                 key={value.title}
                 className="bg-card-bg rounded-xl p-8 border border-card-border text-center"
@@ -232,7 +232,7 @@ export default function AboutPage() {
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {teamMembers.map((member) => (
+            {teamMembers.map((member: any) => (
               <div key={member.name} className="text-center">
                 {/* Avatar Placeholder */}
                 <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-cream flex items-center justify-center">

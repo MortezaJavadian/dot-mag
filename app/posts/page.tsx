@@ -97,7 +97,7 @@ function PostsContent() {
       <section className="py-6 border-b border-card-border sticky top-16 md:top-20 bg-background/95 backdrop-blur-md z-30">
         <div className="container">
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-            {categories.map((cat) => (
+            {categories.map((cat: any) => (
               <button
                 key={cat.value}
                 onClick={() => setSelectedCategory(cat.value)}

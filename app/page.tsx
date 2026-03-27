@@ -172,7 +172,7 @@ export default async function HomePage() {
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-              {featuredArticles.slice(0, 2).map((article) => (
+              {featuredArticles.slice(0, 2).map((article: any) => (
                 <ArticleCard
                   key={article.id}
                   article={article}
@@ -198,7 +198,7 @@ export default async function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {latestArticles.map((article) => (
+            {latestArticles.map((article: any) => (
               <ArticleCard key={article.id} article={article} />
             ))}
           </div>

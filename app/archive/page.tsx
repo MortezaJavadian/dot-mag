@@ -71,7 +71,7 @@ export default async function ArchivePage() {
       <section className="py-12 md:py-16">
         <div className="container">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {sortedMagazines.map((magazine) => (
+            {sortedMagazines.map((magazine: any) => (
               <MagazineCard key={magazine.id} magazine={magazine} />
             ))}
           </div>

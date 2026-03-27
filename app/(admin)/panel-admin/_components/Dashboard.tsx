@@ -98,7 +98,7 @@ export default function Dashboard() {
             </p>
           ) : (
             <div className="space-y-2">
-              {articles.map((article) => (
+              {articles.map((article: any) => (
                 <div
                   key={article.id}
                   className="p-4 border rounded-lg dark:border-slate-700 flex justify-between items-center"
@@ -153,7 +153,7 @@ export default function Dashboard() {
             </p>
           ) : (
             <div className="space-y-2">
-              {magazines.map((magazine) => (
+              {magazines.map((magazine: any) => (
                 <div
                   key={magazine.id}
                   className="p-4 border rounded-lg dark:border-slate-700 flex justify-between items-center"
