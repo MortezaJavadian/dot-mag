@@ -1,6 +1,7 @@
 "use server";
 
 import { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { getAdminUser } from "@/lib/auth";
 
 const prisma = new PrismaClient();
@@ -12,6 +13,11 @@ function generateSlug(title: string): string {
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 }
+
+type CreateArticleInput = Omit<
+  Prisma.ArticleCreateInput,
+  "id" | "createdAt" | "updatedAt" | "slug"
+>;
 
 export async function getArticles() {
   try {
@@ -37,9 +43,7 @@ export async function getArticle(id: string) {
   }
 }
 
-export async function createArticle(
-  data: Omit<any, "id" | "createdAt" | "updatedAt">,
-) {
+export async function createArticle(data: CreateArticleInput) {
   const adminUser = await getAdminUser();
   if (!adminUser) {
     return { success: false, error: "Unauthorized" };
@@ -65,7 +69,9 @@ export async function createArticle(
 
 export async function updateArticle(
   id: string,
-  data: Partial<Omit<any, "id" | "createdAt" | "updatedAt">>,
+  data: Partial<
+    Omit<Prisma.ArticleUpdateInput, "id" | "createdAt" | "updatedAt" | "slug">
+  >,
 ) {
   const adminUser = await getAdminUser();
   if (!adminUser) {
@@ -73,11 +79,11 @@ export async function updateArticle(
   }
 
   try {
-    const updateData: any = { ...data };
+    const updateData: Prisma.ArticleUpdateInput = { ...data };
 
     // Only update slug if title changed
     if (data.title) {
-      updateData.slug = generateSlug(data.title);
+      updateData.slug = generateSlug(data.title as string);
     }
 
     const article = await prisma.article.update({

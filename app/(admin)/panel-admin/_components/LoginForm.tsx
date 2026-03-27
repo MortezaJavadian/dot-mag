@@ -37,9 +37,9 @@ export default function LoginForm() {
   return (
     <div className="w-full max-w-md mx-auto p-6">
       <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-8">
-        <h1 className="text-3xl font-bold mb-2 text-center">Admin Panel</h1>
+        <h1 className="text-3xl font-bold mb-2 text-center">پنل ادمین</h1>
         <p className="text-center text-slate-600 dark:text-slate-400 mb-6">
-          Sign in to manage content
+          برای مدیریت محتوا وارد شوید
         </p>
 
         {error && (
@@ -50,7 +50,7 @@ export default function LoginForm() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Username</label>
+            <label className="block text-sm font-medium mb-1">نام کاربری</label>
             <input
               type="text"
               value={username}
@@ -58,12 +58,12 @@ export default function LoginForm() {
               required
               disabled={loading}
               className="w-full px-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:border-slate-600 dark:text-white"
-              placeholder="Enter username"
+              placeholder="نام کاربری را وارد کنید"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
+            <label className="block text-sm font-medium mb-1">رمز عبور</label>
             <input
               type="password"
               value={password}
@@ -71,12 +71,12 @@ export default function LoginForm() {
               required
               disabled={loading}
               className="w-full px-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:border-slate-600 dark:text-white"
-              placeholder="Enter password"
+              placeholder="رمز عبور را وارد کنید"
             />
           </div>
 
           <Button type="submit" disabled={loading} className="w-full mt-6">
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? "در حال ورود..." : "ورود"}
           </Button>
         </form>
       </div>

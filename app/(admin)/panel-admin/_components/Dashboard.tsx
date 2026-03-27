@@ -70,7 +70,7 @@ export default function Dashboard() {
               : "text-slate-600 dark:text-slate-400"
           }`}
         >
-          Articles ({articles.length})
+          مقالات ({articles.length})
         </button>
         <button
           onClick={() => setActiveTab("magazines")}
@@ -80,21 +80,21 @@ export default function Dashboard() {
               : "text-slate-600 dark:text-slate-400"
           }`}
         >
-          Magazines ({magazines.length})
+          مجلات ({magazines.length})
         </button>
       </div>
 
       {activeTab === "articles" && (
         <div className="space-y-4">
           <Button onClick={() => setEditingArticle({ id: null })}>
-            Create Article
+            ایجاد مقاله
           </Button>
 
           {loading ? (
-            <p>Loading...</p>
+            <p>در حال بارگذاری...</p>
           ) : articles.length === 0 ? (
             <p className="text-slate-600 dark:text-slate-400">
-              No articles yet
+              هنوز مقاله‌ای وجود ندارد
             </p>
           ) : (
             <div className="space-y-2">
@@ -114,13 +114,13 @@ export default function Dashboard() {
                       onClick={() => setEditingArticle(article)}
                       className="text-sm"
                     >
-                      Edit
+                      ویرایش
                     </Button>
                     <Button
                       onClick={async () => {
                         if (
                           confirm(
-                            "Are you sure you want to delete this article?",
+                            "آیا اطمینان دارید که می‌خواهید این مقاله را حذف کنید؟",
                           )
                         ) {
                           // Delete article
@@ -129,7 +129,7 @@ export default function Dashboard() {
                       }}
                       className="text-sm bg-red-500 hover:bg-red-600"
                     >
-                      Delete
+                      حذف
                     </Button>
                   </div>
                 </div>
@@ -142,14 +142,14 @@ export default function Dashboard() {
       {activeTab === "magazines" && (
         <div className="space-y-4">
           <Button onClick={() => setEditingMagazine({ id: null })}>
-            Create Magazine
+            ایجاد مجله
           </Button>
 
           {loading ? (
-            <p>Loading...</p>
+            <p>در حال بارگذاری...</p>
           ) : magazines.length === 0 ? (
             <p className="text-slate-600 dark:text-slate-400">
-              No magazines yet
+              هنوز مجله‌ای وجود ندارد
             </p>
           ) : (
             <div className="space-y-2">
@@ -169,13 +169,13 @@ export default function Dashboard() {
                       onClick={() => setEditingMagazine(magazine)}
                       className="text-sm"
                     >
-                      Edit
+                      ویرایش
                     </Button>
                     <Button
                       onClick={async () => {
                         if (
                           confirm(
-                            "Are you sure you want to delete this magazine?",
+                            "آیا اطمینان دارید که می‌خواهید این مجله را حذف کنید؟",
                           )
                         ) {
                           // Delete magazine
@@ -184,7 +184,7 @@ export default function Dashboard() {
                       }}
                       className="text-sm bg-red-500 hover:bg-red-600"
                     >
-                      Delete
+                      حذف
                     </Button>
                   </div>
                 </div>

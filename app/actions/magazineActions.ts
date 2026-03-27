@@ -1,6 +1,7 @@
 "use server";
 
 import { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { getAdminUser } from "@/lib/auth";
 
 const prisma = new PrismaClient();
@@ -12,6 +13,15 @@ function generateSlug(title: string): string {
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 }
+
+type CreateMagazineInput = Omit<
+  Prisma.MagazineCreateInput,
+  "id" | "createdAt" | "updatedAt" | "slug"
+>;
+type CreateMagazinePageInput = Omit<
+  Prisma.MagazinePageCreateInput,
+  "id" | "createdAt" | "updatedAt"
+>;
 
 export async function getMagazines() {
   try {
@@ -39,9 +49,7 @@ export async function getMagazine(id: string) {
   }
 }
 
-export async function createMagazine(
-  data: Omit<any, "id" | "createdAt" | "updatedAt">,
-) {
+export async function createMagazine(data: CreateMagazineInput) {
   const adminUser = await getAdminUser();
   if (!adminUser) {
     return { success: false, error: "Unauthorized" };
@@ -66,7 +74,9 @@ export async function createMagazine(
 
 export async function updateMagazine(
   id: string,
-  data: Partial<Omit<any, "id" | "createdAt" | "updatedAt">>,
+  data: Partial<
+    Omit<Prisma.MagazineUpdateInput, "id" | "createdAt" | "updatedAt" | "slug">
+  >,
 ) {
   const adminUser = await getAdminUser();
   if (!adminUser) {
@@ -74,10 +84,10 @@ export async function updateMagazine(
   }
 
   try {
-    const updateData: any = { ...data };
+    const updateData: Prisma.MagazineUpdateInput = { ...data };
 
     if (data.title) {
-      updateData.slug = generateSlug(data.title);
+      updateData.slug = generateSlug(data.title as string);
     }
 
     const magazine = await prisma.magazine.update({
@@ -111,7 +121,7 @@ export async function deleteMagazine(id: string) {
 
 export async function addMagazinePage(
   magazineId: string,
-  page: Omit<any, "id" | "createdAt" | "updatedAt" | "magazineId">,
+  page: Omit<CreateMagazinePageInput, "magazine">,
 ) {
   const adminUser = await getAdminUser();
   if (!adminUser) {
@@ -135,7 +145,12 @@ export async function addMagazinePage(
 
 export async function updateMagazinePage(
   pageId: string,
-  page: Partial<Omit<any, "id" | "createdAt" | "updatedAt" | "magazineId">>,
+  page: Partial<
+    Omit<
+      Prisma.MagazinePageUpdateInput,
+      "id" | "createdAt" | "updatedAt" | "magazine"
+    >
+  >,
 ) {
   const adminUser = await getAdminUser();
   if (!adminUser) {

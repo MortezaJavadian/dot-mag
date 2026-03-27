@@ -4,10 +4,12 @@ FROM node:24-alpine AS base
 # Set working directory
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
+# Install OpenSSL for Prisma compatibility
+RUN apk add --no-cache openssl
+
+# Install dependencies
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN npm config set registry https://hub.megan.ir/npm/ && \
-    npm ci
+RUN npm install --legacy-peer-deps || npm ci
 
 # Copy application code
 COPY . .
@@ -21,5 +23,9 @@ RUN npm run build
 # Expose port
 EXPOSE 3000
 
+# Copy entrypoint script
+COPY scripts/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 # Start the application
-CMD ["npm", "start"]
+CMD sh /docker-entrypoint.sh
