@@ -28,8 +28,8 @@ export default function Dashboard() {
       getMagazines(),
     ]);
 
-    if (articlesRes.success) setArticles(articlesRes.data);
-    if (magazinesRes.success) setMagazines(magazinesRes.data);
+    if (articlesRes.success) setArticles(articlesRes.data || []);
+    if (magazinesRes.success) setMagazines(magazinesRes.data || []);
     setLoading(false);
   };
 
