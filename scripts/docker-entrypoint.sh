@@ -3,21 +3,22 @@ set -e
 
 echo "Starting application..."
 
-# Wait a moment for database readiness
+# Wait for database readiness
 sleep 2
 
-# Push Prisma schema to database
+# Initialize database schema
 echo "Initializing database schema..."
 npx prisma db push --skip-generate --accept-data-loss || {
-  echo "Warning: Prisma db push failed, database may not be initialized"
+  echo "Warning: Prisma db push failed"
 }
 
-# Seed the database with initial data
+# Seed database
 echo "Seeding database..."
 npm run db:seed || {
   echo "Warning: Database seeding failed"
 }
 
-# Start the application
+# Start Next.js server
 echo "Starting Next.js server..."
 exec npm start
+
