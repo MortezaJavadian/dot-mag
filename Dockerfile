@@ -12,6 +12,9 @@ RUN npm config set registry https://hub.megan.ir/npm/ && \
 # Copy application code
 COPY . .
 
+# Generate Prisma client
+RUN npm run db:generate
+
 # Build Next.js application
 RUN npm run build
 

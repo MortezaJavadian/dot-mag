@@ -1,0 +1,85 @@
+"use client";
+
+import { useState } from "react";
+import { loginAction } from "@/app/actions/authActions";
+import Button from "@/components/ui/Button";
+import { useRouter } from "next/navigation";
+
+export default function LoginForm() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const result = await loginAction(username, password);
+
+      if (result.success) {
+        router.push("/panel-admin");
+        router.refresh();
+      } else {
+        setError(result.error || "Login failed");
+      }
+    } catch (err) {
+      setError("An error occurred");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-md mx-auto p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-8">
+        <h1 className="text-3xl font-bold mb-2 text-center">Admin Panel</h1>
+        <p className="text-center text-slate-600 dark:text-slate-400 mb-6">
+          Sign in to manage content
+        </p>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100 rounded-md text-sm">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              disabled={loading}
+              className="w-full px-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+              placeholder="Enter username"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading}
+              className="w-full px-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+              placeholder="Enter password"
+            />
+          </div>
+
+          <Button type="submit" disabled={loading} className="w-full mt-6">
+            {loading ? "Signing in..." : "Sign In"}
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+}

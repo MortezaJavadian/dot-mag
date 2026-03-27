@@ -1,19 +1,32 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { MagazineCard } from "@/components/feature/MagazineCard";
-import magazines from "@/data/magazines.json";
 
 export const metadata: Metadata = {
   title: "آرشیو مجله",
   description: "تمام شماره‌های مجله دات را به صورت آنلاین مطالعه کنید",
 };
 
-export default function ArchivePage() {
+async function getMagazines() {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/magazines`,
+      {
+        next: { revalidate: 3600 },
+      },
+    );
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export default async function ArchivePage() {
+  const magazines = await getMagazines();
   const sortedMagazines = [...magazines].reverse();
 
   return (
     <>
-      {/* Hero */}
       <section className="pt-12 pb-8 md:pt-16 md:pb-12 bg-gradient-to-b from-forest/10 to-background">
         <div className="container">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
@@ -26,7 +39,6 @@ export default function ArchivePage() {
         </div>
       </section>
 
-      {/* Info Banner */}
       <section className="py-6 bg-cream/30 border-y border-cream">
         <div className="container">
           <div className="flex items-center gap-4">
@@ -56,45 +68,21 @@ export default function ArchivePage() {
         </div>
       </section>
 
-      {/* Magazine Grid */}
       <section className="py-12 md:py-16">
         <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-            {sortedMagazines.map((magazine, index) => (
-              <div
-                key={magazine.id}
-                className="animate-slide-up"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <MagazineCard magazine={magazine} />
-              </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {sortedMagazines.map((magazine) => (
+              <MagazineCard key={magazine.id} magazine={magazine} />
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* Subscribe CTA */}
-      <section className="py-16 md:py-24 bg-background-secondary">
-        <div className="container">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              از شماره‌های جدید باخبر شوید
-            </h2>
-            <p className="text-foreground-secondary mb-8">
-              با عضویت در خبرنامه، اولین نفری باشید که از انتشار شماره جدید مجله
-              مطلع می‌شوید.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="ایمیل شما"
-                className="flex-1 px-5 py-4 bg-card-bg border border-card-border rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-              />
-              <button className="px-8 py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-colors">
-                عضویت
-              </button>
+          {sortedMagazines.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-foreground-secondary text-lg">
+                هنوز شماره‌ای منتشر نشده است.
+              </p>
             </div>
-          </div>
+          )}
         </div>
       </section>
     </>

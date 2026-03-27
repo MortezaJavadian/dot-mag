@@ -1,10 +1,41 @@
 import Link from "next/link";
 import { ArticleCard } from "@/components/feature/ArticleCard";
-import articles from "@/data/articles.json";
-import magazines from "@/data/magazines.json";
 
-export default function HomePage() {
-  const featuredArticles = articles.filter((a) => a.featured);
+async function getArticles() {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/articles`,
+      {
+        next: { revalidate: 3600 },
+      },
+    );
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+async function getMagazines() {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/magazines`,
+      {
+        next: { revalidate: 3600 },
+      },
+    );
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export default async function HomePage() {
+  const [articles, magazines] = await Promise.all([
+    getArticles(),
+    getMagazines(),
+  ]);
+
+  const featuredArticles = articles.filter((a: any) => a.featured);
   const latestArticles = articles.slice(0, 6);
   const latestMagazine = magazines[magazines.length - 1];
 

@@ -1,9 +1,6 @@
 "use client";
 
-"use client";
-
 import { ArticleCard } from "@/components/feature/ArticleCard";
-import articles from "@/data/articles.json";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -28,7 +25,6 @@ const categories = [
   },
 ];
 
-// Mapping existing categories to new system
 const categoryMapping: { [key: string]: string } = {
   تکنولوژی: "از ما",
   طراحی: "از ما",
@@ -41,11 +37,12 @@ const categoryMapping: { [key: string]: string } = {
 function PostsContent() {
   const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string>("از ما");
+  const [articles, setArticles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const categoryFromUrl = searchParams.get("category");
     if (categoryFromUrl) {
-      // Map English URL params to Persian categories
       const categoryMap: { [key: string]: string } = {
         "from-us": "از ما",
         "from-you": "از شما",
@@ -57,7 +54,23 @@ function PostsContent() {
     }
   }, [searchParams]);
 
-  // Filter articles based on selected category
+  useEffect(() => {
+    const fetchArticles = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/articles");
+        const data = await res.json();
+        setArticles(data);
+      } catch (error) {
+        console.error("Failed to fetch articles:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArticles();
+  }, []);
+
   const filteredArticles = articles.filter((article) => {
     const articleCategory = categoryMapping[article.category] || "از ما";
     return articleCategory === selectedCategory;
@@ -69,7 +82,6 @@ function PostsContent() {
 
   return (
     <>
-      {/* Hero */}
       <section className="pt-12 pb-8 md:pt-16 md:pb-12 bg-background-secondary">
         <div className="container">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
@@ -82,7 +94,6 @@ function PostsContent() {
         </div>
       </section>
 
-      {/* Categories Filter */}
       <section className="py-6 border-b border-card-border sticky top-16 md:top-20 bg-background/95 backdrop-blur-md z-30">
         <div className="container">
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -108,10 +119,16 @@ function PostsContent() {
         </div>
       </section>
 
-      {/* Articles Grid */}
       <section className="section-spacing-sm">
         <div className="container">
-          {filteredArticles.length > 0 ? (
+          {loading ? (
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-foreground-secondary">در حال بارگذاری...</p>
+              </div>
+            </div>
+          ) : filteredArticles.length > 0 ? (
             <>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                 {filteredArticles.map((article, index) => (
@@ -125,7 +142,6 @@ function PostsContent() {
                 ))}
               </div>
 
-              {/* Load More - Only show if there are articles */}
               <div className="mt-12 text-center">
                 <button className="px-8 py-4 bg-foreground/5 hover:bg-foreground/10 rounded-full font-medium transition-colors">
                   بارگذاری بیشتر
@@ -133,7 +149,6 @@ function PostsContent() {
               </div>
             </>
           ) : (
-            /* No Posts Found */
             <div className="text-center py-16">
               <div className="max-w-md mx-auto">
                 <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-foreground/5 flex items-center justify-center">
