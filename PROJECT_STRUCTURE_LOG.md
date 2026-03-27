@@ -85,15 +85,15 @@ dot-mag/
 
 ### Components
 
-| File                                    | Purpose                                                      |
-| --------------------------------------- | ------------------------------------------------------------ |
-| `components/ui/Logo.tsx`                | Logo with dark/light variants                                |
-| `components/shared/Header.tsx`          | Sticky header, navigation, search, theme toggle, mobile menu |
-| `components/shared/Footer.tsx`          | Footer with links, social, copyright                         |
-| `components/shared/ThemeProvider.tsx`   | Dark/Light mode context with localStorage                    |
-| `components/feature/ArticleCard.tsx`    | Article cards (default, featured, horizontal)                |
-| `components/feature/MagazineCard.tsx`   | Magazine cover card with hover effect                        |
-| `components/feature/MagazineReader.tsx` | Full-screen magazine reader with swipe, keyboard nav         |
+| File                                    | Purpose                                              |
+| --------------------------------------- | ---------------------------------------------------- |
+| `components/ui/Logo.tsx`                | Logo with dark/light variants                        |
+| `components/shared/Header.tsx`          | Sticky header, navigation, theme toggle, mobile menu |
+| `components/shared/Footer.tsx`          | Footer with links, social, copyright                 |
+| `components/shared/ThemeProvider.tsx`   | Dark/Light mode context with localStorage            |
+| `components/feature/ArticleCard.tsx`    | Article cards (default, featured, horizontal)        |
+| `components/feature/MagazineCard.tsx`   | Magazine cover card with hover effect                |
+| `components/feature/MagazineReader.tsx` | Full-screen magazine reader with swipe, keyboard nav |
 
 ### Data
 
@@ -118,14 +118,19 @@ dot-mag/
 
 ## Change Journal
 
-| Date       | Change                    | Reason                                         |
-| ---------- | ------------------------- | ---------------------------------------------- |
-| 2026-03-21 | Initial setup             | Project foundation with RTL, font, colors      |
-| 2026-03-21 | Created components        | Header, Footer, Cards, Reader                  |
-| 2026-03-21 | Created all pages         | Home, Posts, Archive, About                    |
-| 2026-03-21 | Added PWA files           | Manifest, SW, offline page                     |
-| 2026-03-25 | Added Android TWA setup   | Bubblewrap configuration for Android APK build |
-| 2026-03-25 | Added Digital Asset Links | API route for TWA verification                 |
+| Date       | Change                    | Reason                                                                   |
+| ---------- | ------------------------- | ------------------------------------------------------------------------ |
+| 2026-03-21 | Initial setup             | Project foundation with RTL, font, colors                                |
+| 2026-03-21 | Created components        | Header, Footer, Cards, Reader                                            |
+| 2026-03-21 | Created all pages         | Home, Posts, Archive, About                                              |
+| 2026-03-21 | Added PWA files           | Manifest, SW, offline page                                               |
+| 2026-03-25 | Added Android TWA setup   | Bubblewrap configuration for Android APK build                           |
+| 2026-03-25 | Added Digital Asset Links | API route for TWA verification                                           |
+| 2026-03-27 | UI spacing fixes          | Fixed hamburger menu background, button spacing, footer buffer           |
+| 2026-03-27 | Persian text updates      | Replaced "فرسته" with "نوشتار" (8 instances across 5 files)              |
+| 2026-03-27 | Spacing system overhaul   | Added CSS utilities for consistent spacing                               |
+| 2026-03-27 | Hashtag category system   | Implemented #ازـما #ازـشما #ازـدیگران filtering with "no posts" handling |
+| 2026-03-27 | Search feature removal    | Removed search functionality from header - simplified UI                 |
 
 ## Reuse Decisions
 
@@ -142,7 +147,7 @@ dot-mag/
 4. [ ] Extract SHA256 fingerprint and update .env
 5. [ ] Add actual PWA icons (72x72 to 512x512)
 6. [ ] Add article/magazine images when available
-7. [ ] Implement actual search functionality (client-side filter)
+7. [ ] Add actual content images when available
 8. [ ] Add category filter functionality on /posts
 9. [ ] Enhance magazine reader with actual page images
 10. [ ] Add newsletter subscription backend (when needed)

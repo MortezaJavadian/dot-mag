@@ -59,7 +59,7 @@ export default function HomePage() {
                   href="/posts"
                   className="inline-flex items-center gap-2 px-8 py-4 bg-foreground/5 text-foreground font-bold rounded-full hover:bg-foreground/10 transition-all"
                 >
-                  فرسته
+                  نوشتار
                 </Link>
               </div>
             </div>
@@ -110,7 +110,7 @@ export default function HomePage() {
       </section>
 
       {/* Editorial Section */}
-      <section className="py-16 md:py-24 bg-background-secondary">
+      <section className="section-spacing bg-background-secondary">
         <div className="container">
           <div className="max-w-3xl mx-auto text-center">
             <span className="inline-block w-12 h-1 bg-primary rounded-full mb-6" />
@@ -128,10 +128,10 @@ export default function HomePage() {
 
       {/* Featured Articles */}
       {featuredArticles.length > 0 && (
-        <section className="py-16 md:py-24">
+        <section className="section-spacing">
           <div className="container">
             <div className="flex items-center justify-between mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold">فرسته ویژه</h2>
+              <h2 className="text-2xl md:text-3xl font-bold">نوشتار ویژه</h2>
               <Link
                 href="/posts"
                 className="text-primary font-medium hover:underline hidden md:block"
@@ -154,10 +154,10 @@ export default function HomePage() {
       )}
 
       {/* Latest Articles */}
-      <section className="py-16 md:py-24 bg-background-secondary">
+      <section className="section-spacing bg-background-secondary">
         <div className="container">
           <div className="flex items-center justify-between mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold">آخرین فرسته</h2>
+            <h2 className="text-2xl md:text-3xl font-bold">آخرین نوشتار</h2>
             <Link
               href="/posts"
               className="text-primary font-medium hover:underline"
@@ -175,7 +175,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-24">
+      <section className="section-spacing">
         <div className="container">
           <div className="relative overflow-hidden rounded-3xl bg-deep-black text-white p-8 md:p-16">
             {/* Background Pattern */}

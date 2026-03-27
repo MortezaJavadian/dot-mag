@@ -91,7 +91,7 @@ const footerLinks = [
     title: "صفحات",
     links: [
       { label: "خانه", href: "/" },
-      { label: "فرسته", href: "/posts" },
+      { label: "نوشتار", href: "/posts" },
       { label: "آرشیو مجله", href: "/archive" },
       { label: "درباره ما", href: "/about" },
     ],
@@ -99,9 +99,9 @@ const footerLinks = [
   {
     title: "دسته‌بندی‌ها",
     links: [
-      { label: "از ما", href: "/posts?category=from-us" },
-      { label: "از شما", href: "/posts?category=from-you" },
-      { label: "از دیگران", href: "/posts?category=from-others" },
+      { label: "#ازـما", href: "/posts?category=from-us" },
+      { label: "#ازـشما", href: "/posts?category=from-you" },
+      { label: "#ازـدیگران", href: "/posts?category=from-others" },
     ],
   },
 ];

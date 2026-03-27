@@ -76,7 +76,9 @@ export default function RootLayout({
         <ThemeProvider>
           <AppWrapper>
             <Header />
-            <main className="flex-1 pt-16 md:pt-20">{children}</main>
+            <main className="flex-1 pt-16 md:pt-20 footer-buffer">
+              {children}
+            </main>
             <Footer />
           </AppWrapper>
         </ThemeProvider>

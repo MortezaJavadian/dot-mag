@@ -1,23 +1,20 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { useThemeContext } from "@/components/shared/ThemeProvider";
 
 const navLinks = [
   { href: "/", label: "خانه" },
-  { href: "/posts", label: "فرسته" },
+  { href: "/posts", label: "نوشتار" },
   { href: "/archive", label: "آرشیو مجله" },
   { href: "/about", label: "درباره ما" },
 ];
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const { theme, toggleTheme } = useThemeContext();
 
   useEffect(() => {
@@ -28,16 +25,9 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    if (isSearchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [isSearchOpen]);
-
   // Close menu on route change
   useEffect(() => {
     setIsMenuOpen(false);
-    setIsSearchOpen(false);
   }, []);
 
   return (
@@ -68,28 +58,6 @@ export function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            {/* Search Button */}
-            <button
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="p-2.5 rounded-full hover:bg-foreground/5 transition-colors"
-              aria-label="جستجو"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-              </svg>
-            </button>
-
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -138,7 +106,7 @@ export function Header() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2.5 rounded-full hover:bg-foreground/5 transition-colors md:hidden"
+              className="p-2.5 rounded-full bg-foreground/5 hover:bg-foreground/10 transition-colors md:hidden"
               aria-label="منو"
             >
               {isMenuOpen ? (
@@ -174,39 +142,6 @@ export function Header() {
                 </svg>
               )}
             </button>
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div
-          className={`overflow-hidden transition-all duration-300 ${
-            isSearchOpen ? "max-h-20 opacity-100 pb-4" : "max-h-0 opacity-0"
-          }`}
-        >
-          <div className="relative">
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="جستجو در فرسته..."
-              className="w-full px-5 py-3 pr-12 bg-background-secondary rounded-xl border border-card-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-            />
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground-secondary"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
           </div>
         </div>
       </div>
