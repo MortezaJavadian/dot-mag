@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getArticles, getMagazines } from "@/app/actions/articleActions";
+import { getArticles } from "@/app/actions/articleActions";
+import { getMagazines } from "@/app/actions/magazineActions";
 import ArticleEditor from "./ArticleEditor";
 import MagazineEditor from "./MagazineEditor";
 import Button from "@/components/ui/Button";
