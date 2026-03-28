@@ -17,7 +17,7 @@ function generateSlug(title: string): string {
 type CreateArticleInput = Omit<
   Prisma.ArticleCreateInput,
   "id" | "createdAt" | "updatedAt" | "slug"
->;
+> & { category?: string };
 
 export async function getArticles() {
   try {
@@ -55,6 +55,7 @@ export async function createArticle(data: CreateArticleInput) {
     const article = await prisma.article.create({
       data: {
         ...data,
+        category: data.category || "عام",
         slug,
         tags: data.tags || [],
       },

@@ -4,7 +4,7 @@ import { join } from "path";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ filename: string }> }
+  { params }: { params: Promise<{ filename: string }> },
 ) {
   try {
     const { filename } = await params;
@@ -25,13 +25,14 @@ export async function GET(
 
     // Determine content type
     const ext = filename.split(".").pop()?.toLowerCase();
-    const contentType = {
-      jpg: "image/jpeg",
-      jpeg: "image/jpeg",
-      png: "image/png",
-      gif: "image/gif",
-      webp: "image/webp",
-    }[ext] || "application/octet-stream";
+    const contentType =
+      {
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        png: "image/png",
+        gif: "image/gif",
+        webp: "image/webp",
+      }[ext] || "application/octet-stream";
 
     return new NextResponse(file, {
       headers: {
@@ -43,7 +44,7 @@ export async function GET(
     console.error("Image serve error:", error);
     return NextResponse.json(
       { error: "Failed to serve image" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
