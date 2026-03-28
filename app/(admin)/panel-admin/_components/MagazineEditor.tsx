@@ -41,7 +41,7 @@ export default function MagazineEditor({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [coverPreview, setCoverPreview] = useState<string | null>(
-    magazine?.cover || null
+    magazine?.cover || null,
   );
   const [uploading, setUploading] = useState(false);
 
@@ -204,7 +204,9 @@ export default function MagazineEditor({
                 disabled={uploading}
                 className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              {uploading && <p className="text-sm text-blue-600">در حال آپلود...</p>}
+              {uploading && (
+                <p className="text-sm text-blue-600">در حال آپلود...</p>
+              )}
               {coverPreview && (
                 <div className="mt-2">
                   <img
@@ -264,7 +266,11 @@ export default function MagazineEditor({
             <Button
               type="button"
               onClick={async () => {
-                if (confirm("آیا اطمینان دارید که می‌خواهید این مجله را حذف کنید؟")) {
+                if (
+                  confirm(
+                    "آیا اطمینان دارید که می‌خواهید این مجله را حذف کنید؟",
+                  )
+                ) {
                   await deleteMagazine(magazine.id);
                   onSave();
                 }

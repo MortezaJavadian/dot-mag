@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 import { getAdminUser } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
     const adminUser = await getAdminUser();
     if (!adminUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -15,45 +14,47 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file") as File;
 
     if (!file) {
-      return NextResponse.json({ error: "هیچ فایلی ارسال نشده" }, { status: 400 });
+      return NextResponse.json(
+        { error: "هیچ فایلی ارسال نشده" },
+        { status: 400 }
+      );
     }
 
-    // Validate file type
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
+      console.error("Invalid file type:", file.type);
       return NextResponse.json(
         { error: "فقط تصاویر (JPG, PNG, WebP, GIF) مجاز هستند" },
         { status: 400 }
       );
     }
 
-    // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
+      console.error("File too large:", file.size);
       return NextResponse.json(
         { error: "حجم فایل نباید بیشتر از 5MB باشد" },
         { status: 400 }
       );
     }
 
-    // Generate filename
     const timestamp = Date.now();
-    const ext = file.name.split(".").pop();
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
     const filename = `${timestamp}-${Math.random().toString(36).substring(7)}.${ext}`;
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), "public", "uploads");
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch (err) {
-      // Directory might already exist
-    }
+    const cwd = process.cwd();
+    const uploadsDir = join(cwd, "public", "uploads");
+    console.log("Creating directory:", uploadsDir);
 
-    // Write file
+    mkdirSync(uploadsDir, { recursive: true });
+
     const filepath = join(uploadsDir, filename);
-    const bytes = await file.arrayBuffer();
-    await writeFile(filepath, Buffer.from(bytes));
+    console.log("Saving file to:", filepath);
 
-    // Return public URL
+    const bytes = await file.arrayBuffer();
+    writeFileSync(filepath, Buffer.from(bytes));
+
+    console.log("File saved successfully:", filename);
+
     const url = `/uploads/${filename}`;
     return NextResponse.json({ success: true, url });
   } catch (error) {

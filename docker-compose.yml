@@ -29,10 +29,14 @@ services:
       ANDROID_SHA256_FINGERPRINT: ${ANDROID_SHA256_FINGERPRINT}
     ports:
       - "127.0.0.1:8090:3000"
+    volumes:
+      - web_uploads:/app/public/uploads
     depends_on:
       postgres:
         condition: service_healthy
 
 volumes:
   postgres_data:
+    driver: local
+  web_uploads:
     driver: local
