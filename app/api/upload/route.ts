@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     console.log("File saved successfully:", filename);
 
-    const url = `/uploads/${filename}`;
+    const url = `/api/uploads/${filename}`;
     return NextResponse.json({ success: true, url });
   } catch (error) {
     console.error("Upload error:", error);

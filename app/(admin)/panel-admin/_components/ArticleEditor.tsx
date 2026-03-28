@@ -24,7 +24,6 @@ export default function ArticleEditor({
     excerpt: article?.excerpt || "",
     content: article?.content || "",
     author: article?.author || "",
-    category: article?.category || "",
     tags: article?.tags?.join(", ") || "",
     image: article?.image || "",
     readingTime: article?.readingTime || 5,
@@ -154,37 +153,16 @@ export default function ArticleEditor({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">نویسنده</label>
-            <input
-              type="text"
-              value={formData.author}
-              onChange={(e) =>
-                setFormData({ ...formData, author: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">دسته‌بندی</label>
-            <select
-              value={formData.category}
-              onChange={(e) =>
-                setFormData({ ...formData, category: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">انتخاب دسته‌بندی</option>
-              <option value="تکنولوژی">تکنولوژی</option>
-              <option value="طراحی">طراحی</option>
-              <option value="مد و لباس">مد و لباس</option>
-              <option value="معماری">معماری</option>
-              <option value="عکاسی">عکاسی</option>
-              <option value="سبک زندگی">سبک زندگی</option>
-            </select>
-          </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">نویسنده</label>
+          <input
+            type="text"
+            value={formData.author}
+            onChange={(e) =>
+              setFormData({ ...formData, author: e.target.value })
+            }
+            className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
