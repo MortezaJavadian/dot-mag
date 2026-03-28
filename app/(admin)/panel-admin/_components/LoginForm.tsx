@@ -27,7 +27,6 @@ export default function LoginForm() {
 
       if (result.success) {
         router.push("/panel-admin");
-        router.refresh();
       } else {
         setError(result.error || "ورود ناموفق بود");
       }
