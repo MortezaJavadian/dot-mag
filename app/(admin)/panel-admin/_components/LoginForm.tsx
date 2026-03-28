@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { loginAction } from "@/app/actions/authActions";
 import Button from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 
@@ -18,16 +17,22 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      const result = await loginAction(username, password);
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const result = await response.json();
 
       if (result.success) {
         router.push("/panel-admin");
         router.refresh();
       } else {
-        setError(result.error || "Login failed");
+        setError(result.error || "ورود ناموفق بود");
       }
     } catch (err) {
-      setError("An error occurred");
+      setError("خطایی رخ داد");
       console.error(err);
     } finally {
       setLoading(false);
