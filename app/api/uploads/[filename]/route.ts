@@ -25,14 +25,14 @@ export async function GET(
 
     // Determine content type
     const ext = filename.split(".").pop()?.toLowerCase();
-    const contentType =
-      {
-        jpg: "image/jpeg",
-        jpeg: "image/jpeg",
-        png: "image/png",
-        gif: "image/gif",
-        webp: "image/webp",
-      }[ext] || "application/octet-stream";
+    const contentTypeMap: Record<string, string> = {
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      png: "image/png",
+      gif: "image/gif",
+      webp: "image/webp",
+    };
+    const contentType = (ext && contentTypeMap[ext]) || "application/octet-stream";
 
     return new NextResponse(file, {
       headers: {
