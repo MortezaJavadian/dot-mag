@@ -16,7 +16,7 @@ function generateSlug(title: string): string {
 
 type CreateArticleInput = Omit<
   Prisma.ArticleCreateInput,
-  "id" | "createdAt" | "updatedAt" | "slug"
+  "id" | "createdAt" | "updatedAt" | "slug" | "category"
 > & { category?: string };
 
 export async function getArticles() {
