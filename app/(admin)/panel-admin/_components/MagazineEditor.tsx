@@ -40,6 +40,43 @@ export default function MagazineEditor({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [coverPreview, setCoverPreview] = useState<string | null>(
+    magazine?.cover || null
+  );
+  const [uploading, setUploading] = useState(false);
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError("");
+
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadFormData,
+        credentials: "include",
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setFormData((prev) => ({ ...prev, cover: result.url }));
+        setCoverPreview(result.url);
+      } else {
+        setError(result.error || "خطا در آپلود عکس");
+      }
+    } catch (err) {
+      setError("خطا در آپلود عکس");
+      console.error(err);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,10 +96,10 @@ export default function MagazineEditor({
       if (result.success) {
         onSave();
       } else {
-        setError(result.error || "Failed to save magazine");
+        setError(result.error || "خطا در ذخیره‌سازی مجله");
       }
     } catch (err) {
-      setError("An error occurred");
+      setError("خطایی رخ داد");
       console.error(err);
     } finally {
       setLoading(false);
@@ -71,12 +108,12 @@ export default function MagazineEditor({
 
   const addPage = async () => {
     if (!newPage.title || !newPage.image) {
-      setError("Page title and image are required");
+      setError("عنوان صفحه و عکس الزامی هستند");
       return;
     }
 
     if (!magazine?.id) {
-      setError("Save magazine first before adding pages");
+      setError("ابتدا مجله را ذخیره کنید");
       return;
     }
 
@@ -91,7 +128,7 @@ export default function MagazineEditor({
       setPages([...pages, result.data]);
       setNewPage({ type: "article", image: "", title: "" });
     } else {
-      setError("Failed to add page");
+      setError("خطا در اضافه کردن صفحه");
     }
   };
 
@@ -102,14 +139,14 @@ export default function MagazineEditor({
     if (result.success) {
       setPages(pages.filter((p: any) => p.id !== pageId));
     } else {
-      setError("Failed to delete page");
+      setError("خطا در حذف صفحه");
     }
   };
 
   return (
     <div className="space-y-6 max-w-2xl">
       <h2 className="text-2xl font-bold">
-        {magazine?.id ? "Edit Magazine" : "Create Magazine"}
+        {magazine?.id ? "ویرایش مجله" : "ایجاد مجله"}
       </h2>
 
       {error && (
@@ -120,7 +157,7 @@ export default function MagazineEditor({
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Title</label>
+          <label className="block text-sm font-medium mb-1">عنوان</label>
           <input
             type="text"
             value={formData.title}
@@ -133,7 +170,7 @@ export default function MagazineEditor({
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Subtitle</label>
+          <label className="block text-sm font-medium mb-1">زیرعنوان</label>
           <input
             type="text"
             value={formData.subtitle}
@@ -145,7 +182,7 @@ export default function MagazineEditor({
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Description</label>
+          <label className="block text-sm font-medium mb-1">توضیح</label>
           <textarea
             value={formData.description}
             onChange={(e) =>
@@ -158,20 +195,31 @@ export default function MagazineEditor({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Cover URL</label>
-            <input
-              type="text"
-              value={formData.cover}
-              onChange={(e) =>
-                setFormData({ ...formData, cover: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            <label className="block text-sm font-medium mb-1">عکس جلد</label>
+            <div className="space-y-2">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleCoverUpload}
+                disabled={uploading}
+                className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              {uploading && <p className="text-sm text-blue-600">در حال آپلود...</p>}
+              {coverPreview && (
+                <div className="mt-2">
+                  <img
+                    src={coverPreview}
+                    alt="Cover Preview"
+                    className="h-32 w-full object-cover rounded-md"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Published Date
+              تاریخ انتشار
             </label>
             <input
               type="date"
@@ -185,7 +233,7 @@ export default function MagazineEditor({
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Page Count</label>
+          <label className="block text-sm font-medium mb-1">تعداد صفحات</label>
           <input
             type="number"
             value={formData.pageCount}
@@ -200,30 +248,30 @@ export default function MagazineEditor({
         <div className="flex gap-2">
           <Button type="submit" disabled={loading}>
             {loading
-              ? "Saving..."
+              ? "در حال ذخیره..."
               : magazine?.id
-                ? "Update Magazine"
-                : "Create Magazine"}
+                ? "بروزرسانی مجله"
+                : "ایجاد مجله"}
           </Button>
           <Button
             type="button"
             onClick={onCancel}
             className="bg-slate-500 hover:bg-slate-600"
           >
-            Cancel
+            انصراف
           </Button>
           {magazine?.id && (
             <Button
               type="button"
               onClick={async () => {
-                if (confirm("Delete this magazine?")) {
+                if (confirm("آیا اطمینان دارید که می‌خواهید این مجله را حذف کنید؟")) {
                   await deleteMagazine(magazine.id);
                   onSave();
                 }
               }}
               className="bg-red-500 hover:bg-red-600"
             >
-              Delete
+              حذف
             </Button>
           )}
         </div>
@@ -231,7 +279,7 @@ export default function MagazineEditor({
 
       {magazine?.id && (
         <div className="space-y-4 pt-6 border-t">
-          <h3 className="text-lg font-semibold">Pages ({pages.length})</h3>
+          <h3 className="text-lg font-semibold">صفحات ({pages.length})</h3>
 
           {pages.length > 0 && (
             <div className="space-y-2">
@@ -242,17 +290,17 @@ export default function MagazineEditor({
                 >
                   <div>
                     <p className="font-medium">
-                      Page {page.number}: {page.title}
+                      صفحه {page.number}: {page.title}
                     </p>
                     <p className="text-sm text-slate-600 dark:text-slate-400">
-                      Type: {page.type}
+                      نوع: {page.type}
                     </p>
                   </div>
                   <Button
                     onClick={() => deletePage(page.id)}
                     className="text-sm bg-red-500 hover:bg-red-600"
                   >
-                    Remove
+                    حذف
                   </Button>
                 </div>
               ))}
@@ -260,22 +308,22 @@ export default function MagazineEditor({
           )}
 
           <div className="space-y-3 p-4 bg-slate-100 dark:bg-slate-800 rounded-md">
-            <h4 className="font-medium">Add New Page</h4>
+            <h4 className="font-medium">اضافه کردن صفحه جدید</h4>
 
             <select
               value={newPage.type}
               onChange={(e) => setNewPage({ ...newPage, type: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-md dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="cover">Cover</option>
-              <option value="toc">Table of Contents</option>
-              <option value="editorial">Editorial</option>
-              <option value="article">Article</option>
+              <option value="cover">جلد</option>
+              <option value="toc">فهرست محتویات</option>
+              <option value="editorial">سرمقاله</option>
+              <option value="article">نوشتار</option>
             </select>
 
             <input
               type="text"
-              placeholder="Page Title"
+              placeholder="عنوان صفحه"
               value={newPage.title}
               onChange={(e) =>
                 setNewPage({ ...newPage, title: e.target.value })
@@ -285,7 +333,7 @@ export default function MagazineEditor({
 
             <input
               type="text"
-              placeholder="Image URL"
+              placeholder="آدرس عکس"
               value={newPage.image}
               onChange={(e) =>
                 setNewPage({ ...newPage, image: e.target.value })
@@ -294,7 +342,7 @@ export default function MagazineEditor({
             />
 
             <Button type="button" onClick={addPage}>
-              Add Page
+              اضافه کردن صفحه
             </Button>
           </div>
         </div>

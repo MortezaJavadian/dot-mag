@@ -15,13 +15,13 @@ export default async function AdminLayout({
       {adminUser && (
         <div className="bg-white dark:bg-slate-900 border-b">
           <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold">Admin Panel</h1>
+            <h1 className="text-2xl font-bold">پنل ادمین</h1>
             <form action={logoutAction}>
               <button
                 type="submit"
                 className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-md transition"
               >
-                Logout
+                خروج
               </button>
             </form>
           </div>

@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { verifyPassword, createToken, setSessionCookie } from "@/lib/auth";
+import { verifyPassword, createToken } from "@/lib/auth";
 
 const prisma = new PrismaClient();
+const COOKIE_NAME = "admin_session";
 
 export async function POST(request: NextRequest) {
   try {
     const { username, password } = await request.json();
 
-    console.log("Login attempt with username:", username);
-
     if (!username || !password) {
       return NextResponse.json(
         { success: false, error: "نام کاربری و رمز عبور الزامی است" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -21,37 +20,39 @@ export async function POST(request: NextRequest) {
       where: { username },
     });
 
-    console.log("User found:", !!user);
-
     if (!user) {
       return NextResponse.json(
         { success: false, error: "نام کاربری یا رمز عبور اشتباه است" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const isValidPassword = await verifyPassword(password, user.password);
-    console.log("Password valid:", isValidPassword);
 
     if (!isValidPassword) {
       return NextResponse.json(
         { success: false, error: "نام کاربری یا رمز عبور اشتباه است" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const token = await createToken(user.id);
-    console.log("Token created");
 
-    await setSessionCookie(token);
-    console.log("Cookie set");
+    const response = NextResponse.json({ success: true });
+    response.cookies.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 30 * 24 * 60 * 60,
+      path: "/",
+    });
 
-    return NextResponse.json({ success: true });
+    return response;
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(
       { success: false, error: "خطایی در ورود به وجود آمد" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

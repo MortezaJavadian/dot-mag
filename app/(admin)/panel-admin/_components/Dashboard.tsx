@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getArticles } from "@/app/actions/articleActions";
-import { getMagazines } from "@/app/actions/magazineActions";
+import { getArticles, deleteArticle } from "@/app/actions/articleActions";
+import { getMagazines, deleteMagazine } from "@/app/actions/magazineActions";
 import ArticleEditor from "./ArticleEditor";
 import MagazineEditor from "./MagazineEditor";
 import Button from "@/components/ui/Button";
@@ -70,7 +70,7 @@ export default function Dashboard() {
               : "text-slate-600 dark:text-slate-400"
           }`}
         >
-          مقالات ({articles.length})
+          نوشتارها ({articles.length})
         </button>
         <button
           onClick={() => setActiveTab("magazines")}
@@ -87,7 +87,7 @@ export default function Dashboard() {
       {activeTab === "articles" && (
         <div className="space-y-4">
           <Button onClick={() => setEditingArticle({ id: null })}>
-            ایجاد مقاله
+            ایجاد نوشتار
           </Button>
 
           {loading ? (
@@ -120,11 +120,16 @@ export default function Dashboard() {
                       onClick={async () => {
                         if (
                           confirm(
-                            "آیا اطمینان دارید که می‌خواهید این مقاله را حذف کنید؟",
+                            "آیا اطمینان دارید که می‌خواهید این نوشتار را حذف کنید؟",
                           )
                         ) {
-                          // Delete article
-                          await loadData();
+                          try {
+                            await deleteArticle(article.id);
+                            await loadData();
+                          } catch (error) {
+                            alert("خطا در حذف نوشتار");
+                            console.error(error);
+                          }
                         }
                       }}
                       className="text-sm bg-red-500 hover:bg-red-600"
@@ -178,8 +183,13 @@ export default function Dashboard() {
                             "آیا اطمینان دارید که می‌خواهید این مجله را حذف کنید؟",
                           )
                         ) {
-                          // Delete magazine
-                          await loadData();
+                          try {
+                            await deleteMagazine(magazine.id);
+                            await loadData();
+                          } catch (error) {
+                            alert("خطا در حذف مجله");
+                            console.error(error);
+                          }
                         }
                       }}
                       className="text-sm bg-red-500 hover:bg-red-600"

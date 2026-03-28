@@ -60,3 +60,6 @@ gradlew.bat
 /gradle.properties
 /manifest-checksum.txt
 /twa-manifest.json
+
+# User-uploaded images
+/public/uploads/

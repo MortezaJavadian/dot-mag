@@ -34,6 +34,43 @@ export default function ArticleEditor({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    article?.image || null
+  );
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError("");
+
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadFormData,
+        credentials: "include",
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setFormData((prev) => ({ ...prev, image: result.url }));
+        setImagePreview(result.url);
+      } else {
+        setError(result.error || "خطا در آپلود عکس");
+      }
+    } catch (err) {
+      setError("خطا در آپلود عکس");
+      console.error(err);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,10 +94,10 @@ export default function ArticleEditor({
       if (result.success) {
         onSave();
       } else {
-        setError(result.error || "Failed to save article");
+        setError(result.error || "خطا در ذخیره‌سازی نوشتار");
       }
     } catch (err) {
-      setError("An error occurred");
+      setError("خطایی رخ داد");
       console.error(err);
     } finally {
       setLoading(false);
@@ -70,7 +107,7 @@ export default function ArticleEditor({
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
       <h2 className="text-2xl font-bold">
-        {article?.id ? "Edit Article" : "Create Article"}
+        {article?.id ? "ویرایش نوشتار" : "ایجاد نوشتار"}
       </h2>
 
       {error && (
@@ -81,7 +118,7 @@ export default function ArticleEditor({
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Title</label>
+          <label className="block text-sm font-medium mb-1">عنوان</label>
           <input
             type="text"
             value={formData.title}
@@ -94,7 +131,7 @@ export default function ArticleEditor({
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Excerpt</label>
+          <label className="block text-sm font-medium mb-1">خلاصه</label>
           <textarea
             value={formData.excerpt}
             onChange={(e) =>
@@ -106,7 +143,7 @@ export default function ArticleEditor({
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Content</label>
+          <label className="block text-sm font-medium mb-1">متن</label>
           <textarea
             value={formData.content}
             onChange={(e) =>
@@ -119,7 +156,7 @@ export default function ArticleEditor({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Author</label>
+            <label className="block text-sm font-medium mb-1">نویسنده</label>
             <input
               type="text"
               value={formData.author}
@@ -131,7 +168,7 @@ export default function ArticleEditor({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Category</label>
+            <label className="block text-sm font-medium mb-1">دسته‌بندی</label>
             <select
               value={formData.category}
               onChange={(e) =>
@@ -139,7 +176,7 @@ export default function ArticleEditor({
               }
               className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="">Select category</option>
+              <option value="">انتخاب دسته‌بندی</option>
               <option value="تکنولوژی">تکنولوژی</option>
               <option value="طراحی">طراحی</option>
               <option value="مد و لباس">مد و لباس</option>
@@ -152,20 +189,31 @@ export default function ArticleEditor({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Image URL</label>
-            <input
-              type="text"
-              value={formData.image}
-              onChange={(e) =>
-                setFormData({ ...formData, image: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            <label className="block text-sm font-medium mb-1">عکس</label>
+            <div className="space-y-2">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleImageUpload}
+                disabled={uploading}
+                className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              {uploading && <p className="text-sm text-blue-600">در حال آپلود...</p>}
+              {imagePreview && (
+                <div className="mt-2">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="h-32 w-full object-cover rounded-md"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Reading Time (minutes)
+              زمان مطالعه (دقیقه)
             </label>
             <input
               type="number"
@@ -181,7 +229,7 @@ export default function ArticleEditor({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">
-              Published Date
+              تاریخ انتشار
             </label>
             <input
               type="date"
@@ -203,14 +251,14 @@ export default function ArticleEditor({
                 }
                 className="w-4 h-4"
               />
-              <span className="text-sm font-medium">Featured</span>
+              <span className="text-sm font-medium">برجسته</span>
             </label>
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1">
-            Tags (comma-separated)
+            برچسب‌ها (جداشده با کاما)
           </label>
           <input
             type="text"
@@ -224,30 +272,30 @@ export default function ArticleEditor({
       <div className="flex gap-2">
         <Button type="submit" disabled={loading}>
           {loading
-            ? "Saving..."
+            ? "در حال ذخیره..."
             : article?.id
-              ? "Update Article"
-              : "Create Article"}
+              ? "بروزرسانی نوشتار"
+              : "ایجاد نوشتار"}
         </Button>
         <Button
           type="button"
           onClick={onCancel}
           className="bg-slate-500 hover:bg-slate-600"
         >
-          Cancel
+          انصراف
         </Button>
         {article?.id && (
           <Button
             type="button"
             onClick={async () => {
-              if (confirm("Delete this article?")) {
+              if (confirm("آیا اطمینان دارید که می‌خواهید این نوشتار را حذف کنید؟")) {
                 await deleteArticle(article.id);
                 onSave();
               }
             }}
             className="bg-red-500 hover:bg-red-600"
           >
-            Delete
+            حذف
           </Button>
         )}
       </div>
