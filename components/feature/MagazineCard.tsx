@@ -18,28 +18,30 @@ export function MagazineCard({ magazine }: MagazineCardProps) {
   return (
     <Link href={`/archive/${magazine.slug}`} className="group block">
       <article className="card-hover">
-        {/* Cover Placeholder */}
+        {/* Cover */}
         <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gradient-to-br from-cream to-khaki/30 shadow-xl mb-4 border border-card-border">
-          {/* Magazine Cover Design */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-            {/* Logo/Brand Mark */}
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <span className="text-primary text-2xl font-black">.</span>
+          {magazine.cover ? (
+            <img
+              src={magazine.cover}
+              alt={magazine.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <span className="text-primary text-2xl font-black">.</span>
+              </div>
+              <h4 className="text-lg font-bold text-deep-black mb-1">دات</h4>
+              <p className="text-khaki text-sm font-medium mb-4">
+                {magazine.subtitle}
+              </p>
+              <div className="mt-auto">
+                <span className="text-3xl font-black text-deep-black/20">
+                  {magazine.id.padStart(2, "0")}
+                </span>
+              </div>
             </div>
-
-            {/* Title */}
-            <h4 className="text-lg font-bold text-deep-black mb-1">دات</h4>
-            <p className="text-khaki text-sm font-medium mb-4">
-              {magazine.subtitle}
-            </p>
-
-            {/* Issue Number */}
-            <div className="mt-auto">
-              <span className="text-3xl font-black text-deep-black/20">
-                {magazine.id.padStart(2, "0")}
-              </span>
-            </div>
-          </div>
+          )}
 
           {/* Hover Overlay */}
           <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/20 transition-all duration-300 flex items-center justify-center">

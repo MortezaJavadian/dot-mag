@@ -321,26 +321,32 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                   <h2 className="text-xl md:text-2xl font-bold mb-4 text-center">
                     {currentPageData.title}
                   </h2>
-                  <div className="w-full h-48 bg-khaki/10 rounded-lg mb-6 flex items-center justify-center">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="48"
-                      height="48"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      className="text-khaki/50"
-                    >
-                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                      <circle cx="9" cy="9" r="2" />
-                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                    </svg>
+                  <div className="w-full h-96 bg-khaki/10 rounded-lg mb-6 flex items-center justify-center overflow-hidden">
+                    {currentPageData.image ? (
+                      <img
+                        src={currentPageData.image}
+                        alt={currentPageData.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="48"
+                        height="48"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        className="text-khaki/50"
+                      >
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                        <circle cx="9" cy="9" r="2" />
+                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                      </svg>
+                    )}
                   </div>
                   <p className="text-center text-deep-black/70 leading-loose">
-                    محتوای مقاله در اینجا نمایش داده می‌شود. می‌توانید تصاویر
-                    صفحات مجله را در پوشه public/assets/images/magazines قرار
-                    دهید.
+                    {currentPageData.title}
                   </p>
                 </>
               )}
@@ -388,10 +394,20 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                       : "border-transparent opacity-50 hover:opacity-100"
                   }`}
                 >
-                  <div className="w-full h-full bg-cream flex items-center justify-center">
-                    <span className="text-xs text-deep-black/50">
-                      {page.number}
-                    </span>
+                  <div className="w-full h-full bg-cream">
+                    {page.image ? (
+                      <img
+                        src={page.image}
+                        alt={`Page ${page.number}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-xs text-deep-black/50">
+                          {page.number}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </button>
               ))}
