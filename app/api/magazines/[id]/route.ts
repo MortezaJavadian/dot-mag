@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { getAdminUser } from "@/lib/auth";
-
-const prisma = new PrismaClient();
 
 export async function GET(
   request: NextRequest,
@@ -45,9 +43,23 @@ export async function PUT(
     const { id } = await params;
     const data = await request.json();
 
+    // Generate slug if title changed
+    const updateData: any = { ...data };
+    if (data.title) {
+      function generateSlug(title: string): string {
+        return title
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, "-")
+          .replace(/[^\u0600-\u06FF\w-]/g, "")
+          .replace(/-+/g, "-");
+      }
+      updateData.slug = generateSlug(data.title);
+    }
+
     const magazine = await prisma.magazine.update({
       where: { id },
-      data,
+      data: updateData,
       include: { pages: { orderBy: { number: "asc" } } },
     });
 

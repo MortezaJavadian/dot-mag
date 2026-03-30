@@ -51,6 +51,7 @@ model Magazine {
   subtitle    String
   description String          @db.Text
   cover       String
+  pdfUrl      String?         @db.Text
   publishedAt String
   pageCount   Int
   pages       MagazinePage[]

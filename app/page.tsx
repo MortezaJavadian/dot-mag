@@ -6,7 +6,7 @@ async function getArticles() {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/articles`,
       {
-        next: { revalidate: 3600 },
+        next: { revalidate: 60 },
       },
     );
     return await res.json();
@@ -20,7 +20,7 @@ async function getMagazines() {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/magazines`,
       {
-        next: { revalidate: 3600 },
+        next: { revalidate: 60 },
       },
     );
     return await res.json();
@@ -37,7 +37,7 @@ export default async function HomePage() {
 
   const featuredArticles = articles.filter((a: any) => a.featured);
   const latestArticles = articles.slice(0, 6);
-  const latestMagazine = magazines[magazines.length - 1];
+  const latestMagazine = magazines[0];
 
   return (
     <>
@@ -100,26 +100,34 @@ export default async function HomePage() {
               <div className="relative">
                 <div className="absolute -inset-4 bg-gradient-to-br from-primary/20 to-forest/20 rounded-3xl blur-2xl" />
                 <div className="relative bg-card-bg rounded-2xl p-8 border border-card-border shadow-2xl">
-                  <div className="aspect-[3/4] bg-cream rounded-xl mb-6 flex items-center justify-center text-foreground-secondary">
-                    <div className="text-center">
-                      <div className="w-24 h-32 mx-auto bg-khaki/20 rounded-lg mb-4 flex items-center justify-center">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="48"
-                          height="48"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          className="text-khaki"
-                        >
-                          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-                        </svg>
+                  <div className="aspect-[3/4] bg-cream rounded-xl mb-6 flex items-center justify-center text-foreground-secondary overflow-hidden">
+                    {latestMagazine?.cover ? (
+                      <img
+                        src={latestMagazine.cover}
+                        alt="جلد مجله"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-center">
+                        <div className="w-24 h-32 mx-auto bg-khaki/20 rounded-lg mb-4 flex items-center justify-center">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="48"
+                            height="48"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            className="text-khaki"
+                          >
+                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+                          </svg>
+                        </div>
+                        <p className="text-sm">
+                          جلد مجله {latestMagazine?.title}
+                        </p>
                       </div>
-                      <p className="text-sm">
-                        جلد مجله {latestMagazine?.title}
-                      </p>
-                    </div>
+                    )}
                   </div>
                   <h3 className="text-xl font-bold mb-2">
                     {latestMagazine?.title}

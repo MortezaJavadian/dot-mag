@@ -16,25 +16,41 @@ export async function POST(request: NextRequest) {
     if (!file) {
       return NextResponse.json(
         { error: "هیچ فایلی ارسال نشده" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "application/pdf",
+    ];
     if (!allowedTypes.includes(file.type)) {
       console.error("Invalid file type:", file.type);
       return NextResponse.json(
-        { error: "فقط تصاویر (JPG, PNG, WebP, GIF) مجاز هستند" },
-        { status: 400 }
+        { error: "فقط تصاویر (JPG, PNG, WebP, GIF) و PDF مجاز هستند" },
+        { status: 400 },
       );
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      console.error("File too large:", file.size);
-      return NextResponse.json(
-        { error: "حجم فایل نباید بیشتر از 5MB باشد" },
-        { status: 400 }
-      );
+    if (file.type === "application/pdf") {
+      if (file.size > 50 * 1024 * 1024) {
+        console.error("PDF too large:", file.size);
+        return NextResponse.json(
+          { error: "حجم PDF نباید بیشتر از 50MB باشد" },
+          { status: 400 },
+        );
+      }
+    } else {
+      if (file.size > 5 * 1024 * 1024) {
+        console.error("File too large:", file.size);
+        return NextResponse.json(
+          { error: "حجم فایل نباید بیشتر از 5MB باشد" },
+          { status: 400 },
+        );
+      }
     }
 
     const timestamp = Date.now();
@@ -55,13 +71,10 @@ export async function POST(request: NextRequest) {
 
     console.log("File saved successfully:", filename);
 
-    const url = `/api/uploads/${filename}`;
+    const url = `/uploads/${filename}`;
     return NextResponse.json({ success: true, url });
   } catch (error) {
     console.error("Upload error:", error);
-    return NextResponse.json(
-      { error: "خطا در آپلود فایل" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "خطا در آپلود فایل" }, { status: 500 });
   }
 }

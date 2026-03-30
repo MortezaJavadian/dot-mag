@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding database...");
 
-  // Create admin user
+  // Create admin user (idempotent - won't overwrite)
   const adminUsername = process.env.ADMIN_USERNAME;
   const adminPassword = process.env.ADMIN_PASSWORD;
 
@@ -16,7 +16,7 @@ async function main() {
   }
 
   const hashedPassword = await bcrypt.hash(adminPassword, 10);
-  
+
   const user = await prisma.user.upsert({
     where: { username: adminUsername },
     update: {},
@@ -27,16 +27,7 @@ async function main() {
   });
 
   console.log(`Admin user "${user.username}" created/verified`);
-
-  // Clear existing data
-  await prisma.magazinePage.deleteMany({});
-  await prisma.magazine.deleteMany({});
-  await prisma.article.deleteMany({});
-  await prisma.tag.deleteMany({});
-
-  console.log("Existing data cleared");
-
-  console.log("Database seeded successfully!");
+  console.log("Database seeded - existing data preserved");
 }
 
 main()

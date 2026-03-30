@@ -11,11 +11,16 @@ async function getMagazines() {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/magazines`,
       {
-        next: { revalidate: 3600 },
+        next: { revalidate: 10 },
       },
     );
+    if (!res.ok) {
+      console.error("Failed to fetch magazines:", res.status);
+      return [];
+    }
     return await res.json();
-  } catch {
+  } catch (error) {
+    console.error("Error fetching magazines:", error);
     return [];
   }
 }

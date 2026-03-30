@@ -26,6 +26,7 @@ export default function MagazineEditor({
     subtitle: magazine?.subtitle || "",
     description: magazine?.description || "",
     cover: magazine?.cover || "",
+    pdfUrl: magazine?.pdfUrl || "",
     publishedAt:
       magazine?.publishedAt || new Date().toISOString().split("T")[0],
     pageCount: magazine?.pageCount || 1,
@@ -44,6 +45,8 @@ export default function MagazineEditor({
     magazine?.cover || null,
   );
   const [uploading, setUploading] = useState(false);
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const [pageImageLoading, setPageImageLoading] = useState(false);
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -78,6 +81,70 @@ export default function MagazineEditor({
     }
   };
 
+  const handlePageImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setPageImageLoading(true);
+    setError("");
+
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadFormData,
+        credentials: "include",
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setNewPage((prev) => ({ ...prev, image: result.url }));
+      } else {
+        setError(result.error || "خطا در آپلود عکس صفحه");
+      }
+    } catch (err) {
+      setError("خطا در آپلود عکس صفحه");
+      console.error(err);
+    } finally {
+      setPageImageLoading(false);
+    }
+  };
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setPdfUploading(true);
+    setError("");
+
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadFormData,
+        credentials: "include",
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setFormData((prev) => ({ ...prev, pdfUrl: result.url }));
+      } else {
+        setError(result.error || "خطا در آپلود PDF");
+      }
+    } catch (err) {
+      setError("خطا در آپلود PDF");
+      console.error(err);
+    } finally {
+      setPdfUploading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -107,8 +174,12 @@ export default function MagazineEditor({
   };
 
   const addPage = async () => {
-    if (!newPage.title || !newPage.image) {
-      setError("عنوان صفحه و عکس الزامی هستند");
+    if (!newPage.title) {
+      setError("عنوان صفحه الزامی است");
+      return;
+    }
+    if (!newPage.image) {
+      setError("عکس صفحه الزامی است");
       return;
     }
 
@@ -247,6 +318,29 @@ export default function MagazineEditor({
           />
         </div>
 
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            فایل PDF (اختیاری)
+          </label>
+          <div className="space-y-2">
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={handlePdfUpload}
+              disabled={pdfUploading}
+              className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            {pdfUploading && (
+              <p className="text-sm text-blue-600">در حال آپلود PDF...</p>
+            )}
+            {formData.pdfUrl && (
+              <div className="mt-2 p-2 bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100 rounded text-sm">
+                ✓ PDF آپلود شده: {formData.pdfUrl.split("/").pop()}
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="flex gap-2">
           <Button type="submit" disabled={loading}>
             {loading
@@ -337,15 +431,26 @@ export default function MagazineEditor({
               className="w-full px-3 py-2 border border-slate-300 rounded-md dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
 
-            <input
-              type="text"
-              placeholder="آدرس عکس"
-              value={newPage.image}
-              onChange={(e) =>
-                setNewPage({ ...newPage, image: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-slate-300 rounded-md dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            <div>
+              <label className="block text-sm font-medium mb-1">عکس صفحه</label>
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handlePageImageUpload}
+                  disabled={pageImageLoading}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-md dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                {pageImageLoading && (
+                  <p className="text-sm text-blue-600">در حال آپلود...</p>
+                )}
+                {newPage.image && (
+                  <div className="mt-2 p-2 bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100 rounded text-sm">
+                    ✓ عکس انتخاب شد
+                  </div>
+                )}
+              </div>
+            </div>
 
             <Button type="button" onClick={addPage}>
               اضافه کردن صفحه

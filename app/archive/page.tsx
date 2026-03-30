@@ -12,18 +12,24 @@ async function getMagazines() {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/magazines`,
       {
-        next: { revalidate: 3600 },
+        next: { revalidate: 0 },
       },
     );
-    return await res.json();
-  } catch {
+    if (!res.ok) {
+      console.error("Failed to fetch magazines:", res.status);
+      return [];
+    }
+    const data = await res.json();
+    console.log("Archive magazines fetched:", data.length);
+    return data;
+  } catch (error) {
+    console.error("Error fetching magazines:", error);
     return [];
   }
 }
 
 export default async function ArchivePage() {
   const magazines = await getMagazines();
-  const sortedMagazines = [...magazines].reverse();
 
   return (
     <>
@@ -71,12 +77,12 @@ export default async function ArchivePage() {
       <section className="py-12 md:py-16">
         <div className="container">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {sortedMagazines.map((magazine: any) => (
+            {magazines.map((magazine: any) => (
               <MagazineCard key={magazine.id} magazine={magazine} />
             ))}
           </div>
 
-          {sortedMagazines.length === 0 && (
+          {magazines.length === 0 && (
             <div className="text-center py-16">
               <p className="text-foreground-secondary text-lg">
                 هنوز شماره‌ای منتشر نشده است.

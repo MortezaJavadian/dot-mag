@@ -1,15 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { getAdminUser } from "@/lib/auth";
 
-const prisma = new PrismaClient();
+function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\u0600-\u06FF\w-]/g, "")
+    .replace(/-+/g, "-");
+}
 
 export async function GET() {
   try {
+    console.log("GET /api/magazines - fetching magazines...");
     const magazines = await prisma.magazine.findMany({
       include: { pages: { orderBy: { number: "asc" } } },
       orderBy: { publishedAt: "desc" },
     });
+    console.log(
+      `Found ${magazines.length} magazines:`,
+      magazines.map((m) => ({ id: m.id, slug: m.slug, title: m.title })),
+    );
     return NextResponse.json(magazines);
   } catch (error) {
     console.error("GET /api/magazines error:", error);
@@ -28,9 +40,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const data = await request.json();
+    const slug = generateSlug(data.title);
 
     const magazine = await prisma.magazine.create({
-      data,
+      data: {
+        ...data,
+        slug,
+      },
+      include: { pages: { orderBy: { number: "asc" } } },
     });
 
     return NextResponse.json(magazine, { status: 201 });
