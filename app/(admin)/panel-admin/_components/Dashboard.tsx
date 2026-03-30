@@ -5,6 +5,7 @@ import { getArticles, deleteArticle } from "@/app/actions/articleActions";
 import { getMagazines, deleteMagazine } from "@/app/actions/magazineActions";
 import { getTags, createTag, deleteTag } from "@/app/actions/tagActions";
 import ArticleEditor from "./ArticleEditor";
+import ArticlesTabs from "./ArticlesTabs";
 import MagazineEditor from "./MagazineEditor";
 import Button from "@/components/ui/Button";
 
@@ -144,57 +145,27 @@ export default function Dashboard() {
 
           {loading ? (
             <p>در حال بارگذاری...</p>
-          ) : articles.length === 0 ? (
-            <p className="text-slate-600 dark:text-slate-400">
-              هنوز مقاله‌ای وجود ندارد
-            </p>
           ) : (
-            <div className="space-y-2">
-              {articles.map((article: any) => (
-                <div
-                  key={article.id}
-                  className="p-4 border rounded-lg dark:border-slate-700 flex justify-between items-center"
-                >
-                  <div>
-                    <h3 className="font-medium">{article.title}</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      {article.author} • {article.publishedAt}
-                      {article.tags && article.tags.length > 0 && (
-                        <span> • {article.tags.map((t: any) => t.name).join(", ")}</span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => setEditingArticle(article)}
-                      className="text-sm"
-                    >
-                      ویرایش
-                    </Button>
-                    <Button
-                      onClick={async () => {
-                        if (
-                          confirm(
-                            "آیا اطمینان دارید که می‌خواهید این نوشتار را حذف کنید؟",
-                          )
-                        ) {
-                          try {
-                            await deleteArticle(article.id);
-                            await loadData();
-                          } catch (error) {
-                            alert("خطا در حذف نوشتار");
-                            console.error(error);
-                          }
-                        }
-                      }}
-                      className="text-sm bg-red-500 hover:bg-red-600"
-                    >
-                      حذف
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ArticlesTabs
+              articles={articles}
+              tags={tags}
+              onEdit={(article) => setEditingArticle(article)}
+              onDelete={async (article) => {
+                if (
+                  confirm(
+                    "آیا اطمینان دارید که می‌خواهید این نوشتار را حذف کنید؟"
+                  )
+                ) {
+                  try {
+                    await deleteArticle(article.id);
+                    await loadData();
+                  } catch (error) {
+                    alert("خطا در حذف نوشتار");
+                    console.error(error);
+                  }
+                }
+              }}
+            />
           )}
         </div>
       )}
