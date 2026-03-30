@@ -40,9 +40,8 @@ Key docs to read first:
 Before planning or editing any file, the agent must read these documents in order:
 
 1. Next.js docs in `node_modules/next/dist/docs/` (relevant to the task)
-2. [FRONTEND_ARCHITECTURE_ANALYSIS.md](FRONTEND_ARCHITECTURE_ANALYSIS.md)
-3. [AGENT_EXECUTION_GUIDE.md](AGENT_EXECUTION_GUIDE.md)
-4. [PROJECT_STRUCTURE_LOG.md](PROJECT_STRUCTURE_LOG.md) (if exists)
+2. [AGENTS.md](AGENTS.md)
+3. [PROJECT_STRUCTURE_LOG.md](PROJECT_STRUCTURE_LOG.md) (if exists)
 
 If step 4 does not exist yet, create it once and keep updating only that same file for the rest of the project.
 

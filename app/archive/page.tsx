@@ -3,6 +3,9 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { MagazineCard } from "@/components/feature/MagazineCard";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "آرشیو مجله",
   description: "تمام شماره‌های مجله دات را به صورت آنلاین مطالعه کنید",

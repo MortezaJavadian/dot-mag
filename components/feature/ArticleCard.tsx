@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getUploadUrl } from "@/lib/uploads";
 
 interface Tag {
   id: string;
@@ -27,14 +28,16 @@ export function ArticleCard({
   article,
   variant = "default",
 }: ArticleCardProps) {
+  const imageSrc = getUploadUrl(article.image);
+
   if (variant === "featured") {
     return (
       <Link href={`/posts/${article.slug}`} className="group block">
         <article className="relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden bg-gradient-to-br from-forest to-deep-black">
           {/* Image */}
-          {article.image && (
+          {imageSrc && (
             <img
-              src={article.image}
+              src={imageSrc}
               alt={article.title}
               className="absolute inset-0 w-full h-full object-cover"
             />
@@ -96,9 +99,9 @@ export function ArticleCard({
         <article className="flex gap-4 md:gap-6 items-start">
           {/* Image */}
           <div className="relative w-28 h-28 md:w-40 md:h-40 flex-shrink-0 rounded-xl overflow-hidden bg-cream">
-            {article.image ? (
+            {imageSrc ? (
               <img
-                src={article.image}
+                src={imageSrc}
                 alt={article.title}
                 className="w-full h-full object-cover"
               />
@@ -127,13 +130,18 @@ export function ArticleCard({
             {article.tags && article.tags.length > 0 ? (
               <div className="flex gap-2 flex-wrap mb-1">
                 {article.tags.map((tag) => (
-                  <span key={tag.id} className="text-primary text-sm font-medium">
+                  <span
+                    key={tag.id}
+                    className="text-primary text-sm font-medium"
+                  >
                     {tag.name}
                   </span>
                 ))}
               </div>
             ) : (
-              <span className="text-primary text-sm font-medium">بدون برچسب</span>
+              <span className="text-primary text-sm font-medium">
+                بدون برچسب
+              </span>
             )}
             <h3 className="text-lg md:text-xl font-bold mt-1 mb-2 group-hover:text-primary transition-colors line-clamp-2">
               {article.title}
@@ -158,9 +166,9 @@ export function ArticleCard({
       <article className="card-hover bg-card-bg rounded-2xl overflow-hidden border border-card-border">
         {/* Image */}
         <div className="relative aspect-[4/3] bg-gradient-to-br from-cream to-khaki/20 overflow-hidden">
-          {article.image ? (
+          {imageSrc ? (
             <img
-              src={article.image}
+              src={imageSrc}
               alt={article.title}
               className="w-full h-full object-cover"
             />

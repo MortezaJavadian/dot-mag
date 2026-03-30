@@ -8,6 +8,7 @@ import {
 } from "@/app/actions/articleActions";
 import { getTags } from "@/app/actions/tagActions";
 import Button from "@/components/ui/Button";
+import { getUploadUrl } from "@/lib/uploads";
 
 interface ArticleEditorProps {
   article: any;
@@ -26,7 +27,7 @@ export default function ArticleEditor({
     content: article?.content || "",
     author: article?.author || "",
     tagIds: article?.tags?.map((t: any) => t.id) || [],
-    image: article?.image || "",
+    image: getUploadUrl(article?.image) || "",
     publishedAt: article?.publishedAt || new Date().toISOString().split("T")[0],
     featured: article?.featured || false,
   });
@@ -34,7 +35,7 @@ export default function ArticleEditor({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(
-    article?.image || null
+    getUploadUrl(article?.image) || null,
   );
   const [uploading, setUploading] = useState(false);
   const [tags, setTags] = useState<any[]>([]);
@@ -95,7 +96,10 @@ export default function ArticleEditor({
       if (checked) {
         return { ...prev, tagIds: [...prev.tagIds, tagId] };
       } else {
-        return { ...prev, tagIds: prev.tagIds.filter((id: string) => id !== tagId) };
+        return {
+          ...prev,
+          tagIds: prev.tagIds.filter((id: string) => id !== tagId),
+        };
       }
     });
   };
@@ -195,7 +199,9 @@ export default function ArticleEditor({
               disabled={uploading}
               className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            {uploading && <p className="text-sm text-blue-600">در حال آپلود...</p>}
+            {uploading && (
+              <p className="text-sm text-blue-600">در حال آپلود...</p>
+            )}
             {imagePreview && (
               <div className="mt-2">
                 <img
@@ -292,7 +298,11 @@ export default function ArticleEditor({
           <Button
             type="button"
             onClick={async () => {
-              if (confirm("آیا اطمینان دارید که می‌خواهید این نوشتار را حذف کنید؟")) {
+              if (
+                confirm(
+                  "آیا اطمینان دارید که می‌خواهید این نوشتار را حذف کنید؟",
+                )
+              ) {
                 await deleteArticle(article.id);
                 onSave();
               }

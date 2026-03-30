@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getUploadUrl } from "@/lib/uploads";
 
 interface Magazine {
   id: string;
@@ -15,14 +16,16 @@ interface MagazineCardProps {
 }
 
 export function MagazineCard({ magazine }: MagazineCardProps) {
+  const coverSrc = getUploadUrl(magazine.cover);
+
   return (
     <Link href={`/archive/${magazine.slug}`} className="group block">
       <article className="card-hover">
         {/* Cover */}
         <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gradient-to-br from-cream to-khaki/30 shadow-xl mb-4 border border-card-border">
-          {magazine.cover ? (
+          {coverSrc ? (
             <img
-              src={magazine.cover}
+              src={coverSrc}
               alt={magazine.title}
               className="w-full h-full object-cover"
             />

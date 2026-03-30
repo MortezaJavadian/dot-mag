@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArticleCard } from "@/components/feature/ArticleCard";
+import { getUploadUrl } from "@/lib/uploads";
 
 async function getArticles() {
   try {
@@ -20,7 +21,7 @@ async function getMagazines() {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/magazines`,
       {
-        next: { revalidate: 60 },
+        next: { revalidate: 60, tags: ["magazines"] },
       },
     );
     return await res.json();
@@ -38,6 +39,7 @@ export default async function HomePage() {
   const featuredArticles = articles.filter((a: any) => a.featured);
   const latestArticles = articles.slice(0, 6);
   const latestMagazine = magazines[0];
+  const latestMagazineCover = getUploadUrl(latestMagazine?.cover);
 
   return (
     <>
@@ -101,9 +103,9 @@ export default async function HomePage() {
                 <div className="absolute -inset-4 bg-gradient-to-br from-primary/20 to-forest/20 rounded-3xl blur-2xl" />
                 <div className="relative bg-card-bg rounded-2xl p-8 border border-card-border shadow-2xl">
                   <div className="aspect-[3/4] bg-cream rounded-xl mb-6 flex items-center justify-center text-foreground-secondary overflow-hidden">
-                    {latestMagazine?.cover ? (
+                    {latestMagazineCover ? (
                       <img
-                        src={latestMagazine.cover}
+                        src={latestMagazineCover}
                         alt="جلد مجله"
                         className="w-full h-full object-cover"
                       />

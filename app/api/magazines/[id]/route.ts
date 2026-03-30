@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAdminUser } from "@/lib/auth";
+import { revalidateTag } from "next/cache";
+
+const MAGAZINE_TAG = "magazines";
+const MAGAZINE_CACHE_PROFILE = "default";
 
 export async function GET(
   request: NextRequest,
@@ -63,6 +67,8 @@ export async function PUT(
       include: { pages: { orderBy: { number: "asc" } } },
     });
 
+    revalidateTag(MAGAZINE_TAG, MAGAZINE_CACHE_PROFILE);
+
     return NextResponse.json(magazine);
   } catch (error) {
     console.error("PUT /api/magazines/[id] error:", error);
@@ -88,6 +94,8 @@ export async function DELETE(
     await prisma.magazine.delete({
       where: { id },
     });
+
+    revalidateTag(MAGAZINE_TAG, MAGAZINE_CACHE_PROFILE);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -7,7 +7,10 @@ export async function POST(request: NextRequest) {
   try {
     const adminUser = await getAdminUser();
     if (!adminUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
     }
 
     const formData = await request.formData();
@@ -15,10 +18,13 @@ export async function POST(request: NextRequest) {
 
     if (!file) {
       return NextResponse.json(
-        { error: "هیچ فایلی ارسال نشده" },
+        { success: false, error: "هیچ فایلی ارسال نشده" },
         { status: 400 },
       );
     }
+
+    const IMAGE_MAX_BYTES = 15 * 1024 * 1024; // 15MB to handle high-res covers
+    const PDF_MAX_BYTES = 50 * 1024 * 1024;
 
     const allowedTypes = [
       "image/jpeg",
@@ -30,24 +36,27 @@ export async function POST(request: NextRequest) {
     if (!allowedTypes.includes(file.type)) {
       console.error("Invalid file type:", file.type);
       return NextResponse.json(
-        { error: "فقط تصاویر (JPG, PNG, WebP, GIF) و PDF مجاز هستند" },
+        {
+          success: false,
+          error: "فقط تصاویر (JPG, PNG, WebP, GIF) و PDF مجاز هستند",
+        },
         { status: 400 },
       );
     }
 
     if (file.type === "application/pdf") {
-      if (file.size > 50 * 1024 * 1024) {
+      if (file.size > PDF_MAX_BYTES) {
         console.error("PDF too large:", file.size);
         return NextResponse.json(
-          { error: "حجم PDF نباید بیشتر از 50MB باشد" },
+          { success: false, error: "حجم PDF نباید بیشتر از 50MB باشد" },
           { status: 400 },
         );
       }
     } else {
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > IMAGE_MAX_BYTES) {
         console.error("File too large:", file.size);
         return NextResponse.json(
-          { error: "حجم فایل نباید بیشتر از 5MB باشد" },
+          { success: false, error: "حجم فایل نباید بیشتر از 15MB باشد" },
           { status: 400 },
         );
       }
@@ -71,10 +80,13 @@ export async function POST(request: NextRequest) {
 
     console.log("File saved successfully:", filename);
 
-    const url = `/uploads/${filename}`;
+    const url = `/api/uploads/${filename}`;
     return NextResponse.json({ success: true, url });
   } catch (error) {
     console.error("Upload error:", error);
-    return NextResponse.json({ error: "خطا در آپلود فایل" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "خطا در آپلود فایل" },
+      { status: 500 },
+    );
   }
 }

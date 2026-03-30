@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { getAdminUser } from "@/lib/auth";
+import { revalidateTag } from "next/cache";
 
 function generateSlug(title: string): string {
   return title
@@ -11,6 +12,13 @@ function generateSlug(title: string): string {
     .replace(/\s+/g, "-")
     .replace(/[^\u0600-\u06FF\w-]/g, "")
     .replace(/-+/g, "-");
+}
+
+const MAGAZINE_TAG = "magazines";
+const MAGAZINE_CACHE_PROFILE = "default";
+
+function revalidateMagazinesCache() {
+  revalidateTag(MAGAZINE_TAG, MAGAZINE_CACHE_PROFILE);
 }
 
 type CreateMagazineInput = Omit<
@@ -65,6 +73,8 @@ export async function createMagazine(data: CreateMagazineInput) {
       include: { pages: { orderBy: { number: "asc" } } },
     });
 
+    revalidateMagazinesCache();
+
     return { success: true, data: magazine };
   } catch (error) {
     console.error("Create magazine error:", error);
@@ -95,6 +105,8 @@ export async function updateMagazine(
       data: updateData,
     });
 
+    revalidateMagazinesCache();
+
     return { success: true, data: magazine };
   } catch (error) {
     console.error("Update magazine error:", error);
@@ -112,6 +124,7 @@ export async function deleteMagazine(id: string) {
     await prisma.magazine.delete({
       where: { id },
     });
+    revalidateMagazinesCache();
     return { success: true };
   } catch (error) {
     console.error("Delete magazine error:", error);
@@ -135,6 +148,8 @@ export async function addMagazinePage(
         magazineId,
       },
     });
+
+    revalidateMagazinesCache();
 
     return { success: true, data: newPage };
   } catch (error) {
@@ -163,6 +178,8 @@ export async function updateMagazinePage(
       data: page,
     });
 
+    revalidateMagazinesCache();
+
     return { success: true, data: updatedPage };
   } catch (error) {
     console.error("Update magazine page error:", error);
@@ -180,6 +197,8 @@ export async function deleteMagazinePage(pageId: string) {
     await prisma.magazinePage.delete({
       where: { id: pageId },
     });
+
+    revalidateMagazinesCache();
 
     return { success: true };
   } catch (error) {

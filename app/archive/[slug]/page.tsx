@@ -1,7 +1,10 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { MagazineReader } from "@/components/feature/MagazineReader";
+import { MagazineReaderClient } from "./_components/MagazineReaderClient";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -20,12 +23,55 @@ async function getMagazines() {
   }
 }
 
+function normalizeSlug(value: string): string {
+  const digitMap: Record<string, string> = {
+    "۰": "0",
+    "۱": "1",
+    "۲": "2",
+    "۳": "3",
+    "۴": "4",
+    "۵": "5",
+    "۶": "6",
+    "۷": "7",
+    "۸": "8",
+    "۹": "9",
+    "٠": "0",
+    "١": "1",
+    "٢": "2",
+    "٣": "3",
+    "٤": "4",
+    "٥": "5",
+    "٦": "6",
+    "٧": "7",
+    "٨": "8",
+    "٩": "9",
+  };
+
+  return value
+    .normalize("NFC")
+    .replace(/[۰-۹٠-٩0-9]/g, (char) => digitMap[char] ?? char)
+    .replace(/[\u200c\u200f\u202a\u202b\u202c]/g, "")
+    .toLowerCase();
+}
+
+function decodeSlug(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
   const magazines = await getMagazines();
-  const magazine = magazines.find((m: any) => m.slug === slug);
+  const normalizedSlug = normalizeSlug(slug);
+  const magazine = magazines.find(
+    (m: any) => normalizeSlug(m.slug) === normalizedSlug,
+  );
 
   if (!magazine) {
     return { title: "مجله یافت نشد" };
@@ -37,18 +83,23 @@ export async function generateMetadata({
   };
 }
 
-export async function generateStaticParams() {
-  return [];
-}
-
 export default async function MagazineReaderPage({ params }: PageProps) {
-  const { slug } = await params;
-  const magazines = await getMagazines();
-  const magazine = magazines.find((m: any) => m.slug === slug);
+  try {
+    const { slug: rawSlug } = await params;
+    const slug = decodeSlug(rawSlug);
+    const magazines = await getMagazines();
+    const normalizedSlug = normalizeSlug(slug);
+    const magazine = magazines.find(
+      (m: any) => normalizeSlug(m.slug) === normalizedSlug,
+    );
 
-  if (!magazine) {
-    notFound();
+    if (!magazine) {
+      notFound();
+    }
+
+    return <MagazineReaderClient magazine={magazine} />;
+  } catch (error) {
+    console.error("[archive/[slug]] error", error);
+    throw error;
   }
-
-  return <MagazineReader magazine={magazine} />;
 }

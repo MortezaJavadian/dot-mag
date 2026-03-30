@@ -52,7 +52,8 @@ dot-mag/
 │       └── MagazineReader.tsx  # In-app magazine reader
 ├── hooks/                      # Custom React hooks (empty)
 ├── lib/
-│   └── auth.ts                 # JWT, session, password utilities
+│   ├── auth.ts                 # JWT, session, password utilities
+│   └── uploads.ts              # Upload URL normalizer for public assets
 ├── actions/
 │   ├── authActions.ts          # Server action: login/logout
 │   ├── articleActions.ts       # Server actions: Article CRUD
@@ -101,6 +102,8 @@ dot-mag/
 | `app/api/.well-known/assetlinks.json/route.ts` | Digital Asset Links API for Android TWA verification                          |
 | `app/api/articles/route.ts`                    | API GET all articles / POST create article                                    |
 | `app/api/articles/[id]/route.ts`               | API GET/PUT/DELETE single article                                             |
+| `app/api/upload/route.ts`                      | API upload endpoint for images/PDF                                            |
+| `app/api/uploads/[filename]/route.ts`          | Serves uploaded files with byte-range support (PDF/image)                     |
 | `app/api/magazines/route.ts`                   | API GET all magazines / POST create magazine                                  |
 | `app/api/magazines/[id]/route.ts`              | API GET/PUT/DELETE single magazine                                            |
 
@@ -117,13 +120,14 @@ dot-mag/
 
 ### Authentication & Actions
 
-| File                             | Purpose                           |
-| -------------------------------- | --------------------------------- |
-| `lib/auth.ts`                    | JWT, session, password utilities  |
-| `middleware.ts`                  | Route protection for /panel-admin |
-| `app/actions/authActions.ts`     | Login/logout server actions       |
-| `app/actions/articleActions.ts`  | Article CRUD server actions       |
-| `app/actions/magazineActions.ts` | Magazine CRUD server actions      |
+| File                             | Purpose                            |
+| -------------------------------- | ---------------------------------- |
+| `lib/auth.ts`                    | JWT, session, password utilities   |
+| `lib/uploads.ts`                 | Normalizes upload URLs for CDN/API |
+| `middleware.ts`                  | Route protection for /panel-admin  |
+| `app/actions/authActions.ts`     | Login/logout server actions        |
+| `app/actions/articleActions.ts`  | Article CRUD server actions        |
+| `app/actions/magazineActions.ts` | Magazine CRUD server actions       |
 
 ### Database
 
@@ -167,26 +171,38 @@ dot-mag/
 
 ## Change Journal
 
-| Date       | Change                         | Reason                                                                   |
-| ---------- | ------------------------------ | ------------------------------------------------------------------------ |
-| 2026-03-21 | Initial project setup          | Project foundation with RTL, font, colors                                |
-| 2026-03-21 | Created components             | Header, Footer, Cards, Reader                                            |
-| 2026-03-21 | Created all pages              | Home, Posts, Archive, About                                              |
-| 2026-03-21 | Added PWA files                | Manifest, SW, offline page                                               |
-| 2026-03-25 | Added Android TWA setup        | Bubblewrap configuration for Android APK build                           |
-| 2026-03-25 | Added Digital Asset Links      | API route for TWA verification                                           |
-| 2026-03-27 | UI spacing fixes               | Fixed hamburger menu background, button spacing, footer buffer           |
-| 2026-03-27 | Persian text updates           | Replaced "فرسته" with "نوشتار" (8 instances across 5 files)              |
-| 2026-03-27 | Spacing system overhaul        | Added CSS utilities for consistent spacing                               |
-| 2026-03-27 | Hashtag category system        | Implemented #ازـما #ازـشما #ازـدیگران filtering with "no posts" handling |
-| 2026-03-27 | Search feature removal         | Removed search functionality from header - simplified UI                 |
-| 2026-03-27 | **Admin Panel Implementation** | **Complete CRUD system with PostgreSQL, JWT auth, API routes**           |
-| 2026-03-27 | Database migration             | Moved from static JSON to PostgreSQL with Prisma ORM                     |
-| 2026-03-27 | API endpoints created          | RESTful API for articles and magazines                                   |
-| 2026-03-27 | Admin authentication           | JWT-based auth with httpOnly cookies                                     |
-| 2026-03-27 | Admin UI implementation        | Dashboard with Articles & Magazines tabs, full CRUD forms                |
-| 2026-03-27 | Updated public pages           | All pages now fetch from API instead of static JSON imports              |
-| 2026-03-27 | Removed JSON data files        | data/articles.json and data/magazines.json deleted                       |
+| Date       | Change                         | Reason                                                                                                                        |
+| ---------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| 2026-03-21 | Initial project setup          | Project foundation with RTL, font, colors                                                                                     |
+| 2026-03-21 | Created components             | Header, Footer, Cards, Reader                                                                                                 |
+| 2026-03-21 | Created all pages              | Home, Posts, Archive, About                                                                                                   |
+| 2026-03-21 | Added PWA files                | Manifest, SW, offline page                                                                                                    |
+| 2026-03-25 | Added Android TWA setup        | Bubblewrap configuration for Android APK build                                                                                |
+| 2026-03-25 | Added Digital Asset Links      | API route for TWA verification                                                                                                |
+| 2026-03-27 | UI spacing fixes               | Fixed hamburger menu background, button spacing, footer buffer                                                                |
+| 2026-03-27 | Persian text updates           | Replaced "فرسته" with "نوشتار" (8 instances across 5 files)                                                                   |
+| 2026-03-27 | Spacing system overhaul        | Added CSS utilities for consistent spacing                                                                                    |
+| 2026-03-27 | Hashtag category system        | Implemented #ازـما #ازـشما #ازـدیگران filtering with "no posts" handling                                                      |
+| 2026-03-27 | Search feature removal         | Removed search functionality from header - simplified UI                                                                      |
+| 2026-03-27 | **Admin Panel Implementation** | **Complete CRUD system with PostgreSQL, JWT auth, API routes**                                                                |
+| 2026-03-27 | Database migration             | Moved from static JSON to PostgreSQL with Prisma ORM                                                                          |
+| 2026-03-27 | API endpoints created          | RESTful API for articles and magazines                                                                                        |
+| 2026-03-27 | Admin authentication           | JWT-based auth with httpOnly cookies                                                                                          |
+| 2026-03-27 | Admin UI implementation        | Dashboard with Articles & Magazines tabs, full CRUD forms                                                                     |
+| 2026-03-27 | Updated public pages           | All pages now fetch from API instead of static JSON imports                                                                   |
+| 2026-03-27 | Removed JSON data files        | data/articles.json and data/magazines.json deleted                                                                            |
+| 2026-03-30 | Magazine freshness fixes       | Forced dynamic archive/reader pages, tag-based cache busting, larger cover uploads                                            |
+| 2026-03-30 | Cache revalidate signature     | Added required cache profile to `revalidateTag` for magazine mutations                                                        |
+| 2026-03-30 | Upload path normalization      | Upload API now returns /api/uploads URLs, added helper to normalize legacy /uploads paths, PDF served via API                 |
+| 2026-03-30 | PDF spread rendering fix       | Magazine reader now uses stable left/right canvases for single/two-page PDF display                                           |
+| 2026-03-30 | Slug normalization for archive | Archive reader accepts Persian/Arabic/ASCII digit variants to prevent 404 on localized slugs                                  |
+| 2026-03-30 | Archive slug decoding          | Decoded percent-encoded slugs and kept archive route fully dynamic to resolve localized magazine pages                        |
+| 2026-03-30 | PDF SSR compatibility          | Lazy-loaded pdfjs on the client to avoid DOM APIs during server render (fixes DOMMatrix errors)                               |
+| 2026-03-31 | PDF worker cleanup             | Switched pdfjs loader to use bundled workerSrc via GlobalWorkerOptions to avoid runtime load errors                           |
+| 2026-03-31 | PDF worker type declaration    | Added module declaration for pdfjs worker to satisfy TypeScript during build                                                  |
+| 2026-03-31 | PDF reader SSR + worker fix    | MagazineReader uses client wrapper (no SSR), versioned CDN workerSrc; switched to legacy pdfjs build for Safari compatibility |
+| 2026-03-31 | Archive PDF loading stability  | Fixed loading/empty-state render condition, switched worker to local module, added load timeout and byte-range support        |
+| 2026-03-31 | Worker fallback for pdfjs      | If workerSrc cannot be resolved at runtime, reader now falls back to `disableWorker` instead of failing the whole PDF load    |
 
 ## Reuse Decisions
 
@@ -243,6 +259,8 @@ dot-mag/
   - Articles/magazines now fetched at runtime from API
   - Allows real-time updates from admin panel
   - No rebuild needed when content changes
+
+- Archive + magazine reader routes are force-dynamic; magazine data uses cache tag `magazines` and is revalidated on mutations (home page fetch tagged)
 
 - **API calls from public pages use revalidation**: 3600s (1 hour cache)
   - Balance between freshness and performance

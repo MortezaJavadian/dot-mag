@@ -9,6 +9,7 @@ import {
   deleteMagazinePage,
 } from "@/app/actions/magazineActions";
 import Button from "@/components/ui/Button";
+import { getUploadUrl } from "@/lib/uploads";
 
 interface MagazineEditorProps {
   magazine: any;
@@ -25,8 +26,8 @@ export default function MagazineEditor({
     title: magazine?.title || "",
     subtitle: magazine?.subtitle || "",
     description: magazine?.description || "",
-    cover: magazine?.cover || "",
-    pdfUrl: magazine?.pdfUrl || "",
+    cover: getUploadUrl(magazine?.cover) || "",
+    pdfUrl: getUploadUrl(magazine?.pdfUrl) || "",
     publishedAt:
       magazine?.publishedAt || new Date().toISOString().split("T")[0],
     pageCount: magazine?.pageCount || 1,
@@ -42,7 +43,7 @@ export default function MagazineEditor({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [coverPreview, setCoverPreview] = useState<string | null>(
-    magazine?.cover || null,
+    getUploadUrl(magazine?.cover) || null,
   );
   const [uploading, setUploading] = useState(false);
   const [pdfUploading, setPdfUploading] = useState(false);
