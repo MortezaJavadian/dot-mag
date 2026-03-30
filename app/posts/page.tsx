@@ -2,83 +2,41 @@
 
 import { ArticleCard } from "@/components/feature/ArticleCard";
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-
-const categories = [
-  {
-    label: "#ازـما",
-    value: "از ما",
-    hashtag: "#ازـما",
-    description: "نوشتارهای تیم مجله دات",
-  },
-  {
-    label: "#ازـشما",
-    value: "از شما",
-    hashtag: "#ازـشما",
-    description: "مطالب ارسالی خوانندگان",
-  },
-  {
-    label: "#ازـدیگران",
-    value: "از دیگران",
-    hashtag: "#ازـدیگران",
-    description: "برگزیده‌ها از سراسر وب",
-  },
-];
-
-const categoryMapping: { [key: string]: string } = {
-  تکنولوژی: "از ما",
-  طراحی: "از ما",
-  معماری: "از ما",
-  عکاسی: "از دیگران",
-  "مد و لباس": "از دیگران",
-  "سبک زندگی": "از شما",
-};
 
 function PostsContent() {
-  const searchParams = useSearchParams();
-  const [selectedCategory, setSelectedCategory] = useState<string>("از ما");
+  const [selectedTab, setSelectedTab] = useState<"all" | string>("all");
   const [articles, setArticles] = useState<any[]>([]);
+  const [tags, setTags] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const categoryFromUrl = searchParams.get("category");
-    if (categoryFromUrl) {
-      const categoryMap: { [key: string]: string } = {
-        "from-us": "از ما",
-        "from-you": "از شما",
-        "from-others": "از دیگران",
-      };
-
-      const mappedCategory = categoryMap[categoryFromUrl] || "از ما";
-      setSelectedCategory(mappedCategory);
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    const fetchArticles = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/articles");
-        const data = await res.json();
-        setArticles(data);
+        const [articlesRes, tagsRes] = await Promise.all([
+          fetch("/api/articles"),
+          fetch("/api/tags"),
+        ]);
+        const articlesData = await articlesRes.json();
+        const tagsData = await tagsRes.json();
+        setArticles(articlesData || []);
+        setTags(tagsData || []);
       } catch (error) {
-        console.error("Failed to fetch articles:", error);
+        console.error("Failed to fetch data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchArticles();
+    fetchData();
   }, []);
 
-  const filteredArticles = articles.filter((article) => {
-    const articleCategory = categoryMapping[article.category] || "از ما";
-    return articleCategory === selectedCategory;
-  });
-
-  const currentCategoryData = categories.find(
-    (cat) => cat.value === selectedCategory,
-  );
+  const filteredArticles =
+    selectedTab === "all"
+      ? articles
+      : articles.filter((article) =>
+          article.tags?.some((tag: any) => tag.id === selectedTab)
+        );
 
   return (
     <>
@@ -97,23 +55,38 @@ function PostsContent() {
       <section className="py-6 border-b border-card-border sticky top-16 md:top-20 bg-background/95 backdrop-blur-md z-30">
         <div className="container">
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-            {categories.map((cat: any) => (
+            <button
+              onClick={() => setSelectedTab("all")}
+              className={`px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                selectedTab === "all"
+                  ? "bg-primary text-white"
+                  : "bg-foreground/5 hover:bg-foreground/10"
+              }`}
+            >
+              #همه
+            </button>
+            {tags.map((tag: any) => (
               <button
-                key={cat.value}
-                onClick={() => setSelectedCategory(cat.value)}
+                key={tag.id}
+                onClick={() => setSelectedTab(tag.id)}
                 className={`px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  cat.value === selectedCategory
+                  selectedTab === tag.id
                     ? "bg-primary text-white"
                     : "bg-foreground/5 hover:bg-foreground/10"
                 }`}
               >
-                {cat.label}
+                #{tag.name}
               </button>
             ))}
           </div>
-          {currentCategoryData && (
+          {selectedTab !== "all" && (
             <p className="text-foreground-secondary text-sm mt-3">
-              {currentCategoryData.description}
+              نوشتارهای برچسب‌شده با {tags.find((t) => t.id === selectedTab)?.name}
+            </p>
+          )}
+          {selectedTab === "all" && (
+            <p className="text-foreground-secondary text-sm mt-3">
+              تمام نوشتارهای منتشر‌شده
             </p>
           )}
         </div>
@@ -170,25 +143,24 @@ function PostsContent() {
                   </svg>
                 </div>
                 <h3 className="text-xl font-bold mb-3">
-                  هنوز نوشتاری در این بخش نیست
+                  هنوز نوشتاری برای این برچسب نیست
                 </h3>
                 <p className="text-foreground-secondary mb-6">
-                  {currentCategoryData?.hashtag} به زودی با محتوای جذاب آماده
-                  می‌شود. در حال حاضر می‌توانید سایر بخش‌ها را بررسی کنید.
+                  به زودی نوشتارهای بیشتری اضافه خواهد شد.
                 </p>
-                <div className="flex gap-2 justify-center">
-                  {categories
-                    .filter((cat) => cat.value !== selectedCategory)
-                    .map((cat) => (
+                {tags.length > 0 && (
+                  <div className="flex gap-2 justify-center flex-wrap">
+                    {tags.map((tag: any) => (
                       <button
-                        key={cat.value}
-                        onClick={() => setSelectedCategory(cat.value)}
+                        key={tag.id}
+                        onClick={() => setSelectedTab(tag.id)}
                         className="px-4 py-2 bg-primary text-white text-sm rounded-full hover:bg-primary/90 transition-colors"
                       >
-                        {cat.hashtag}
+                        #{tag.name}
                       </button>
                     ))}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
