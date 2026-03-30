@@ -17,7 +17,7 @@ interface Magazine {
   subtitle: string;
   description: string;
   cover: string | null;
-  pdfUrl?: string;
+  pdfUrl: string | null | undefined;
   publishedAt: string;
   pageCount: number;
   pages: Array<{
