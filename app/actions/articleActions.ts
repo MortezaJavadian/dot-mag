@@ -1,10 +1,8 @@
 "use server";
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { getAdminUser } from "@/lib/auth";
-
-const prisma = new PrismaClient();
 
 function generateSlug(title: string): string {
   return title
