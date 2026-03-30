@@ -35,7 +35,7 @@ function PostsContent() {
     selectedTab === "all"
       ? articles
       : articles.filter((article) =>
-          article.tags?.some((tag: any) => tag.id === selectedTab)
+          article.tags?.some((tag: any) => tag.id === selectedTab),
         );
 
   return (
@@ -45,10 +45,6 @@ function PostsContent() {
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
             نوشتار
           </h1>
-          <p className="text-foreground-secondary text-lg max-w-2xl">
-            جدیدترین نوشتارهای ما درباره طراحی، تکنولوژی، هنر و سبک زندگی مدرن
-            را بخوانید.
-          </p>
         </div>
       </section>
 
@@ -81,7 +77,8 @@ function PostsContent() {
           </div>
           {selectedTab !== "all" && (
             <p className="text-foreground-secondary text-sm mt-3">
-              نوشتارهای برچسب‌شده با {tags.find((t) => t.id === selectedTab)?.name}
+              نوشتارهای برچسب‌شده با{" "}
+              {tags.find((t) => t.id === selectedTab)?.name}
             </p>
           )}
           {selectedTab === "all" && (

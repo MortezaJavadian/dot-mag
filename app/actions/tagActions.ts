@@ -8,9 +8,15 @@ const prisma = new PrismaClient();
 function generateSlug(name: string): string {
   return name
     .toLowerCase()
+    .trim()
+    .normalize("NFD")
     .replace(/[^\w\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
+}
+
+function normalizeName(name: string): string {
+  return name.trim().normalize("NFC");
 }
 
 export async function getTags() {
@@ -33,11 +39,12 @@ export async function createTag(name: string) {
   }
 
   try {
-    const slug = generateSlug(name);
+    const normalizedName = normalizeName(name);
+    const slug = generateSlug(normalizedName);
 
     const tag = await prisma.tag.create({
       data: {
-        name,
+        name: normalizedName,
         slug,
       },
     });
@@ -46,7 +53,7 @@ export async function createTag(name: string) {
   } catch (error) {
     console.error("Create tag error:", error);
     if ((error as any).code === "P2002") {
-      return { success: false, error: "برچسب‌ با این نام از قبل وجود دارد" };
+      return { success: false, error: "برچسب با این نام از قبل وجود دارد" };
     }
     return { success: false, error: "Failed to create tag" };
   }
@@ -76,18 +83,19 @@ export async function updateTag(id: string, name: string) {
   }
 
   try {
-    const slug = generateSlug(name);
+    const normalizedName = normalizeName(name);
+    const slug = generateSlug(normalizedName);
 
     const tag = await prisma.tag.update({
       where: { id },
-      data: { name, slug },
+      data: { name: normalizedName, slug },
     });
 
     return { success: true, data: tag };
   } catch (error) {
     console.error("Update tag error:", error);
     if ((error as any).code === "P2002") {
-      return { success: false, error: "برچسب‌ با این نام از قبل وجود دارد" };
+      return { success: false, error: "برچسب با این نام از قبل وجود دارد" };
     }
     return { success: false, error: "Failed to update tag" };
   }
