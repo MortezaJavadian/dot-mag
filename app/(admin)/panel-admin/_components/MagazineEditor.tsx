@@ -81,7 +81,9 @@ export default function MagazineEditor({
     }
   };
 
-  const handlePageImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePageImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -266,7 +268,9 @@ export default function MagazineEditor({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">عکس جلد (اختیاری)</label>
+            <label className="block text-sm font-medium mb-1">
+              عکس جلد (اختیاری)
+            </label>
             <div className="space-y-2">
               <input
                 type="file"

@@ -5,7 +5,7 @@ interface Magazine {
   slug: string;
   title: string;
   subtitle: string;
-  cover: string;
+  cover: string | null;
   publishedAt: string;
   pageCount: number;
 }
