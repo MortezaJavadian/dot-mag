@@ -266,7 +266,7 @@ export default function MagazineEditor({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">عکس جلد</label>
+            <label className="block text-sm font-medium mb-1">عکس جلد (اختیاری)</label>
             <div className="space-y-2">
               <input
                 type="file"

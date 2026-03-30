@@ -50,7 +50,7 @@ model Magazine {
   title       String
   subtitle    String
   description String          @db.Text
-  cover       String
+  cover       String?         @db.Text
   pdfUrl      String?         @db.Text
   publishedAt String
   pageCount   Int

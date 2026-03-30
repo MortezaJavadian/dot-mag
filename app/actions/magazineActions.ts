@@ -62,6 +62,7 @@ export async function createMagazine(data: CreateMagazineInput) {
         ...data,
         slug,
       },
+      include: { pages: { orderBy: { number: "asc" } } },
     });
 
     return { success: true, data: magazine };
