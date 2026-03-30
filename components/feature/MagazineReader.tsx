@@ -55,11 +55,12 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
   // Load PDF if pdfUrl exists
   useEffect(() => {
-    if (!magazine.pdfUrl) return;
+    const pdfUrl = magazine.pdfUrl;
+    if (!pdfUrl) return;
 
     const loadPdf = async () => {
       try {
-        const pdf = await pdfjsLib.getDocument(magazine.pdfUrl).promise;
+        const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
         setTotalPages(pdf.numPages);
 
         // Pre-render all pages
