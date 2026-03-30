@@ -7,11 +7,16 @@ async function main() {
   console.log("Seeding database...");
 
   // Create admin user
-  const adminUsername = process.env.ADMIN_USERNAME || "admin";
-  const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
+  const adminUsername = process.env.ADMIN_USERNAME;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminUsername || !adminPassword) {
+    console.error("Environment variables for admin user are not set");
+    process.exit(1);
+  }
 
   const hashedPassword = await bcrypt.hash(adminPassword, 10);
-
+  
   const user = await prisma.user.upsert({
     where: { username: adminUsername },
     update: {},

@@ -60,7 +60,7 @@ export async function createArticle(data: CreateArticleInput) {
         ...articleData,
         category: data.category || "عام",
         slug,
-        tags: tagIds ? { connect: tagIds.map(id => ({ id })) } : undefined,
+        tags: tagIds ? { connect: tagIds.map((id: string) => ({ id })) } : undefined,
       },
       include: { tags: true },
     });
@@ -93,7 +93,7 @@ export async function updateArticle(
 
     if (tagIds !== undefined) {
       finalUpdateData.tags = {
-        set: tagIds.map(id => ({ id })),
+        set: tagIds.map((id: string) => ({ id })),
       };
     }
 

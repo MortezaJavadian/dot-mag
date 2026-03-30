@@ -48,7 +48,7 @@ export default function ArticleEditor({
     try {
       const result = await getTags();
       if (result.success) {
-        setTags(result.data);
+        setTags(result.data || []);
       }
     } catch (err) {
       console.error("Failed to load tags:", err);

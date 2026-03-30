@@ -36,7 +36,7 @@ export default function ArticlesTabs({
     activeTab === "all"
       ? articles
       : articles.filter((article) =>
-          article.tags.some((tag) => tag.id === activeTab)
+          article.tags.some((tag) => tag.id === activeTab),
         );
 
   return (
@@ -56,7 +56,7 @@ export default function ArticlesTabs({
 
         {tags.map((tag) => {
           const tagArticleCount = articles.filter((article) =>
-            article.tags.some((t) => t.id === tag.id)
+            article.tags.some((t) => t.id === tag.id),
           ).length;
 
           return (
@@ -75,7 +75,9 @@ export default function ArticlesTabs({
         })}
 
         {tags.length === 0 && (
-          <span className="px-4 py-2 text-slate-500 text-sm">هنوز برچسبی نیست</span>
+          <span className="px-4 py-2 text-slate-500 text-sm">
+            هنوز برچسبی نیست
+          </span>
         )}
       </div>
 
@@ -103,10 +105,7 @@ export default function ArticlesTabs({
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button
-                  onClick={() => onEdit(article)}
-                  className="text-sm"
-                >
+                <Button onClick={() => onEdit(article)} className="text-sm">
                   ویرایش
                 </Button>
                 <Button
