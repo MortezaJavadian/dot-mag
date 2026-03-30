@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 import { MagazineCard } from "@/components/feature/MagazineCard";
 
 export const metadata: Metadata = {
@@ -9,19 +10,13 @@ export const metadata: Metadata = {
 
 async function getMagazines() {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/magazines`,
-      {
-        next: { revalidate: 0 },
-      },
-    );
-    if (!res.ok) {
-      console.error("Failed to fetch magazines:", res.status);
-      return [];
-    }
-    const data = await res.json();
-    console.log("Archive magazines fetched:", data.length);
-    return data;
+    console.log("Fetching magazines from database...");
+    const magazines = await prisma.magazine.findMany({
+      include: { pages: { orderBy: { number: "asc" } } },
+      orderBy: { publishedAt: "desc" },
+    });
+    console.log("Magazines fetched:", magazines.length);
+    return magazines;
   } catch (error) {
     console.error("Error fetching magazines:", error);
     return [];
