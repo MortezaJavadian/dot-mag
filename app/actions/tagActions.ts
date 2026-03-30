@@ -7,9 +7,8 @@ function generateSlug(name: string): string {
   return name
     .toLowerCase()
     .trim()
-    .normalize("NFD")
-    .replace(/[^\w\s-]/g, "")
     .replace(/\s+/g, "-")
+    .replace(/[^\u0600-\u06FF\w-]/g, "")
     .replace(/-+/g, "-");
 }
 

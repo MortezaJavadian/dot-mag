@@ -7,8 +7,9 @@ import { getAdminUser } from "@/lib/auth";
 function generateSlug(title: string): string {
   return title
     .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
+    .trim()
     .replace(/\s+/g, "-")
+    .replace(/[^\u0600-\u06FF\w-]/g, "")
     .replace(/-+/g, "-");
 }
 
