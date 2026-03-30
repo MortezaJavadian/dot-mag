@@ -275,44 +275,74 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
             <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-deep-black">
               {currentPageData?.type === "cover" && (
                 <>
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                    <span className="text-primary text-4xl font-black">.</span>
-                  </div>
-                  <h2 className="text-3xl md:text-4xl font-black mb-2">دات</h2>
-                  <p className="text-khaki text-lg mb-4">{magazine.subtitle}</p>
-                  <p className="text-deep-black/50 text-sm">{magazine.title}</p>
+                  {currentPageData.image ? (
+                    <img
+                      src={currentPageData.image}
+                      alt="جلد"
+                      className="w-full h-full object-cover absolute inset-0"
+                    />
+                  ) : (
+                    <>
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                        <span className="text-primary text-4xl font-black">.</span>
+                      </div>
+                      <h2 className="text-3xl md:text-4xl font-black mb-2">دات</h2>
+                      <p className="text-khaki text-lg mb-4">{magazine.subtitle}</p>
+                      <p className="text-deep-black/50 text-sm">{magazine.title}</p>
+                    </>
+                  )}
                 </>
               )}
 
               {currentPageData?.type === "toc" && (
                 <>
-                  <h2 className="text-2xl font-bold mb-8">فهرست مطالب</h2>
-                  <div className="w-full max-w-sm space-y-4">
-                    {magazine.pages
-                      .filter(
-                        (p) => p.type === "article" || p.type === "editorial",
-                      )
-                      .map((page) => (
-                        <div
-                          key={page.number}
-                          className="flex justify-between items-center border-b border-khaki/20 pb-2"
-                        >
-                          <span className="font-medium">{page.title}</span>
-                          <span className="text-khaki">{page.number}</span>
-                        </div>
-                      ))}
-                  </div>
+                  {currentPageData.image ? (
+                    <img
+                      src={currentPageData.image}
+                      alt="فهرست مطالب"
+                      className="w-full h-full object-cover absolute inset-0"
+                    />
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-bold mb-8">فهرست مطالب</h2>
+                      <div className="w-full max-w-sm space-y-4">
+                        {magazine.pages
+                          .filter(
+                            (p) => p.type === "article" || p.type === "editorial",
+                          )
+                          .map((page) => (
+                            <div
+                              key={page.number}
+                              className="flex justify-between items-center border-b border-khaki/20 pb-2"
+                            >
+                              <span className="font-medium">{page.title}</span>
+                              <span className="text-khaki">{page.number}</span>
+                            </div>
+                          ))}
+                      </div>
+                    </>
+                  )}
                 </>
               )}
 
               {currentPageData?.type === "editorial" && (
                 <>
-                  <h2 className="text-2xl font-bold mb-6">سرمقاله</h2>
-                  <p className="text-center text-deep-black/70 leading-loose max-w-md">
-                    به شماره جدید مجله دات خوش آمدید. در این شماره با موضوعات
-                    جذابی از دنیای طراحی، تکنولوژی و سبک زندگی آشنا خواهید شد.
-                  </p>
-                  <p className="mt-6 text-khaki font-medium">— تیم مجله دات</p>
+                  {currentPageData.image ? (
+                    <img
+                      src={currentPageData.image}
+                      alt="سرمقاله"
+                      className="w-full h-full object-cover absolute inset-0"
+                    />
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-bold mb-6">سرمقاله</h2>
+                      <p className="text-center text-deep-black/70 leading-loose max-w-md">
+                        به شماره جدید مجله دات خوش آمدید. در این شماره با موضوعات
+                        جذابی از دنیای طراحی، تکنولوژی و سبک زندگی آشنا خواهید شد.
+                      </p>
+                      <p className="mt-6 text-khaki font-medium">— تیم مجله دات</p>
+                    </>
+                  )}
                 </>
               )}
 
@@ -339,7 +369,14 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                         strokeWidth="1.5"
                         className="text-khaki/50"
                       >
-                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                        <rect
+                          width="18"
+                          height="18"
+                          x="3"
+                          y="3"
+                          rx="2"
+                          ry="2"
+                        />
                         <circle cx="9" cy="9" r="2" />
                         <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
                       </svg>

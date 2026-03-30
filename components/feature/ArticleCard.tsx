@@ -104,9 +104,7 @@ export function ArticleCard({
 
           {/* Content */}
           <div className="flex-1 py-1">
-            <span className="text-primary text-sm font-medium">
-              عام
-            </span>
+            <span className="text-primary text-sm font-medium">عام</span>
             <h3 className="text-lg md:text-xl font-bold mt-1 mb-2 group-hover:text-primary transition-colors line-clamp-2">
               {article.title}
             </h3>
