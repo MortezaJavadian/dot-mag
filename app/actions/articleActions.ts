@@ -16,13 +16,14 @@ function generateSlug(title: string): string {
 
 type CreateArticleInput = Omit<
   Prisma.ArticleCreateInput,
-  "id" | "createdAt" | "updatedAt" | "slug" | "category"
-> & { category?: string };
+  "id" | "createdAt" | "updatedAt" | "slug" | "category" | "tags"
+> & { category?: string; tagIds?: string[] };
 
 export async function getArticles() {
   try {
     const articles = await prisma.article.findMany({
       orderBy: { publishedAt: "desc" },
+      include: { tags: true },
     });
     return { success: true, data: articles };
   } catch (error) {
@@ -35,6 +36,7 @@ export async function getArticle(id: string) {
   try {
     const article = await prisma.article.findUnique({
       where: { id },
+      include: { tags: true },
     });
     return { success: true, data: article };
   } catch (error) {
@@ -51,14 +53,16 @@ export async function createArticle(data: CreateArticleInput) {
 
   try {
     const slug = generateSlug(data.title);
+    const { tagIds, ...articleData } = data;
 
     const article = await prisma.article.create({
       data: {
-        ...data,
+        ...articleData,
         category: data.category || "عام",
         slug,
-        tags: data.tags || [],
+        tags: tagIds ? { connect: tagIds.map(id => ({ id })) } : undefined,
       },
+      include: { tags: true },
     });
 
     return { success: true, data: article };
@@ -71,8 +75,8 @@ export async function createArticle(data: CreateArticleInput) {
 export async function updateArticle(
   id: string,
   data: Partial<
-    Omit<Prisma.ArticleUpdateInput, "id" | "createdAt" | "updatedAt" | "slug">
-  >,
+    Omit<Prisma.ArticleUpdateInput, "id" | "createdAt" | "updatedAt" | "slug" | "tags">
+  > & { tagIds?: string[] },
 ) {
   const adminUser = await getAdminUser();
   if (!adminUser) {
@@ -80,16 +84,23 @@ export async function updateArticle(
   }
 
   try {
-    const updateData: Prisma.ArticleUpdateInput = { ...data };
+    const { tagIds, ...updateData } = data as any;
+    const finalUpdateData: Prisma.ArticleUpdateInput = { ...updateData };
 
-    // Only update slug if title changed
     if (data.title) {
-      updateData.slug = generateSlug(data.title as string);
+      finalUpdateData.slug = generateSlug(data.title as string);
+    }
+
+    if (tagIds !== undefined) {
+      finalUpdateData.tags = {
+        set: tagIds.map(id => ({ id })),
+      };
     }
 
     const article = await prisma.article.update({
       where: { id },
-      data: updateData,
+      data: finalUpdateData,
+      include: { tags: true },
     });
 
     return { success: true, data: article };

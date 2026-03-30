@@ -3,19 +3,23 @@
 import { useState, useEffect } from "react";
 import { getArticles, deleteArticle } from "@/app/actions/articleActions";
 import { getMagazines, deleteMagazine } from "@/app/actions/magazineActions";
+import { getTags, createTag, deleteTag } from "@/app/actions/tagActions";
 import ArticleEditor from "./ArticleEditor";
 import MagazineEditor from "./MagazineEditor";
 import Button from "@/components/ui/Button";
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"articles" | "magazines">(
+  const [activeTab, setActiveTab] = useState<"articles" | "magazines" | "tags">(
     "articles",
   );
   const [articles, setArticles] = useState<any[]>([]);
   const [magazines, setMagazines] = useState<any[]>([]);
+  const [tags, setTags] = useState<any[]>([]);
   const [editingArticle, setEditingArticle] = useState<any>(null);
   const [editingMagazine, setEditingMagazine] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [newTagName, setNewTagName] = useState("");
+  const [addingTag, setAddingTag] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -23,14 +27,52 @@ export default function Dashboard() {
 
   const loadData = async () => {
     setLoading(true);
-    const [articlesRes, magazinesRes] = await Promise.all([
+    const [articlesRes, magazinesRes, tagsRes] = await Promise.all([
       getArticles(),
       getMagazines(),
+      getTags(),
     ]);
 
     if (articlesRes.success) setArticles(articlesRes.data || []);
     if (magazinesRes.success) setMagazines(magazinesRes.data || []);
+    if (tagsRes.success) setTags(tagsRes.data || []);
     setLoading(false);
+  };
+
+  const handleAddTag = async () => {
+    if (!newTagName.trim()) return;
+
+    setAddingTag(true);
+    try {
+      const result = await createTag(newTagName);
+      if (result.success) {
+        setNewTagName("");
+        await loadData();
+      } else {
+        alert(result.error);
+      }
+    } catch (error) {
+      alert("خطا در افزودن برچسب");
+      console.error(error);
+    } finally {
+      setAddingTag(false);
+    }
+  };
+
+  const handleDeleteTag = async (tagId: string) => {
+    if (!confirm("آیا اطمینان دارید که می‌خواهید این برچسب را حذف کنید؟")) return;
+
+    try {
+      const result = await deleteTag(tagId);
+      if (result.success) {
+        await loadData();
+      } else {
+        alert(result.error);
+      }
+    } catch (error) {
+      alert("خطا در حذف برچسب");
+      console.error(error);
+    }
   };
 
   if (editingArticle) {
@@ -82,6 +124,16 @@ export default function Dashboard() {
         >
           مجلات ({magazines.length})
         </button>
+        <button
+          onClick={() => setActiveTab("tags")}
+          className={`px-4 py-2 font-medium ${
+            activeTab === "tags"
+              ? "border-b-2 border-primary text-primary"
+              : "text-slate-600 dark:text-slate-400"
+          }`}
+        >
+          برچسب‌ها ({tags.length})
+        </button>
       </div>
 
       {activeTab === "articles" && (
@@ -107,6 +159,9 @@ export default function Dashboard() {
                     <h3 className="font-medium">{article.title}</h3>
                     <p className="text-sm text-slate-600 dark:text-slate-400">
                       {article.author} • {article.publishedAt}
+                      {article.tags && article.tags.length > 0 && (
+                        <span> • {article.tags.map((t: any) => t.name).join(", ")}</span>
+                      )}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -197,6 +252,58 @@ export default function Dashboard() {
                       حذف
                     </Button>
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "tags" && (
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newTagName}
+              onChange={(e) => setNewTagName(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  handleAddTag();
+                }
+              }}
+              placeholder="نام برچسب جدید"
+              className="flex-1 px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <Button onClick={handleAddTag} disabled={addingTag || !newTagName.trim()}>
+              {addingTag ? "در حال افزودن..." : "افزودن برچسب"}
+            </Button>
+          </div>
+
+          {loading ? (
+            <p>در حال بارگذاری...</p>
+          ) : tags.length === 0 ? (
+            <p className="text-slate-600 dark:text-slate-400">
+              هنوز برچسبی وجود ندارد
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {tags.map((tag: any) => (
+                <div
+                  key={tag.id}
+                  className="p-4 border rounded-lg dark:border-slate-700 flex justify-between items-center"
+                >
+                  <div>
+                    <h3 className="font-medium">{tag.name}</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      {tag._count?.articles || 0} نوشتار
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => handleDeleteTag(tag.id)}
+                    className="text-sm bg-red-500 hover:bg-red-600"
+                  >
+                    حذف
+                  </Button>
                 </div>
               ))}
             </div>

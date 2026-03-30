@@ -27,6 +27,7 @@ async function main() {
   await prisma.magazinePage.deleteMany({});
   await prisma.magazine.deleteMany({});
   await prisma.article.deleteMany({});
+  await prisma.tag.deleteMany({});
 
   console.log("Existing data cleared");
 

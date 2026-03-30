@@ -27,13 +27,21 @@ model Article {
   content     String   @db.Text
   author      String
   category    String
-  tags        String[] // JSON array stored as text
+  tags        Tag[]
   image       String
-  readingTime Int
   publishedAt String
   featured    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Tag {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  articles  Article[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Magazine {

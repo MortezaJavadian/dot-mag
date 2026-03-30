@@ -1,5 +1,11 @@
 import Link from "next/link";
 
+interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 interface Article {
   id: string;
   slug: string;
@@ -8,8 +14,8 @@ interface Article {
   author: string;
   category: string;
   image: string;
-  readingTime: number;
   publishedAt: string;
+  tags?: Tag[];
 }
 
 interface ArticleCardProps {
@@ -50,9 +56,23 @@ export function ArticleCard({
 
           {/* Content */}
           <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 md:p-10">
-            <span className="inline-block px-3 py-1 bg-primary text-white text-sm font-medium rounded-full w-fit mb-4">
-              عام
-            </span>
+            {article.tags && article.tags.length > 0 && (
+              <div className="flex gap-2 flex-wrap mb-4">
+                {article.tags.map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="inline-block px-3 py-1 bg-primary text-white text-sm font-medium rounded-full w-fit"
+                  >
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+            )}
+            {(!article.tags || article.tags.length === 0) && (
+              <span className="inline-block px-3 py-1 bg-primary text-white text-sm font-medium rounded-full w-fit mb-4">
+                بدون برچسب
+              </span>
+            )}
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 leading-snug">
               {article.title}
             </h2>
@@ -62,7 +82,7 @@ export function ArticleCard({
             <div className="flex items-center gap-4 text-white/60 text-sm">
               <span>{article.author}</span>
               <span>•</span>
-              <span>{article.readingTime} دقیقه مطالعه</span>
+              <span>{article.publishedAt}</span>
             </div>
           </div>
         </article>
@@ -104,7 +124,17 @@ export function ArticleCard({
 
           {/* Content */}
           <div className="flex-1 py-1">
-            <span className="text-primary text-sm font-medium">عام</span>
+            {article.tags && article.tags.length > 0 ? (
+              <div className="flex gap-2 flex-wrap mb-1">
+                {article.tags.map((tag) => (
+                  <span key={tag.id} className="text-primary text-sm font-medium">
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <span className="text-primary text-sm font-medium">بدون برچسب</span>
+            )}
             <h3 className="text-lg md:text-xl font-bold mt-1 mb-2 group-hover:text-primary transition-colors line-clamp-2">
               {article.title}
             </h3>
@@ -114,7 +144,7 @@ export function ArticleCard({
             <div className="flex items-center gap-3 text-foreground-secondary text-xs mt-2">
               <span>{article.author}</span>
               <span>•</span>
-              <span>{article.readingTime} دقیقه</span>
+              <span>{article.publishedAt}</span>
             </div>
           </div>
         </article>
@@ -152,9 +182,16 @@ export function ArticleCard({
               </svg>
             </div>
           )}
-          <span className="absolute top-4 right-4 px-3 py-1 bg-primary text-white text-xs font-medium rounded-full">
-            عام
-          </span>
+          {article.tags && article.tags.length > 0 && (
+            <span className="absolute top-4 right-4 px-3 py-1 bg-primary text-white text-xs font-medium rounded-full">
+              {article.tags[0].name}
+            </span>
+          )}
+          {(!article.tags || article.tags.length === 0) && (
+            <span className="absolute top-4 right-4 px-3 py-1 bg-primary text-white text-xs font-medium rounded-full">
+              بدون برچسب
+            </span>
+          )}
         </div>
 
         {/* Content */}
@@ -167,7 +204,7 @@ export function ArticleCard({
           </p>
           <div className="flex items-center justify-between text-foreground-secondary text-xs">
             <span>{article.author}</span>
-            <span>{article.readingTime} دقیقه مطالعه</span>
+            <span>{article.publishedAt}</span>
           </div>
         </div>
       </article>

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   createArticle,
   updateArticle,
   deleteArticle,
 } from "@/app/actions/articleActions";
+import { getTags } from "@/app/actions/tagActions";
 import Button from "@/components/ui/Button";
 
 interface ArticleEditorProps {
@@ -24,9 +25,8 @@ export default function ArticleEditor({
     excerpt: article?.excerpt || "",
     content: article?.content || "",
     author: article?.author || "",
-    tags: article?.tags?.join(", ") || "",
+    tagIds: article?.tags?.map((t: any) => t.id) || [],
     image: article?.image || "",
-    readingTime: article?.readingTime || 5,
     publishedAt: article?.publishedAt || new Date().toISOString().split("T")[0],
     featured: article?.featured || false,
   });
@@ -37,6 +37,25 @@ export default function ArticleEditor({
     article?.image || null
   );
   const [uploading, setUploading] = useState(false);
+  const [tags, setTags] = useState<any[]>([]);
+  const [loadingTags, setLoadingTags] = useState(true);
+
+  useEffect(() => {
+    loadTags();
+  }, []);
+
+  const loadTags = async () => {
+    try {
+      const result = await getTags();
+      if (result.success) {
+        setTags(result.data);
+      }
+    } catch (err) {
+      console.error("Failed to load tags:", err);
+    } finally {
+      setLoadingTags(false);
+    }
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -71,24 +90,25 @@ export default function ArticleEditor({
     }
   };
 
+  const handleTagChange = (tagId: string, checked: boolean) => {
+    setFormData((prev) => {
+      if (checked) {
+        return { ...prev, tagIds: [...prev.tagIds, tagId] };
+      } else {
+        return { ...prev, tagIds: prev.tagIds.filter((id: string) => id !== tagId) };
+      }
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      const data = {
-        ...formData,
-        tags: formData.tags
-          .split(",")
-          .map((tag: string) => tag.trim())
-          .filter(Boolean),
-        readingTime: parseInt(String(formData.readingTime)),
-      };
-
       const result = article?.id
-        ? await updateArticle(article.id, data)
-        : await createArticle(data);
+        ? await updateArticle(article.id, formData)
+        : await createArticle(formData);
 
       if (result.success) {
         onSave();
@@ -165,43 +185,61 @@ export default function ArticleEditor({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">عکس</label>
-            <div className="space-y-2">
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                onChange={handleImageUpload}
-                disabled={uploading}
-                className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              {uploading && <p className="text-sm text-blue-600">در حال آپلود...</p>}
-              {imagePreview && (
-                <div className="mt-2">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="h-32 w-full object-cover rounded-md"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              زمان مطالعه (دقیقه)
-            </label>
+        <div>
+          <label className="block text-sm font-medium mb-1">عکس</label>
+          <div className="space-y-2">
             <input
-              type="number"
-              value={formData.readingTime}
-              onChange={(e) =>
-                setFormData({ ...formData, readingTime: e.target.value })
-              }
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={handleImageUpload}
+              disabled={uploading}
               className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
+            {uploading && <p className="text-sm text-blue-600">در حال آپلود...</p>}
+            {imagePreview && (
+              <div className="mt-2">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="h-32 w-full object-cover rounded-md"
+                />
+              </div>
+            )}
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">برچسب‌ها</label>
+          {loadingTags ? (
+            <p className="text-sm text-slate-500">در حال بارگیری برچسب‌ها...</p>
+          ) : (
+            <div className="space-y-2">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.tagIds.length === 0}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setFormData({ ...formData, tagIds: [] });
+                    }
+                  }}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">بدون برچسب</span>
+              </label>
+              {tags.map((tag) => (
+                <label key={tag.id} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.tagIds.includes(tag.id)}
+                    onChange={(e) => handleTagChange(tag.id, e.target.checked)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">{tag.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -232,18 +270,6 @@ export default function ArticleEditor({
               <span className="text-sm font-medium">برجسته</span>
             </label>
           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            برچسب‌ها (جداشده با کاما)
-          </label>
-          <input
-            type="text"
-            value={formData.tags}
-            onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-            className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-          />
         </div>
       </div>
 
