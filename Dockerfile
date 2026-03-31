@@ -2,14 +2,14 @@ FROM node:24-alpine AS base
 
 WORKDIR /app
 
-RUN apk add --no-cache openssl
+COPY offline-pkgs/apk/ /tmp/offline-pkgs/
+RUN apk add --no-cache --allow-untrusted /tmp/offline-pkgs/*.apk && \
+    rm -rf /tmp/offline-pkgs
 
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN npm install --legacy-peer-deps || npm ci
+RUN npm install --legacy-peer-deps --registry=https://hub.megan.ir/npm/ --strict-ssl=false
 
 COPY . .
-
-RUN npm run db:generate || true
 
 RUN npm run build
 

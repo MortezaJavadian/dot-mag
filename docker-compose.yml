@@ -10,7 +10,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
+    extra_hosts:
+      - "hub.megan.ir:87.107.8.20"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
@@ -18,7 +20,10 @@ services:
       retries: 5
 
   web:
-    build: .
+    build:
+      context: .
+      extra_hosts:
+        - "hub.megan.ir:87.107.8.20"
     container_name: dot-mag-app
     restart: always
     environment:
@@ -29,6 +34,8 @@ services:
       ANDROID_SHA256_FINGERPRINT: ${ANDROID_SHA256_FINGERPRINT}
     ports:
       - "127.0.0.1:8090:3000"
+    extra_hosts:
+      - "hub.megan.ir:87.107.8.20"
     volumes:
       - web_uploads:/app/public/uploads
     depends_on:
