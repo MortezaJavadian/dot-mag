@@ -248,11 +248,12 @@ export default function RadioEditor({
         durationSec,
       });
 
-      if (!result.success) {
+      if (!result.success || !result.data) {
         throw new Error(result.error || "خطا در افزودن بخش برگزیده");
       }
 
-      setSegments((prev) => normalizeSegments([...prev, result.data]));
+      const createdSegment = result.data;
+      setSegments((prev) => normalizeSegments([...prev, createdSegment]));
       setNewSegmentTitle("");
       setNewSegmentDuration("");
       setNewSegmentFile(null);

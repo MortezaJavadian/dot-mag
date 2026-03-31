@@ -17,28 +17,40 @@ type ArticleItem = {
   author: string;
   publishedAt: string;
   tags: { id: string; name: string; slug: string }[];
-} & Record<string, unknown>;
+};
 
 type MagazineItem = {
   id: string;
   title: string;
   pageCount: number;
   publishedAt: string;
-} & Record<string, unknown>;
+};
+
+type RadioSegmentItem = {
+  id: string;
+  number: number;
+  title: string;
+  audioUrl: string;
+  durationSec?: number | null;
+};
 
 type RadioItem = {
   id: string;
+  intro?: string;
+  cover?: string | null;
+  audioUrl?: string | null;
+  durationSec?: number | null;
   title: string;
   publishedAt: string;
-  segments?: { id: string }[];
-} & Record<string, unknown>;
+  segments?: RadioSegmentItem[];
+};
 
 type TagItem = {
   id: string;
   name: string;
   slug: string;
   _count?: { articles?: number };
-} & Record<string, unknown>;
+};
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<
