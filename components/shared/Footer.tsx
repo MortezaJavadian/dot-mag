@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
+import { prisma } from "@/lib/prisma";
 
 const socialLinks = [
   {
@@ -86,28 +87,34 @@ const socialLinks = [
   },
 ];
 
-const footerLinks = [
-  {
-    title: "صفحات",
-    links: [
-      { label: "خانه", href: "/" },
-      { label: "نوشتار", href: "/posts" },
-      { label: "رادیو دات", href: "/radio" },
-      { label: "آرشیو مجله", href: "/archive" },
-      { label: "درباره ما", href: "/about" },
-    ],
-  },
-  {
-    title: "دسته‌بندی‌ها",
-    links: [
-      { label: "#ازـما", href: "/posts?category=from-us" },
-      { label: "#ازـشما", href: "/posts?category=from-you" },
-      { label: "#ازـدیگران", href: "/posts?category=from-others" },
-    ],
-  },
+const pageLinks = [
+  { label: "خانه", href: "/" },
+  { label: "نوشتار", href: "/posts" },
+  { label: "رادیو دات", href: "/radio" },
+  { label: "آرشیو مجله", href: "/archive" },
+  { label: "درباره ما", href: "/about" },
 ];
 
-export function Footer() {
+type FooterTag = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+async function getFooterTags(): Promise<FooterTag[]> {
+  try {
+    return await prisma.tag.findMany({
+      orderBy: { name: "asc" },
+    });
+  } catch (error) {
+    console.error("Failed to fetch footer tags:", error);
+    return [];
+  }
+}
+
+export async function Footer() {
+  const tags = await getFooterTags();
+
   // Convert Gregorian year to Persian (Shamsi) year
   // Persian new year starts around March 20-21
   const now = new Date();
@@ -148,24 +155,43 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Links */}
-          {footerLinks.map((section) => (
-            <div key={section.title}>
-              <h4 className="font-bold text-lg mb-4">{section.title}</h4>
-              <ul className="space-y-3">
-                {section.links.map((link) => (
-                  <li key={link.href}>
+          {/* Pages */}
+          <div>
+            <h4 className="font-bold text-lg mb-4">صفحات</h4>
+            <ul className="space-y-3">
+              {pageLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-white/70 hover:text-primary transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <h4 className="font-bold text-lg mb-4">برچسب‌ها</h4>
+            <ul className="space-y-3">
+              {tags.length > 0 ? (
+                tags.map((tag) => (
+                  <li key={tag.id}>
                     <Link
-                      href={link.href}
+                      href={`/posts?tag=${encodeURIComponent(tag.slug)}`}
                       className="text-white/70 hover:text-primary transition-colors"
                     >
-                      {link.label}
+                      #{tag.name}
                     </Link>
                   </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+                ))
+              ) : (
+                <li className="text-white/50">هنوز برچسبی ثبت نشده</li>
+              )}
+            </ul>
+          </div>
         </div>
 
         {/* Bottom Bar */}

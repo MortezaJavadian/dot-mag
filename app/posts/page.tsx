@@ -2,12 +2,15 @@
 
 import { ArticleCard } from "@/components/feature/ArticleCard";
 import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
 function PostsContent() {
   const [selectedTab, setSelectedTab] = useState<"all" | string>("all");
   const [articles, setArticles] = useState<any[]>([]);
   const [tags, setTags] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const selectedTagFromUrl = searchParams.get("tag");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,6 +34,18 @@ function PostsContent() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (!selectedTagFromUrl) {
+      setSelectedTab("all");
+      return;
+    }
+
+    const matchedTag = tags.find(
+      (tag) => tag.slug === selectedTagFromUrl || tag.id === selectedTagFromUrl,
+    );
+
+    setSelectedTab(matchedTag ? matchedTag.id : "all");
+  }, [selectedTagFromUrl, tags]);
   const filteredArticles =
     selectedTab === "all"
       ? articles

@@ -26,10 +26,25 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    const originalOverscroll = document.body.style.overscrollBehavior;
+
+    if (isMenuOpen) {
+      document.body.style.overflow = "hidden";
+      document.body.style.overscrollBehavior = "contain";
+    }
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.overscrollBehavior = originalOverscroll;
+    };
+  }, [isMenuOpen]);
+
   return (
     <header
       className={`fixed top-0 right-0 left-0 z-50 transition-all duration-300 ${
-        isScrolled
+        isScrolled || isMenuOpen
           ? "bg-background/95 backdrop-blur-md shadow-sm"
           : "bg-transparent"
       }`}
@@ -144,13 +159,14 @@ export function Header() {
 
       {/* Mobile Menu */}
       <div
-        className={`fixed inset-0 top-16 bg-background z-40 transition-all duration-300 md:hidden ${
+        className={`fixed inset-x-0 bottom-0 top-16 z-[60] transition-opacity duration-300 md:hidden ${
           isMenuOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
         }`}
       >
-        <nav className="container py-8">
+        <div className="absolute inset-0 bg-background/95 backdrop-blur-md" />
+        <nav className="container relative z-10 py-8">
           <ul className="space-y-6">
             {navLinks.map((link, index) => (
               <li

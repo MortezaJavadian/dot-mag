@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArticleCard } from "@/components/feature/ArticleCard";
 import { prisma } from "@/lib/prisma";
+import { getUploadUrl } from "@/lib/uploads";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -98,8 +99,22 @@ export default async function ArticlePage({ params }: PageProps) {
     notFound();
   }
 
+  const articleImage = getUploadUrl(article.image);
+  const articleTagIds = new Set((article.tags || []).map((tag) => tag.id));
+  const hasTags = articleTagIds.size > 0;
+
   const relatedArticles = articles
-    .filter((a) => a.id !== article.id && a.category === article.category)
+    .filter((a) => {
+      if (a.id === article.id) return false;
+
+      const candidateTagIds = (a.tags || []).map((tag) => tag.id);
+
+      if (hasTags) {
+        return candidateTagIds.some((tagId) => articleTagIds.has(tagId));
+      }
+
+      return candidateTagIds.length === 0;
+    })
     .slice(0, 3);
 
   return (
@@ -121,6 +136,16 @@ export default async function ArticlePage({ params }: PageProps) {
             <p className="text-xl text-foreground-secondary leading-relaxed mb-8">
               {article.excerpt}
             </p>
+
+            {articleImage && (
+              <div className="rounded-2xl overflow-hidden border border-card-border mb-8 bg-background-secondary">
+                <img
+                  src={articleImage}
+                  alt={article.title}
+                  className="w-full h-auto max-h-[520px] object-cover"
+                />
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-6 text-foreground-secondary">
               <div className="flex items-center gap-3">
@@ -147,22 +172,6 @@ export default async function ArticlePage({ params }: PageProps) {
                   </p>
                   <p className="text-sm">{article.publishedAt}</p>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-                <span>{article.readingTime ?? 0} دقیقه مطالعه</span>
               </div>
             </div>
           </div>
