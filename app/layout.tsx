@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { headers } from "next/headers";
 import { ThemeProvider } from "@/components/shared/ThemeProvider";
 import { AppWrapper } from "@/components/shared/AppWrapper";
 import { Header } from "@/components/shared/Header";
@@ -59,11 +60,14 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const requestHeaders = await headers();
+  const isAdminRoute = requestHeaders.get("x-admin-route") === "1";
+
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
@@ -75,11 +79,15 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AppWrapper>
-            <Header />
-            <main className="flex-1 pt-16 md:pt-20 footer-buffer">
+            {!isAdminRoute && <Header />}
+            <main
+              className={`flex-1 ${
+                isAdminRoute ? "" : "pt-16 md:pt-20 footer-buffer"
+              }`}
+            >
               {children}
             </main>
-            <Footer />
+            {!isAdminRoute && <Footer />}
           </AppWrapper>
         </ThemeProvider>
       </body>

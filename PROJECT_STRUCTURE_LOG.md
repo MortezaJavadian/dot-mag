@@ -26,7 +26,7 @@ dot-mag/
 │   │   ├── page.tsx            # Articles listing (fetches from API)
 │   │   └── [slug]/page.tsx     # Single article page (fetches from API)
 │   └── (admin)/
-│       └── panel-admin/
+│       └── admin-panel/
 │           ├── layout.tsx      # Admin auth layout with logout
 │           ├── page.tsx        # Admin dashboard/login
 │           └── _components/
@@ -72,7 +72,7 @@ dot-mag/
 │   ├── manifest.webmanifest    # PWA manifest
 │   ├── sw.js                   # Service worker
 │   └── offline.html            # Offline fallback page
-├── middleware.ts               # Route protection for /panel-admin
+├── middleware.ts               # Route protection for /admin-panel
 ├── .env.example                # Environment variables template
 ├── AGENTS.md                   # Architecture rules (locked)
 ├── CLAUDE.md                   # Agent instructions (locked)
@@ -111,12 +111,12 @@ dot-mag/
 
 | File                                                     | Purpose                                  |
 | -------------------------------------------------------- | ---------------------------------------- |
-| `app/(admin)/panel-admin/layout.tsx`                     | Admin layout with logout button          |
-| `app/(admin)/panel-admin/page.tsx`                       | Main page - shows login or dashboard     |
-| `app/(admin)/panel-admin/_components/LoginForm.tsx`      | Login form component                     |
-| `app/(admin)/panel-admin/_components/Dashboard.tsx`      | Dashboard with Articles & Magazines tabs |
-| `app/(admin)/panel-admin/_components/ArticleEditor.tsx`  | Article editor form                      |
-| `app/(admin)/panel-admin/_components/MagazineEditor.tsx` | Magazine editor form                     |
+| `app/(admin)/admin-panel/layout.tsx`                     | Admin layout with logout button          |
+| `app/(admin)/admin-panel/page.tsx`                       | Main page - shows login or dashboard     |
+| `app/(admin)/admin-panel/_components/LoginForm.tsx`      | Login form component                     |
+| `app/(admin)/admin-panel/_components/Dashboard.tsx`      | Dashboard with Articles & Magazines tabs |
+| `app/(admin)/admin-panel/_components/ArticleEditor.tsx`  | Article editor form                      |
+| `app/(admin)/admin-panel/_components/MagazineEditor.tsx` | Magazine editor form                     |
 
 ### Authentication & Actions
 
@@ -124,7 +124,7 @@ dot-mag/
 | -------------------------------- | ---------------------------------- |
 | `lib/auth.ts`                    | JWT, session, password utilities   |
 | `lib/uploads.ts`                 | Normalizes upload URLs for CDN/API |
-| `middleware.ts`                  | Route protection for /panel-admin  |
+| `middleware.ts`                  | Route protection for /admin-panel  |
 | `app/actions/authActions.ts`     | Login/logout server actions        |
 | `app/actions/articleActions.ts`  | Article CRUD server actions        |
 | `app/actions/magazineActions.ts` | Magazine CRUD server actions       |
@@ -229,8 +229,8 @@ dot-mag/
 
 ### Admin Panel Flow
 
-- `/panel-admin` (no auth) → LoginForm
-- `/panel-admin` (authenticated) → Dashboard with tabs
+- `/admin-panel` (no auth) → LoginForm
+- `/admin-panel` (authenticated) → Dashboard with tabs
 - Dashboard → ArticleEditor or MagazineEditor
 - Editors submit to server actions → database updates
 
@@ -283,7 +283,7 @@ dot-mag/
 
 1. **Authentication**: JWT tokens in httpOnly cookies, not XSS-accessible
 2. **Password hashing**: bcryptjs with 10 salt rounds
-3. **Route protection**: Middleware checks all /panel-admin\* routes
+3. **Route protection**: Middleware checks all /admin-panel\* routes
 4. **API protection**: All write operations require valid JWT
 5. **Environment secrets**: All sensitive values in .env files (not in code)
 6. **HTTPS ready**: secure=true on cookies can be enabled for production
@@ -448,6 +448,7 @@ See DEPLOYMENT_GUIDE.md for detailed deployment instructions.
 | 2026-03-31 | Prisma build stabilization    | Removed Docker `db:generate` step and changed Prisma binary target to `linux-musl-openssl-3.0.x` to reduce blocked engine downloads |
 | 2026-03-31 | Hook template restored        | Re-added `scripts/post-receive.example.sh` with manual seed policy and schema push on deploy                                        |
 | 2026-03-31 | Offline APK install support   | Added `offline-pkgs/apk` bundle path, Dockerfile offline-first `openssl` install, and `scripts/fetch-offline-apk.sh` helper         |
+| 2026-03-31 | Admin route + shell update    | Renamed admin URL to `/admin-panel` and removed global Header/Footer chrome from admin pages                                        |
 
 ## Reuse Decisions
 

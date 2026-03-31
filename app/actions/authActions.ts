@@ -39,5 +39,5 @@ export async function loginAction(
 
 export async function logoutAction() {
   await clearSessionCookie();
-  redirect("/panel-admin");
+  redirect("/admin-panel");
 }

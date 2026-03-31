@@ -27,7 +27,7 @@ export default function LoginForm() {
       const result = await response.json();
 
       if (result.success) {
-        router.push("/panel-admin");
+        router.push("/admin-panel");
       } else {
         setError(result.error || "ورود ناموفق بود");
       }
