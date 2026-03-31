@@ -3,7 +3,7 @@ FROM node:24-alpine AS base
 WORKDIR /app
 
 COPY offline-pkgs/apk/ /tmp/offline-pkgs/
-RUN apk add --no-cache --allow-untrusted /tmp/offline-pkgs/*.apk && \
+RUN apk add --no-cache --no-network --allow-untrusted /tmp/offline-pkgs/*.apk && \
     rm -rf /tmp/offline-pkgs
 
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
