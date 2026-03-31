@@ -5,6 +5,9 @@ import { AudioPlayer } from "@/components/feature/AudioPlayer";
 import { RadioCard } from "@/components/feature/RadioCard";
 import { getUploadUrl } from "@/lib/uploads";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
@@ -85,10 +88,6 @@ export async function generateMetadata({
       publishedTime: radio.publishedAt,
     },
   };
-}
-
-export async function generateStaticParams() {
-  return [];
 }
 
 export default async function RadioDetailPage({ params }: PageProps) {

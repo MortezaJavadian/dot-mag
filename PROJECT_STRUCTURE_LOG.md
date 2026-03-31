@@ -228,6 +228,7 @@ dot-mag/
 | 2026-04-01 | Radio Dot module implementation | Added Radio + RadioSegment schema, radio actions/API/routes/pages, admin radio CRUD tab/editor, reusable audio player, and service worker audio caching flow |
 | 2026-04-01 | Posts slug route 404 fix        | Switched `app/posts/[slug]/page.tsx` to Prisma-backed loading and decoded+normalized slug matching to prevent false not-found on article click               |
 | 2026-04-01 | Admin radio typing hardening    | Aligned dashboard radio/article typings with editor contracts and added segment success-data guard to unblock TypeScript build during deployment             |
+| 2026-04-01 | Dynamic route render hardening  | Marked `app/posts/[slug]/page.tsx` and `app/radio/[slug]/page.tsx` as `force-dynamic` and removed empty `generateStaticParams` to fix production `DYNAMIC_SERVER_USAGE` errors |
 
 ## Reuse Decisions
 

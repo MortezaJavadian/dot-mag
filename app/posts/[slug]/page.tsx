@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { ArticleCard } from "@/components/feature/ArticleCard";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
@@ -81,10 +84,6 @@ export async function generateMetadata({
       authors: [article.author],
     },
   };
-}
-
-export async function generateStaticParams() {
-  return [];
 }
 
 export default async function ArticlePage({ params }: PageProps) {
