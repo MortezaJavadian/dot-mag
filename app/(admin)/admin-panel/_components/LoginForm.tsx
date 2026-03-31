@@ -43,10 +43,6 @@ export default function LoginForm() {
     <div className="w-full max-w-md mx-auto p-6">
       <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-8">
         <h1 className="text-3xl font-bold mb-2 text-center">پنل ادمین</h1>
-        <p className="text-center text-slate-600 dark:text-slate-400 mb-6">
-          برای مدیریت محتوا وارد شوید
-        </p>
-
         {error && (
           <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100 rounded-md text-sm">
             {error}

@@ -203,6 +203,7 @@ dot-mag/
 | 2026-03-31 | PDF reader SSR + worker fix    | MagazineReader uses client wrapper (no SSR), versioned CDN workerSrc; switched to legacy pdfjs build for Safari compatibility |
 | 2026-03-31 | Archive PDF loading stability  | Fixed loading/empty-state render condition, switched worker to local module, added load timeout and byte-range support        |
 | 2026-03-31 | Worker fallback for pdfjs      | If workerSrc cannot be resolved at runtime, reader now falls back to `disableWorker` instead of failing the whole PDF load    |
+| 2026-03-31 | Seed bootstrap hardening       | Updated `db:seed` script to run `db:push` first so first-run admin seed works on empty databases                              |
 
 ## Reuse Decisions
 

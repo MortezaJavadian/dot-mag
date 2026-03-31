@@ -10,7 +10,7 @@
     "release": "./release.sh",
     "db:generate": "prisma generate",
     "db:push": "prisma db push --skip-generate",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "npm run db:push && tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "5.8.1",
