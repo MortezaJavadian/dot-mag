@@ -11,6 +11,9 @@ RUN npm install --legacy-peer-deps --registry=https://hub.megan.ir/npm/ --strict
 
 COPY . .
 
+ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/offline-pkgs/prisma/libquery_engine-linux-musl-openssl-3.0.x.so.node
+RUN npm run db:generate
+
 RUN npm run build
 
 RUN mkdir -p /app/public/uploads
