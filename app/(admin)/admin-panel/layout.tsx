@@ -1,6 +1,5 @@
 import { getAdminUser } from "@/lib/auth";
 import { ReactNode } from "react";
-import Button from "@/components/ui/Button";
 import { logoutAction } from "@/app/actions/authActions";
 
 export default async function AdminLayout({
@@ -11,9 +10,9 @@ export default async function AdminLayout({
   const adminUser = await getAdminUser();
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       {adminUser && (
-        <div className="bg-white dark:bg-slate-900 border-b">
+        <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
           <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 className="text-2xl font-bold">پنل ادمین</h1>
             <form action={logoutAction}>
@@ -28,7 +27,9 @@ export default async function AdminLayout({
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-4 py-8">{children}</div>
+      <div className="max-w-6xl mx-auto px-4 py-8 text-slate-900 dark:text-slate-100">
+        {children}
+      </div>
     </div>
   );
 }

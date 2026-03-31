@@ -204,6 +204,7 @@ dot-mag/
 | 2026-03-31 | Archive PDF loading stability  | Fixed loading/empty-state render condition, switched worker to local module, added load timeout and byte-range support        |
 | 2026-03-31 | Worker fallback for pdfjs      | If workerSrc cannot be resolved at runtime, reader now falls back to `disableWorker` instead of failing the whole PDF load    |
 | 2026-03-31 | Seed bootstrap hardening       | Updated `db:seed` script to run `db:push` first so first-run admin seed works on empty databases                              |
+| 2026-03-31 | Admin text color stabilization | Added explicit light/dark text colors on admin layout and admin form/list wrappers to prevent black text on mobile devices    |
 
 ## Reuse Decisions
 

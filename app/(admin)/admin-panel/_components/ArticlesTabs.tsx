@@ -40,7 +40,7 @@ export default function ArticlesTabs({
         );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 text-slate-900 dark:text-slate-100">
       {/* Tabs */}
       <div className="flex gap-2 border-b overflow-x-auto">
         <button

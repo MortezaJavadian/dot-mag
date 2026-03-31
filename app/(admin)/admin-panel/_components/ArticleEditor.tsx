@@ -128,7 +128,10 @@ export default function ArticleEditor({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-6 max-w-2xl text-slate-900 dark:text-slate-100"
+    >
       <h2 className="text-2xl font-bold">
         {article?.id ? "ویرایش نوشتار" : "ایجاد نوشتار"}
       </h2>

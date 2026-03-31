@@ -61,7 +61,8 @@ export default function Dashboard() {
   };
 
   const handleDeleteTag = async (tagId: string) => {
-    if (!confirm("آیا اطمینان دارید که می‌خواهید این برچسب را حذف کنید؟")) return;
+    if (!confirm("آیا اطمینان دارید که می‌خواهید این برچسب را حذف کنید؟"))
+      return;
 
     try {
       const result = await deleteTag(tagId);
@@ -103,7 +104,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-slate-900 dark:text-slate-100">
       <div className="flex gap-2 border-b">
         <button
           onClick={() => setActiveTab("articles")}
@@ -153,7 +154,7 @@ export default function Dashboard() {
               onDelete={async (article) => {
                 if (
                   confirm(
-                    "آیا اطمینان دارید که می‌خواهید این نوشتار را حذف کنید؟"
+                    "آیا اطمینان دارید که می‌خواهید این نوشتار را حذف کنید؟",
                   )
                 ) {
                   try {
@@ -245,7 +246,10 @@ export default function Dashboard() {
               placeholder="نام برچسب جدید"
               className="flex-1 px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            <Button onClick={handleAddTag} disabled={addingTag || !newTagName.trim()}>
+            <Button
+              onClick={handleAddTag}
+              disabled={addingTag || !newTagName.trim()}
+            >
               {addingTag ? "در حال افزودن..." : "افزودن برچسب"}
             </Button>
           </div>
