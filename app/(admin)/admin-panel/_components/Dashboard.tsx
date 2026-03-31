@@ -3,21 +3,60 @@
 import { useState, useEffect } from "react";
 import { getArticles, deleteArticle } from "@/app/actions/articleActions";
 import { getMagazines, deleteMagazine } from "@/app/actions/magazineActions";
+import { getRadios, deleteRadio } from "@/app/actions/radioActions";
 import { getTags, createTag, deleteTag } from "@/app/actions/tagActions";
 import ArticleEditor from "./ArticleEditor";
 import ArticlesTabs from "./ArticlesTabs";
 import MagazineEditor from "./MagazineEditor";
+import RadioEditor from "./RadioEditor";
 import Button from "@/components/ui/Button";
 
+type ArticleItem = {
+  id: string;
+  title: string;
+  author: string;
+  publishedAt: string;
+  tags: { id: string; name: string; slug: string }[];
+} & Record<string, unknown>;
+
+type MagazineItem = {
+  id: string;
+  title: string;
+  pageCount: number;
+  publishedAt: string;
+} & Record<string, unknown>;
+
+type RadioItem = {
+  id: string;
+  title: string;
+  publishedAt: string;
+  segments?: { id: string }[];
+} & Record<string, unknown>;
+
+type TagItem = {
+  id: string;
+  name: string;
+  slug: string;
+  _count?: { articles?: number };
+} & Record<string, unknown>;
+
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"articles" | "magazines" | "tags">(
-    "articles",
-  );
-  const [articles, setArticles] = useState<any[]>([]);
-  const [magazines, setMagazines] = useState<any[]>([]);
-  const [tags, setTags] = useState<any[]>([]);
-  const [editingArticle, setEditingArticle] = useState<any>(null);
-  const [editingMagazine, setEditingMagazine] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<
+    "articles" | "magazines" | "radios" | "tags"
+  >("articles");
+  const [articles, setArticles] = useState<ArticleItem[]>([]);
+  const [magazines, setMagazines] = useState<MagazineItem[]>([]);
+  const [radios, setRadios] = useState<RadioItem[]>([]);
+  const [tags, setTags] = useState<TagItem[]>([]);
+  const [editingArticle, setEditingArticle] = useState<
+    ArticleItem | { id: null } | null
+  >(null);
+  const [editingMagazine, setEditingMagazine] = useState<
+    MagazineItem | { id: null } | null
+  >(null);
+  const [editingRadio, setEditingRadio] = useState<
+    RadioItem | { id: null } | null
+  >(null);
   const [loading, setLoading] = useState(true);
   const [newTagName, setNewTagName] = useState("");
   const [addingTag, setAddingTag] = useState(false);
@@ -28,14 +67,16 @@ export default function Dashboard() {
 
   const loadData = async () => {
     setLoading(true);
-    const [articlesRes, magazinesRes, tagsRes] = await Promise.all([
+    const [articlesRes, magazinesRes, radiosRes, tagsRes] = await Promise.all([
       getArticles(),
       getMagazines(),
+      getRadios(),
       getTags(),
     ]);
 
     if (articlesRes.success) setArticles(articlesRes.data || []);
     if (magazinesRes.success) setMagazines(magazinesRes.data || []);
+    if (radiosRes.success) setRadios(radiosRes.data || []);
     if (tagsRes.success) setTags(tagsRes.data || []);
     setLoading(false);
   };
@@ -103,6 +144,19 @@ export default function Dashboard() {
     );
   }
 
+  if (editingRadio) {
+    return (
+      <RadioEditor
+        radio={editingRadio}
+        onSave={() => {
+          setEditingRadio(null);
+          loadData();
+        }}
+        onCancel={() => setEditingRadio(null)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 text-slate-900 dark:text-slate-100">
       <div className="flex gap-2 border-b">
@@ -135,6 +189,16 @@ export default function Dashboard() {
           }`}
         >
           برچسب‌ها ({tags.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("radios")}
+          className={`px-4 py-2 font-medium ${
+            activeTab === "radios"
+              ? "border-b-2 border-primary text-primary"
+              : "text-slate-600 dark:text-slate-400"
+          }`}
+        >
+          رادیو دات ({radios.length})
         </button>
       </div>
 
@@ -185,7 +249,7 @@ export default function Dashboard() {
             </p>
           ) : (
             <div className="space-y-2">
-              {magazines.map((magazine: any) => (
+              {magazines.map((magazine) => (
                 <div
                   key={magazine.id}
                   className="p-4 border rounded-lg dark:border-slate-700 flex justify-between items-center"
@@ -215,6 +279,71 @@ export default function Dashboard() {
                             await loadData();
                           } catch (error) {
                             alert("خطا در حذف مجله");
+                            console.error(error);
+                          }
+                        }
+                      }}
+                      className="text-sm bg-red-500 hover:bg-red-600"
+                    >
+                      حذف
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "radios" && (
+        <div className="space-y-4">
+          <Button onClick={() => setEditingRadio({ id: null })}>
+            ایجاد رادیو دات
+          </Button>
+
+          {loading ? (
+            <p>در حال بارگذاری...</p>
+          ) : radios.length === 0 ? (
+            <p className="text-slate-600 dark:text-slate-400">
+              هنوز رادیویی وجود ندارد
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {radios.map((radio) => (
+                <div
+                  key={radio.id}
+                  className="p-4 border rounded-lg dark:border-slate-700 flex flex-col sm:flex-row justify-between sm:items-center gap-3"
+                >
+                  <div>
+                    <h3 className="font-medium">{radio.title}</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      {radio.segments?.length || 0} بخش برگزیده •{" "}
+                      {radio.publishedAt}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setEditingRadio(radio)}
+                      className="text-sm"
+                    >
+                      ویرایش
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        if (
+                          confirm(
+                            "آیا اطمینان دارید که می‌خواهید این رادیو را حذف کنید؟",
+                          )
+                        ) {
+                          try {
+                            const result = await deleteRadio(radio.id);
+                            if (!result.success) {
+                              alert(result.error || "خطا در حذف رادیو");
+                              return;
+                            }
+                            await loadData();
+                          } catch (error) {
+                            alert("خطا در حذف رادیو");
                             console.error(error);
                           }
                         }
@@ -262,7 +391,7 @@ export default function Dashboard() {
             </p>
           ) : (
             <div className="space-y-2">
-              {tags.map((tag: any) => (
+              {tags.map((tag) => (
                 <div
                   key={tag.id}
                   className="p-4 border rounded-lg dark:border-slate-700 flex justify-between items-center"

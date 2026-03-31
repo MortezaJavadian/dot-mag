@@ -92,6 +92,7 @@ const footerLinks = [
     links: [
       { label: "خانه", href: "/" },
       { label: "نوشتار", href: "/posts" },
+      { label: "رادیو دات", href: "/radio" },
       { label: "آرشیو مجله", href: "/archive" },
       { label: "درباره ما", href: "/about" },
     ],

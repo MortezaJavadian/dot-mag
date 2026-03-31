@@ -16,6 +16,9 @@ dot-mag/
 │   │   ├── articles/
 │   │   │   ├── route.ts        # GET/POST articles
 │   │   │   └── [id]/route.ts   # GET/PUT/DELETE single article
+│   │   ├── radios/
+│   │   │   ├── route.ts        # GET/POST radios
+│   │   │   └── [id]/route.ts   # GET/PUT/DELETE single radio
 │   │   └── magazines/
 │   │       ├── route.ts        # GET/POST magazines
 │   │       └── [id]/route.ts   # GET/PUT/DELETE single magazine
@@ -25,15 +28,20 @@ dot-mag/
 │   ├── posts/
 │   │   ├── page.tsx            # Articles listing (fetches from API)
 │   │   └── [slug]/page.tsx     # Single article page (fetches from API)
+│   ├── radio/
+│   │   ├── layout.tsx           # Radio metadata layout
+│   │   ├── page.tsx             # Radio listing page
+│   │   └── [slug]/page.tsx      # Single radio detail + players
 │   └── (admin)/
 │       └── admin-panel/
 │           ├── layout.tsx      # Admin auth layout with logout
 │           ├── page.tsx        # Admin dashboard/login
 │           └── _components/
 │               ├── LoginForm.tsx       # Login page
-│               ├── Dashboard.tsx       # Articles & Magazines tabs
+│               ├── Dashboard.tsx       # Articles, Magazines, Radios, Tags tabs
 │               ├── ArticleEditor.tsx   # Article CRUD form
-│               └── MagazineEditor.tsx  # Magazine CRUD form + pages
+│               ├── MagazineEditor.tsx  # Magazine CRUD form + pages
+│               └── RadioEditor.tsx     # Radio CRUD form + highlight segments
 ├── android/
 │   ├── .gitignore              # Ignore Android build artifacts
 │   ├── README.md               # Android build documentation
@@ -48,8 +56,10 @@ dot-mag/
 │   │   └── ThemeProvider.tsx   # Dark/Light mode context
 │   └── feature/
 │       ├── ArticleCard.tsx     # Article card variants
+│       ├── AudioPlayer.tsx     # Reusable custom audio player + manual download
 │       ├── MagazineCard.tsx    # Magazine cover card
-│       └── MagazineReader.tsx  # In-app magazine reader
+│       ├── MagazineReader.tsx  # In-app magazine reader
+│       └── RadioCard.tsx       # Radio list card
 ├── hooks/                      # Custom React hooks (empty)
 ├── lib/
 │   ├── auth.ts                 # JWT, session, password utilities
@@ -57,9 +67,10 @@ dot-mag/
 ├── actions/
 │   ├── authActions.ts          # Server action: login/logout
 │   ├── articleActions.ts       # Server actions: Article CRUD
-│   └── magazineActions.ts      # Server actions: Magazine CRUD
+│   ├── magazineActions.ts      # Server actions: Magazine CRUD
+│   └── radioActions.ts         # Server actions: Radio CRUD + segment CRUD
 ├── prisma/
-│   ├── schema.prisma           # Database schema (User, Article, Magazine, MagazinePage)
+│   ├── schema.prisma           # Database schema (User, Article, Magazine, Radio, segments)
 │   └── seed.ts                 # Database seeding script
 ├── public/
 │   ├── assets/
@@ -93,41 +104,48 @@ dot-mag/
 | ---------------------------------------------- | ----------------------------------------------------------------------------- |
 | `app/layout.tsx`                               | Root layout with RTL direction, Vazirmatn font, ThemeProvider, Header, Footer |
 | `app/globals.css`                              | Custom color palette, Tailwind config, typography, animations                 |
-| `app/page.tsx`                                 | Home page - fetches articles/magazines from API                               |
+| `app/page.tsx`                                 | Home page - fetches articles/magazines/radios from API                        |
 | `app/posts/page.tsx`                           | Articles listing - fetches from API with category filter                      |
-| `app/posts/[slug]/page.tsx`                    | Single article - fetches from API                                             |
+| `app/posts/[slug]/page.tsx`                    | Single article page + related articles via Prisma with decoded slug matching  |
 | `app/archive/page.tsx`                         | Magazine archive - fetches from API                                           |
 | `app/archive/[slug]/page.tsx`                  | Magazine reader - fetches from API                                            |
+| `app/radio/layout.tsx`                         | Radio route metadata                                                          |
+| `app/radio/page.tsx`                           | Radio listing page                                                            |
+| `app/radio/[slug]/page.tsx`                    | Radio detail page with full audio + highlighted segments                      |
 | `app/about/page.tsx`                           | About page                                                                    |
 | `app/api/.well-known/assetlinks.json/route.ts` | Digital Asset Links API for Android TWA verification                          |
 | `app/api/articles/route.ts`                    | API GET all articles / POST create article                                    |
 | `app/api/articles/[id]/route.ts`               | API GET/PUT/DELETE single article                                             |
-| `app/api/upload/route.ts`                      | API upload endpoint for images/PDF                                            |
-| `app/api/uploads/[filename]/route.ts`          | Serves uploaded files with byte-range support (PDF/image)                     |
+| `app/api/radios/route.ts`                      | API GET all radios / POST create radio                                        |
+| `app/api/radios/[id]/route.ts`                 | API GET/PUT/DELETE single radio                                               |
+| `app/api/upload/route.ts`                      | API upload endpoint for image/PDF/audio                                       |
+| `app/api/uploads/[filename]/route.ts`          | Serves uploaded files with byte-range support (PDF/image/audio)               |
 | `app/api/magazines/route.ts`                   | API GET all magazines / POST create magazine                                  |
 | `app/api/magazines/[id]/route.ts`              | API GET/PUT/DELETE single magazine                                            |
 
 ### Admin Panel
 
-| File                                                     | Purpose                                  |
-| -------------------------------------------------------- | ---------------------------------------- |
-| `app/(admin)/admin-panel/layout.tsx`                     | Admin layout with logout button          |
-| `app/(admin)/admin-panel/page.tsx`                       | Main page - shows login or dashboard     |
-| `app/(admin)/admin-panel/_components/LoginForm.tsx`      | Login form component                     |
-| `app/(admin)/admin-panel/_components/Dashboard.tsx`      | Dashboard with Articles & Magazines tabs |
-| `app/(admin)/admin-panel/_components/ArticleEditor.tsx`  | Article editor form                      |
-| `app/(admin)/admin-panel/_components/MagazineEditor.tsx` | Magazine editor form                     |
+| File                                                     | Purpose                                               |
+| -------------------------------------------------------- | ----------------------------------------------------- |
+| `app/(admin)/admin-panel/layout.tsx`                     | Admin layout with logout button                       |
+| `app/(admin)/admin-panel/page.tsx`                       | Main page - shows login or dashboard                  |
+| `app/(admin)/admin-panel/_components/LoginForm.tsx`      | Login form component                                  |
+| `app/(admin)/admin-panel/_components/Dashboard.tsx`      | Dashboard with Articles, Magazines, Radios, Tags tabs |
+| `app/(admin)/admin-panel/_components/ArticleEditor.tsx`  | Article editor form                                   |
+| `app/(admin)/admin-panel/_components/MagazineEditor.tsx` | Magazine editor form                                  |
+| `app/(admin)/admin-panel/_components/RadioEditor.tsx`    | Radio editor + highlighted segment manager            |
 
 ### Authentication & Actions
 
-| File                             | Purpose                            |
-| -------------------------------- | ---------------------------------- |
-| `lib/auth.ts`                    | JWT, session, password utilities   |
-| `lib/uploads.ts`                 | Normalizes upload URLs for CDN/API |
-| `middleware.ts`                  | Route protection for /admin-panel  |
-| `app/actions/authActions.ts`     | Login/logout server actions        |
-| `app/actions/articleActions.ts`  | Article CRUD server actions        |
-| `app/actions/magazineActions.ts` | Magazine CRUD server actions       |
+| File                             | Purpose                               |
+| -------------------------------- | ------------------------------------- |
+| `lib/auth.ts`                    | JWT, session, password utilities      |
+| `lib/uploads.ts`                 | Normalizes upload URLs for CDN/API    |
+| `middleware.ts`                  | Route protection for /admin-panel     |
+| `app/actions/authActions.ts`     | Login/logout server actions           |
+| `app/actions/articleActions.ts`  | Article CRUD server actions           |
+| `app/actions/magazineActions.ts` | Magazine CRUD server actions          |
+| `app/actions/radioActions.ts`    | Radio CRUD + highlighted segment CRUD |
 
 ### Database
 
@@ -145,16 +163,18 @@ dot-mag/
 | `components/shared/Footer.tsx`          | Footer with links, social, copyright                 |
 | `components/shared/ThemeProvider.tsx`   | Dark/Light mode context with localStorage            |
 | `components/feature/ArticleCard.tsx`    | Article cards (default, featured, horizontal)        |
+| `components/feature/AudioPlayer.tsx`    | Custom buffered audio player with manual download    |
 | `components/feature/MagazineCard.tsx`   | Magazine cover card with hover effect                |
 | `components/feature/MagazineReader.tsx` | Full-screen magazine reader with swipe, keyboard nav |
+| `components/feature/RadioCard.tsx`      | Radio list card for public pages                     |
 
 ### PWA Files
 
-| File                          | Purpose                            |
-| ----------------------------- | ---------------------------------- |
-| `public/manifest.webmanifest` | PWA manifest for installability    |
-| `public/sw.js`                | Service worker for offline support |
-| `public/offline.html`         | Offline fallback page              |
+| File                          | Purpose                                                   |
+| ----------------------------- | --------------------------------------------------------- |
+| `public/manifest.webmanifest` | PWA manifest for installability                           |
+| `public/sw.js`                | Service worker for offline support + audio cache strategy |
+| `public/offline.html`         | Offline fallback page                                     |
 
 ### Configuration & Documentation
 
@@ -171,40 +191,42 @@ dot-mag/
 
 ## Change Journal
 
-| Date       | Change                         | Reason                                                                                                                        |
-| ---------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| 2026-03-21 | Initial project setup          | Project foundation with RTL, font, colors                                                                                     |
-| 2026-03-21 | Created components             | Header, Footer, Cards, Reader                                                                                                 |
-| 2026-03-21 | Created all pages              | Home, Posts, Archive, About                                                                                                   |
-| 2026-03-21 | Added PWA files                | Manifest, SW, offline page                                                                                                    |
-| 2026-03-25 | Added Android TWA setup        | Bubblewrap configuration for Android APK build                                                                                |
-| 2026-03-25 | Added Digital Asset Links      | API route for TWA verification                                                                                                |
-| 2026-03-27 | UI spacing fixes               | Fixed hamburger menu background, button spacing, footer buffer                                                                |
-| 2026-03-27 | Persian text updates           | Replaced "فرسته" with "نوشتار" (8 instances across 5 files)                                                                   |
-| 2026-03-27 | Spacing system overhaul        | Added CSS utilities for consistent spacing                                                                                    |
-| 2026-03-27 | Hashtag category system        | Implemented #ازـما #ازـشما #ازـدیگران filtering with "no posts" handling                                                      |
-| 2026-03-27 | Search feature removal         | Removed search functionality from header - simplified UI                                                                      |
-| 2026-03-27 | **Admin Panel Implementation** | **Complete CRUD system with PostgreSQL, JWT auth, API routes**                                                                |
-| 2026-03-27 | Database migration             | Moved from static JSON to PostgreSQL with Prisma ORM                                                                          |
-| 2026-03-27 | API endpoints created          | RESTful API for articles and magazines                                                                                        |
-| 2026-03-27 | Admin authentication           | JWT-based auth with httpOnly cookies                                                                                          |
-| 2026-03-27 | Admin UI implementation        | Dashboard with Articles & Magazines tabs, full CRUD forms                                                                     |
-| 2026-03-27 | Updated public pages           | All pages now fetch from API instead of static JSON imports                                                                   |
-| 2026-03-27 | Removed JSON data files        | data/articles.json and data/magazines.json deleted                                                                            |
-| 2026-03-30 | Magazine freshness fixes       | Forced dynamic archive/reader pages, tag-based cache busting, larger cover uploads                                            |
-| 2026-03-30 | Cache revalidate signature     | Added required cache profile to `revalidateTag` for magazine mutations                                                        |
-| 2026-03-30 | Upload path normalization      | Upload API now returns /api/uploads URLs, added helper to normalize legacy /uploads paths, PDF served via API                 |
-| 2026-03-30 | PDF spread rendering fix       | Magazine reader now uses stable left/right canvases for single/two-page PDF display                                           |
-| 2026-03-30 | Slug normalization for archive | Archive reader accepts Persian/Arabic/ASCII digit variants to prevent 404 on localized slugs                                  |
-| 2026-03-30 | Archive slug decoding          | Decoded percent-encoded slugs and kept archive route fully dynamic to resolve localized magazine pages                        |
-| 2026-03-30 | PDF SSR compatibility          | Lazy-loaded pdfjs on the client to avoid DOM APIs during server render (fixes DOMMatrix errors)                               |
-| 2026-03-31 | PDF worker cleanup             | Switched pdfjs loader to use bundled workerSrc via GlobalWorkerOptions to avoid runtime load errors                           |
-| 2026-03-31 | PDF worker type declaration    | Added module declaration for pdfjs worker to satisfy TypeScript during build                                                  |
-| 2026-03-31 | PDF reader SSR + worker fix    | MagazineReader uses client wrapper (no SSR), versioned CDN workerSrc; switched to legacy pdfjs build for Safari compatibility |
-| 2026-03-31 | Archive PDF loading stability  | Fixed loading/empty-state render condition, switched worker to local module, added load timeout and byte-range support        |
-| 2026-03-31 | Worker fallback for pdfjs      | If workerSrc cannot be resolved at runtime, reader now falls back to `disableWorker` instead of failing the whole PDF load    |
-| 2026-03-31 | Seed bootstrap hardening       | Updated `db:seed` script to run `db:push` first so first-run admin seed works on empty databases                              |
-| 2026-03-31 | Admin text color stabilization | Added explicit light/dark text colors on admin layout and admin form/list wrappers to prevent black text on mobile devices    |
+| Date       | Change                          | Reason                                                                                                                                                       |
+| ---------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-03-21 | Initial project setup           | Project foundation with RTL, font, colors                                                                                                                    |
+| 2026-03-21 | Created components              | Header, Footer, Cards, Reader                                                                                                                                |
+| 2026-03-21 | Created all pages               | Home, Posts, Archive, About                                                                                                                                  |
+| 2026-03-21 | Added PWA files                 | Manifest, SW, offline page                                                                                                                                   |
+| 2026-03-25 | Added Android TWA setup         | Bubblewrap configuration for Android APK build                                                                                                               |
+| 2026-03-25 | Added Digital Asset Links       | API route for TWA verification                                                                                                                               |
+| 2026-03-27 | UI spacing fixes                | Fixed hamburger menu background, button spacing, footer buffer                                                                                               |
+| 2026-03-27 | Persian text updates            | Replaced "فرسته" with "نوشتار" (8 instances across 5 files)                                                                                                  |
+| 2026-03-27 | Spacing system overhaul         | Added CSS utilities for consistent spacing                                                                                                                   |
+| 2026-03-27 | Hashtag category system         | Implemented #ازـما #ازـشما #ازـدیگران filtering with "no posts" handling                                                                                     |
+| 2026-03-27 | Search feature removal          | Removed search functionality from header - simplified UI                                                                                                     |
+| 2026-03-27 | **Admin Panel Implementation**  | **Complete CRUD system with PostgreSQL, JWT auth, API routes**                                                                                               |
+| 2026-03-27 | Database migration              | Moved from static JSON to PostgreSQL with Prisma ORM                                                                                                         |
+| 2026-03-27 | API endpoints created           | RESTful API for articles and magazines                                                                                                                       |
+| 2026-03-27 | Admin authentication            | JWT-based auth with httpOnly cookies                                                                                                                         |
+| 2026-03-27 | Admin UI implementation         | Dashboard with Articles & Magazines tabs, full CRUD forms                                                                                                    |
+| 2026-03-27 | Updated public pages            | All pages now fetch from API instead of static JSON imports                                                                                                  |
+| 2026-03-27 | Removed JSON data files         | data/articles.json and data/magazines.json deleted                                                                                                           |
+| 2026-03-30 | Magazine freshness fixes        | Forced dynamic archive/reader pages, tag-based cache busting, larger cover uploads                                                                           |
+| 2026-03-30 | Cache revalidate signature      | Added required cache profile to `revalidateTag` for magazine mutations                                                                                       |
+| 2026-03-30 | Upload path normalization       | Upload API now returns /api/uploads URLs, added helper to normalize legacy /uploads paths, PDF served via API                                                |
+| 2026-03-30 | PDF spread rendering fix        | Magazine reader now uses stable left/right canvases for single/two-page PDF display                                                                          |
+| 2026-03-30 | Slug normalization for archive  | Archive reader accepts Persian/Arabic/ASCII digit variants to prevent 404 on localized slugs                                                                 |
+| 2026-03-30 | Archive slug decoding           | Decoded percent-encoded slugs and kept archive route fully dynamic to resolve localized magazine pages                                                       |
+| 2026-03-30 | PDF SSR compatibility           | Lazy-loaded pdfjs on the client to avoid DOM APIs during server render (fixes DOMMatrix errors)                                                              |
+| 2026-03-31 | PDF worker cleanup              | Switched pdfjs loader to use bundled workerSrc via GlobalWorkerOptions to avoid runtime load errors                                                          |
+| 2026-03-31 | PDF worker type declaration     | Added module declaration for pdfjs worker to satisfy TypeScript during build                                                                                 |
+| 2026-03-31 | PDF reader SSR + worker fix     | MagazineReader uses client wrapper (no SSR), versioned CDN workerSrc; switched to legacy pdfjs build for Safari compatibility                                |
+| 2026-03-31 | Archive PDF loading stability   | Fixed loading/empty-state render condition, switched worker to local module, added load timeout and byte-range support                                       |
+| 2026-03-31 | Worker fallback for pdfjs       | If workerSrc cannot be resolved at runtime, reader now falls back to `disableWorker` instead of failing the whole PDF load                                   |
+| 2026-03-31 | Seed bootstrap hardening        | Updated `db:seed` script to run `db:push` first so first-run admin seed works on empty databases                                                             |
+| 2026-03-31 | Admin text color stabilization  | Added explicit light/dark text colors on admin layout and admin form/list wrappers to prevent black text on mobile devices                                   |
+| 2026-04-01 | Radio Dot module implementation | Added Radio + RadioSegment schema, radio actions/API/routes/pages, admin radio CRUD tab/editor, reusable audio player, and service worker audio caching flow |
+| 2026-04-01 | Posts slug route 404 fix        | Switched `app/posts/[slug]/page.tsx` to Prisma-backed loading and decoded+normalized slug matching to prevent false not-found on article click               |
 
 ## Reuse Decisions
 
@@ -214,6 +236,7 @@ dot-mag/
 - **Auth utilities**: Centralized in lib/auth.ts (JWT, session, passwords)
 - **Server Actions**: Separate files for articles, magazines, auth (one concern per file)
 - **API Routes**: RESTful structure with shared patterns
+- **Radio module reuse**: Radio list/detail uses existing card/layout patterns from posts/archive with dedicated audio components
 
 ## Architecture Patterns Established
 
@@ -222,6 +245,7 @@ dot-mag/
 1. Public pages (Next.js server components) → fetch from `/api/*` routes
 2. Admin panel → server actions → Prisma → PostgreSQL
 3. API routes → auth check → server actions → Prisma → PostgreSQL
+4. Radio playback → `/api/uploads/*` byte-range responses → service worker audio/runtime caches
 
 ### Authentication
 
@@ -233,7 +257,7 @@ dot-mag/
 
 - `/admin-panel` (no auth) → LoginForm
 - `/admin-panel` (authenticated) → Dashboard with tabs
-- Dashboard → ArticleEditor or MagazineEditor
+- Dashboard → ArticleEditor, MagazineEditor, or RadioEditor
 - Editors submit to server actions → database updates
 
 ## Pending / TODOs
@@ -263,6 +287,10 @@ dot-mag/
   - No rebuild needed when content changes
 
 - Archive + magazine reader routes are force-dynamic; magazine data uses cache tag `magazines` and is revalidated on mutations (home page fetch tagged)
+
+- Radio list/detail pages fetch via `/api/radios` and are revalidated with cache tag `radios`; radio mutations trigger `revalidateTag("radios", "default")`
+
+- Audio uploads now allow compressed podcast formats and use `/api/uploads/[filename]` range responses; service worker stores runtime audio requests and supports partial replay paths
 
 - **API calls from public pages use revalidation**: 3600s (1 hour cache)
   - Balance between freshness and performance
@@ -317,6 +345,7 @@ Admin panel is desktop-focused but responsive.
 
 ✅ Valid manifest.webmanifest with all required fields
 ✅ Service worker enabled (public/sw.js present)
+✅ Runtime audio caching strategy added for radio playback and manual downloads
 ✅ Offline fallback page (public/offline.html)
 ✅ PWA metadata in app/layout.tsx
 ✅ HTTPS-ready for production

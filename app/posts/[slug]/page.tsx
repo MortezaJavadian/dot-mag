@@ -2,31 +2,69 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArticleCard } from "@/components/feature/ArticleCard";
+import { prisma } from "@/lib/prisma";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-async function getArticles() {
+interface ArticleTag {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface ArticleItem {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  author: string;
+  category: string;
+  image: string;
+  publishedAt: string;
+  readingTime?: number | null;
+  tags: ArticleTag[];
+}
+
+async function getArticles(): Promise<ArticleItem[]> {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/articles`,
-      {
-        next: { revalidate: 3600 },
-      },
-    );
-    return await res.json();
-  } catch {
+    return await prisma.article.findMany({
+      include: { tags: true },
+      orderBy: { publishedAt: "desc" },
+    });
+  } catch (error) {
+    console.error("Failed to fetch articles for post page:", error);
     return [];
   }
+}
+
+function decodeSlug(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function normalizeSlug(value: string): string {
+  return value
+    .normalize("NFC")
+    .replace(/[^\S\r\n]+/g, " ")
+    .trim()
+    .toLowerCase();
 }
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = normalizeSlug(decodeSlug(rawSlug));
   const articles = await getArticles();
-  const article = articles.find((a: any) => a.slug === slug);
+  const article = articles.find(
+    (a) => normalizeSlug(decodeSlug(a.slug)) === slug,
+  );
 
   if (!article) {
     return { title: "مقاله یافت نشد" };
@@ -50,16 +88,19 @@ export async function generateStaticParams() {
 }
 
 export default async function ArticlePage({ params }: PageProps) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = normalizeSlug(decodeSlug(rawSlug));
   const articles = await getArticles();
-  const article = articles.find((a: any) => a.slug === slug);
+  const article = articles.find(
+    (a) => normalizeSlug(decodeSlug(a.slug)) === slug,
+  );
 
   if (!article) {
     notFound();
   }
 
   const relatedArticles = articles
-    .filter((a: any) => a.id !== article.id && a.category === article.category)
+    .filter((a) => a.id !== article.id && a.category === article.category)
     .slice(0, 3);
 
   return (
@@ -122,7 +163,7 @@ export default async function ArticlePage({ params }: PageProps) {
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
-                <span>{article.readingTime} دقیقه مطالعه</span>
+                <span>{article.readingTime ?? 0} دقیقه مطالعه</span>
               </div>
             </div>
           </div>
@@ -142,12 +183,12 @@ export default async function ArticlePage({ params }: PageProps) {
 
             {article.tags && article.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-8">
-                {article.tags.map((tag: string) => (
+                {article.tags.map((tag) => (
                   <span
-                    key={tag}
+                    key={tag.id}
                     className="px-3 py-1.5 bg-foreground/5 text-sm rounded-full"
                   >
-                    {tag}
+                    {tag.name}
                   </span>
                 ))}
               </div>
@@ -163,7 +204,7 @@ export default async function ArticlePage({ params }: PageProps) {
               نوشتارهای مرتبط
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {relatedArticles.map((related: any) => (
+              {relatedArticles.map((related) => (
                 <ArticleCard key={related.id} article={related} />
               ))}
             </div>

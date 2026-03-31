@@ -33,6 +33,14 @@ export async function GET(
       gif: "image/gif",
       webp: "image/webp",
       pdf: "application/pdf",
+      mp3: "audio/mpeg",
+      mpeg: "audio/mpeg",
+      mp4: "audio/mp4",
+      m4a: "audio/mp4",
+      aac: "audio/aac",
+      wav: "audio/wav",
+      ogg: "audio/ogg",
+      webm: "audio/webm",
     };
     const contentType =
       (ext && contentTypeMap[ext]) || "application/octet-stream";

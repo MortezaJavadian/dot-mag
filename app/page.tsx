@@ -1,8 +1,41 @@
 import Link from "next/link";
 import { ArticleCard } from "@/components/feature/ArticleCard";
+import { RadioCard } from "@/components/feature/RadioCard";
 import { getUploadUrl } from "@/lib/uploads";
 
-async function getArticles() {
+type HomeArticle = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  author: string;
+  category: string;
+  image: string;
+  publishedAt: string;
+  featured: boolean;
+  tags?: { id: string; name: string; slug: string }[];
+};
+
+type HomeMagazine = {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string;
+  cover: string | null;
+};
+
+type HomeRadio = {
+  id: string;
+  slug: string;
+  title: string;
+  intro: string;
+  cover: string | null;
+  publishedAt: string;
+  durationSec: number | null;
+  segments: { id: string }[];
+};
+
+async function getArticles(): Promise<HomeArticle[]> {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/articles`,
@@ -16,7 +49,7 @@ async function getArticles() {
   }
 }
 
-async function getMagazines() {
+async function getMagazines(): Promise<HomeMagazine[]> {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/magazines`,
@@ -30,14 +63,30 @@ async function getMagazines() {
   }
 }
 
+async function getRadios(): Promise<HomeRadio[]> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/radios`,
+      {
+        next: { revalidate: 60, tags: ["radios"] },
+      },
+    );
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
 export default async function HomePage() {
-  const [articles, magazines] = await Promise.all([
+  const [articles, magazines, radios] = await Promise.all([
     getArticles(),
     getMagazines(),
+    getRadios(),
   ]);
 
-  const featuredArticles = articles.filter((a: any) => a.featured);
+  const featuredArticles = articles.filter((article) => article.featured);
   const latestArticles = articles.slice(0, 6);
+  const latestRadios = radios.slice(0, 3);
   const latestMagazine = magazines[0];
   const latestMagazineCover = getUploadUrl(latestMagazine?.cover);
 
@@ -93,6 +142,12 @@ export default async function HomePage() {
                   className="inline-flex items-center gap-2 px-8 py-4 bg-foreground/5 text-foreground font-bold rounded-full hover:bg-foreground/10 transition-all"
                 >
                   نوشتار
+                </Link>
+                <Link
+                  href="/radio"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-forest text-white font-bold rounded-full hover:bg-forest/90 transition-all"
+                >
+                  رادیو دات
                 </Link>
               </div>
             </div>
@@ -182,7 +237,7 @@ export default async function HomePage() {
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-              {featuredArticles.slice(0, 2).map((article: any) => (
+              {featuredArticles.slice(0, 2).map((article) => (
                 <ArticleCard
                   key={article.id}
                   article={article}
@@ -208,12 +263,36 @@ export default async function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {latestArticles.map((article: any) => (
+            {latestArticles.map((article) => (
               <ArticleCard key={article.id} article={article} />
             ))}
           </div>
         </div>
       </section>
+
+      {latestRadios.length > 0 && (
+        <section className="section-spacing">
+          <div className="container">
+            <div className="flex items-center justify-between mb-10">
+              <h2 className="text-2xl md:text-3xl font-bold">
+                آخرین رادیو دات
+              </h2>
+              <Link
+                href="/radio"
+                className="text-primary font-medium hover:underline"
+              >
+                مشاهده همه ←
+              </Link>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {latestRadios.map((radio) => (
+                <RadioCard key={radio.id} radio={radio} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="section-spacing">

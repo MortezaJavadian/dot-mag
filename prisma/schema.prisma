@@ -72,3 +72,31 @@ model MagazinePage {
 
   @@unique([magazineId, number])
 }
+
+model Radio {
+  id          String         @id @default(cuid())
+  slug        String         @unique
+  title       String
+  intro       String         @db.Text
+  cover       String?        @db.Text
+  audioUrl    String         @db.Text
+  publishedAt String
+  durationSec Int?
+  segments    RadioSegment[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model RadioSegment {
+  id          String   @id @default(cuid())
+  radio       Radio    @relation(fields: [radioId], references: [id], onDelete: Cascade)
+  radioId     String
+  number      Int
+  title       String
+  audioUrl    String   @db.Text
+  durationSec Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([radioId, number])
+}
