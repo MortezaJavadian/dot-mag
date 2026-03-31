@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  createMagazine,
-  updateMagazine,
-  deleteMagazine,
   addMagazinePage,
+  createMagazine,
+  deleteMagazine,
   deleteMagazinePage,
+  reorderMagazinePages,
+  updateMagazine,
+  updateMagazinePage,
 } from "@/app/actions/magazineActions";
 import Button from "@/components/ui/Button";
 import { getUploadUrl } from "@/lib/uploads";
@@ -15,6 +17,40 @@ interface MagazineEditorProps {
   magazine: any;
   onSave: () => void;
   onCancel: () => void;
+}
+
+type ManagedPage = {
+  id: string;
+  number: number;
+  image: string;
+};
+
+function normalizePages(pages: any[] = []): ManagedPage[] {
+  return [...pages]
+    .sort((a, b) => a.number - b.number)
+    .map((page) => ({
+      id: page.id,
+      number: page.number,
+      image: page.image,
+    }));
+}
+
+async function uploadAsset(file: File): Promise<string> {
+  const uploadFormData = new FormData();
+  uploadFormData.append("file", file);
+
+  const response = await fetch("/api/upload", {
+    method: "POST",
+    body: uploadFormData,
+    credentials: "include",
+  });
+
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.error || "Upload failed");
+  }
+
+  return result.url;
 }
 
 export default function MagazineEditor({
@@ -30,89 +66,40 @@ export default function MagazineEditor({
     pdfUrl: getUploadUrl(magazine?.pdfUrl) || "",
     publishedAt:
       magazine?.publishedAt || new Date().toISOString().split("T")[0],
-    pageCount: magazine?.pageCount || 1,
+    pageCount: Number(magazine?.pageCount || 0),
   });
 
-  const [pages, setPages] = useState(magazine?.pages || []);
-  const [newPage, setNewPage] = useState({
-    type: "article",
-    image: "",
-    title: "",
-  });
-
+  const [pages, setPages] = useState<ManagedPage[]>(
+    normalizePages(magazine?.pages),
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [coverPreview, setCoverPreview] = useState<string | null>(
-    getUploadUrl(magazine?.cover) || null,
-  );
-  const [uploading, setUploading] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
   const [pdfUploading, setPdfUploading] = useState(false);
-  const [pageImageLoading, setPageImageLoading] = useState(false);
+  const [pageUploading, setPageUploading] = useState(false);
+  const [activePageActionId, setActivePageActionId] = useState<string | null>(
+    null,
+  );
+
+  const isExistingMagazine = Boolean(magazine?.id);
+  const sortedPages = useMemo(
+    () => [...pages].sort((a, b) => a.number - b.number),
+    [pages],
+  );
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
+    setCoverUploading(true);
     setError("");
-
     try {
-      const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
-
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: uploadFormData,
-        credentials: "include",
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setFormData((prev) => ({ ...prev, cover: result.url }));
-        setCoverPreview(result.url);
-      } else {
-        setError(result.error || "خطا در آپلود عکس");
-      }
-    } catch (err) {
-      setError("خطا در آپلود عکس");
-      console.error(err);
+      const uploadedUrl = await uploadAsset(file);
+      setFormData((prev) => ({ ...prev, cover: uploadedUrl }));
+    } catch (uploadError: any) {
+      setError(uploadError?.message || "خطا در آپلود عکس جلد");
     } finally {
-      setUploading(false);
-    }
-  };
-
-  const handlePageImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setPageImageLoading(true);
-    setError("");
-
-    try {
-      const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
-
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: uploadFormData,
-        credentials: "include",
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setNewPage((prev) => ({ ...prev, image: result.url }));
-      } else {
-        setError(result.error || "خطا در آپلود عکس صفحه");
-      }
-    } catch (err) {
-      setError("خطا در آپلود عکس صفحه");
-      console.error(err);
-    } finally {
-      setPageImageLoading(false);
+      setCoverUploading(false);
     }
   };
 
@@ -122,27 +109,11 @@ export default function MagazineEditor({
 
     setPdfUploading(true);
     setError("");
-
     try {
-      const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
-
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: uploadFormData,
-        credentials: "include",
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setFormData((prev) => ({ ...prev, pdfUrl: result.url }));
-      } else {
-        setError(result.error || "خطا در آپلود PDF");
-      }
-    } catch (err) {
-      setError("خطا در آپلود PDF");
-      console.error(err);
+      const uploadedUrl = await uploadAsset(file);
+      setFormData((prev) => ({ ...prev, pdfUrl: uploadedUrl }));
+    } catch (uploadError: any) {
+      setError(uploadError?.message || "خطا در آپلود PDF");
     } finally {
       setPdfUploading(false);
     }
@@ -154,73 +125,168 @@ export default function MagazineEditor({
     setError("");
 
     try {
-      const data = {
+      const payload = {
         ...formData,
-        pageCount: parseInt(String(formData.pageCount)),
+        pageCount: sortedPages.length,
       };
 
-      const result = magazine?.id
-        ? await updateMagazine(magazine.id, data)
-        : await createMagazine(data);
+      const result = isExistingMagazine
+        ? await updateMagazine(magazine.id, payload)
+        : await createMagazine(payload);
 
-      if (result.success) {
-        onSave();
-      } else {
-        setError(result.error || "خطا در ذخیره‌سازی مجله");
+      if (!result.success) {
+        setError(result.error || "خطا در ذخیره مجله");
+        setLoading(false);
+        return;
       }
-    } catch (err) {
-      setError("خطایی رخ داد");
-      console.error(err);
+
+      onSave();
+    } catch (saveError) {
+      console.error(saveError);
+      setError("خطا در ذخیره مجله");
     } finally {
       setLoading(false);
     }
   };
 
-  const addPage = async () => {
-    if (!newPage.title) {
-      setError("عنوان صفحه الزامی است");
-      return;
-    }
-    if (!newPage.image) {
-      setError("عکس صفحه الزامی است");
-      return;
+  const syncOrder = async (nextPages: ManagedPage[]) => {
+    if (!isExistingMagazine) return;
+
+    const order = nextPages
+      .sort((a, b) => a.number - b.number)
+      .map((page) => page.id);
+
+    const reorderResult = await reorderMagazinePages(magazine.id, order);
+    if (!reorderResult.success) {
+      throw new Error(reorderResult.error || "خطا در مرتب‌سازی صفحات");
     }
 
-    if (!magazine?.id) {
+    setPages(normalizePages(reorderResult.data || []));
+  };
+
+  const handleAddPage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!isExistingMagazine) {
       setError("ابتدا مجله را ذخیره کنید");
       return;
     }
 
-    const pageNumber = Math.max(0, ...pages.map((p: any) => p.number)) + 1;
+    setPageUploading(true);
+    setError("");
+    try {
+      const uploadedUrl = await uploadAsset(file);
+      const nextNumber = sortedPages.length + 1;
+      const addResult = await addMagazinePage(magazine.id, {
+        number: nextNumber,
+        image: uploadedUrl,
+      });
 
-    const result = await addMagazinePage(magazine.id, {
-      number: pageNumber,
-      ...newPage,
-    });
+      if (!addResult.success) {
+        throw new Error(addResult.error || "خطا در افزودن صفحه");
+      }
 
-    if (result.success) {
-      setPages([...pages, result.data]);
-      setNewPage({ type: "article", image: "", title: "" });
-    } else {
-      setError("خطا در اضافه کردن صفحه");
+      setPages((prev) => normalizePages([...prev, addResult.data]));
+    } catch (addError: any) {
+      setError(addError?.message || "خطا در افزودن صفحه");
+    } finally {
+      setPageUploading(false);
+      e.target.value = "";
     }
   };
 
-  const deletePage = async (pageId: string) => {
-    if (!magazine?.id) return;
+  const handleReplaceImage = async (
+    pageId: string,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const result = await deleteMagazinePage(pageId);
-    if (result.success) {
-      setPages(pages.filter((p: any) => p.id !== pageId));
-    } else {
-      setError("خطا در حذف صفحه");
+    setActivePageActionId(pageId);
+    setError("");
+    try {
+      const uploadedUrl = await uploadAsset(file);
+      const updateResult = await updateMagazinePage(pageId, {
+        image: uploadedUrl,
+      });
+
+      if (!updateResult.success) {
+        throw new Error(updateResult.error || "خطا در ویرایش صفحه");
+      }
+
+      setPages((prev) =>
+        normalizePages(
+          prev.map((page) =>
+            page.id === pageId ? { ...page, image: uploadedUrl } : page,
+          ),
+        ),
+      );
+    } catch (replaceError: any) {
+      setError(replaceError?.message || "خطا در جایگزینی تصویر");
+    } finally {
+      setActivePageActionId(null);
+      e.target.value = "";
+    }
+  };
+
+  const handleDeletePage = async (pageId: string) => {
+    setActivePageActionId(pageId);
+    setError("");
+    try {
+      const deleteResult = await deleteMagazinePage(pageId);
+      if (!deleteResult.success) {
+        throw new Error(deleteResult.error || "خطا در حذف صفحه");
+      }
+
+      const compacted = pages
+        .filter((page) => page.id !== pageId)
+        .sort((a, b) => a.number - b.number)
+        .map((page, index) => ({ ...page, number: index + 1 }));
+
+      setPages(compacted);
+      await syncOrder(compacted);
+    } catch (deleteError: any) {
+      setError(deleteError?.message || "خطا در حذف صفحه");
+    } finally {
+      setActivePageActionId(null);
+    }
+  };
+
+  const movePage = async (pageId: string, direction: "up" | "down") => {
+    const currentIndex = sortedPages.findIndex((page) => page.id === pageId);
+    if (currentIndex === -1) return;
+
+    const targetIndex =
+      direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= sortedPages.length) return;
+
+    const reordered = [...sortedPages];
+    const [moved] = reordered.splice(currentIndex, 1);
+    reordered.splice(targetIndex, 0, moved);
+
+    const normalizedOrder = reordered.map((page, index) => ({
+      ...page,
+      number: index + 1,
+    }));
+
+    setPages(normalizedOrder);
+    setActivePageActionId(pageId);
+    setError("");
+    try {
+      await syncOrder(normalizedOrder);
+    } catch (orderError: any) {
+      setError(orderError?.message || "خطا در جابجایی صفحه");
+      setPages(sortedPages);
+    } finally {
+      setActivePageActionId(null);
     }
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-3xl">
       <h2 className="text-2xl font-bold">
-        {magazine?.id ? "ویرایش مجله" : "ایجاد مجله"}
+        {isExistingMagazine ? "ویرایش مجله" : "ایجاد مجله"}
       </h2>
 
       {error && (
@@ -267,82 +333,67 @@ export default function MagazineEditor({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">
               عکس جلد (اختیاری)
             </label>
-            <div className="space-y-2">
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                onChange={handleCoverUpload}
-                disabled={uploading}
-                className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              {uploading && (
-                <p className="text-sm text-blue-600">در حال آپلود...</p>
-              )}
-              {coverPreview && (
-                <div className="mt-2">
-                  <img
-                    src={coverPreview}
-                    alt="Cover Preview"
-                    className="h-32 w-full object-cover rounded-md"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              تاریخ انتشار
-            </label>
-            <input
-              type="date"
-              value={formData.publishedAt}
-              onChange={(e) =>
-                setFormData({ ...formData, publishedAt: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">تعداد صفحات</label>
-          <input
-            type="number"
-            value={formData.pageCount}
-            onChange={(e) =>
-              setFormData({ ...formData, pageCount: e.target.value })
-            }
-            min="1"
-            className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            فایل PDF (اختیاری)
-          </label>
-          <div className="space-y-2">
             <input
               type="file"
-              accept="application/pdf"
-              onChange={handlePdfUpload}
-              disabled={pdfUploading}
-              className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={handleCoverUpload}
+              disabled={coverUploading}
+              className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
             />
-            {pdfUploading && (
-              <p className="text-sm text-blue-600">در حال آپلود PDF...</p>
+            {coverUploading && (
+              <p className="text-sm text-blue-600 mt-2">در حال آپلود...</p>
             )}
-            {formData.pdfUrl && (
-              <div className="mt-2 p-2 bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100 rounded text-sm">
-                ✓ PDF آپلود شده: {formData.pdfUrl.split("/").pop()}
-              </div>
+            {formData.cover && (
+              <img
+                src={getUploadUrl(formData.cover) || ""}
+                alt="Cover Preview"
+                className="mt-2 h-32 w-full object-cover rounded-md"
+              />
             )}
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                تاریخ انتشار
+              </label>
+              <input
+                type="date"
+                value={formData.publishedAt}
+                onChange={(e) =>
+                  setFormData({ ...formData, publishedAt: e.target.value })
+                }
+                className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                فایل PDF (اختیاری)
+              </label>
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={handlePdfUpload}
+                disabled={pdfUploading}
+                className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+              />
+              {pdfUploading && (
+                <p className="text-sm text-blue-600 mt-2">
+                  در حال آپلود PDF...
+                </p>
+              )}
+              {formData.pdfUrl && (
+                <p className="text-xs text-green-700 dark:text-green-400 mt-2 break-all">
+                  {getUploadUrl(formData.pdfUrl)}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -350,7 +401,7 @@ export default function MagazineEditor({
           <Button type="submit" disabled={loading}>
             {loading
               ? "در حال ذخیره..."
-              : magazine?.id
+              : isExistingMagazine
                 ? "بروزرسانی مجله"
                 : "ایجاد مجله"}
           </Button>
@@ -361,106 +412,117 @@ export default function MagazineEditor({
           >
             انصراف
           </Button>
-          {magazine?.id && (
+          {isExistingMagazine && (
             <Button
               type="button"
               onClick={async () => {
-                if (
-                  confirm(
-                    "آیا اطمینان دارید که می‌خواهید این مجله را حذف کنید؟",
-                  )
-                ) {
+                if (confirm("آیا از حذف کامل این مجله مطمئن هستید؟")) {
                   await deleteMagazine(magazine.id);
                   onSave();
                 }
               }}
               className="bg-red-500 hover:bg-red-600"
             >
-              حذف
+              حذف مجله
             </Button>
           )}
         </div>
       </form>
 
-      {magazine?.id && (
+      {isExistingMagazine && (
         <div className="space-y-4 pt-6 border-t">
-          <h3 className="text-lg font-semibold">صفحات ({pages.length})</h3>
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="text-lg font-semibold">
+              صفحات ({sortedPages.length})
+            </h3>
+            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-primary text-white text-sm cursor-pointer hover:opacity-90 transition-opacity">
+              افزودن صفحه جدید
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleAddPage}
+                disabled={pageUploading}
+                className="hidden"
+              />
+            </label>
+          </div>
 
-          {pages.length > 0 && (
-            <div className="space-y-2">
-              {pages.map((page: any) => (
-                <div
-                  key={page.id}
-                  className="p-3 border rounded-md dark:border-slate-700 flex justify-between items-center"
-                >
-                  <div>
-                    <p className="font-medium">
-                      صفحه {page.number}: {page.title}
-                    </p>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      نوع: {page.type}
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => deletePage(page.id)}
-                    className="text-sm bg-red-500 hover:bg-red-600"
-                  >
-                    حذف
-                  </Button>
-                </div>
-              ))}
-            </div>
+          {pageUploading && (
+            <p className="text-sm text-blue-600">در حال آپلود صفحه جدید...</p>
           )}
 
-          <div className="space-y-3 p-4 bg-slate-100 dark:bg-slate-800 rounded-md">
-            <h4 className="font-medium">اضافه کردن صفحه جدید</h4>
+          {sortedPages.length === 0 ? (
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              هنوز صفحه‌ای ثبت نشده است.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {sortedPages.map((page, index) => {
+                const imageSrc = getUploadUrl(page.image) || "";
+                const pageBusy = activePageActionId === page.id;
 
-            <select
-              value={newPage.type}
-              onChange={(e) => setNewPage({ ...newPage, type: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="cover">جلد</option>
-              <option value="toc">فهرست محتویات</option>
-              <option value="editorial">سرمقاله</option>
-              <option value="article">نوشتار</option>
-            </select>
+                return (
+                  <div
+                    key={page.id}
+                    className="p-3 border rounded-lg dark:border-slate-700 flex flex-col md:flex-row gap-3 md:items-center md:justify-between"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={imageSrc}
+                        alt={`Page ${page.number}`}
+                        className="w-20 h-28 object-cover rounded border border-slate-200 dark:border-slate-700"
+                      />
+                      <div>
+                        <p className="font-medium">صفحه {page.number}</p>
+                        <p className="text-xs text-slate-500 truncate max-w-80">
+                          {imageSrc}
+                        </p>
+                      </div>
+                    </div>
 
-            <input
-              type="text"
-              placeholder="عنوان صفحه"
-              value={newPage.title}
-              onChange={(e) =>
-                setNewPage({ ...newPage, title: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-slate-300 rounded-md dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => movePage(page.id, "up")}
+                        disabled={index === 0 || pageBusy}
+                        className="text-xs"
+                      >
+                        بالا
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => movePage(page.id, "down")}
+                        disabled={index === sortedPages.length - 1 || pageBusy}
+                        className="text-xs"
+                      >
+                        پایین
+                      </Button>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">عکس صفحه</label>
-              <div className="space-y-2">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handlePageImageUpload}
-                  disabled={pageImageLoading}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                {pageImageLoading && (
-                  <p className="text-sm text-blue-600">در حال آپلود...</p>
-                )}
-                {newPage.image && (
-                  <div className="mt-2 p-2 bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100 rounded text-sm">
-                    ✓ عکس انتخاب شد
+                      <label className="inline-flex items-center px-3 py-2 rounded-md bg-slate-700 text-white text-xs cursor-pointer hover:bg-slate-800 transition-colors">
+                        تعویض عکس
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          onChange={(e) => handleReplaceImage(page.id, e)}
+                          disabled={pageBusy}
+                          className="hidden"
+                        />
+                      </label>
+
+                      <Button
+                        type="button"
+                        onClick={() => handleDeletePage(page.id)}
+                        disabled={pageBusy}
+                        className="text-xs bg-red-500 hover:bg-red-600"
+                      >
+                        حذف
+                      </Button>
+                    </div>
                   </div>
-                )}
-              </div>
+                );
+              })}
             </div>
-
-            <Button type="button" onClick={addPage}>
-              اضافه کردن صفحه
-            </Button>
-          </div>
+          )}
         </div>
       )}
     </div>

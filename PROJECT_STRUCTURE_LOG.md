@@ -426,19 +426,25 @@ See DEPLOYMENT_GUIDE.md for detailed deployment instructions.
 
 ## Change Journal
 
-| Date       | Change                    | Reason                                                                   |
-| ---------- | ------------------------- | ------------------------------------------------------------------------ |
-| 2026-03-21 | Initial setup             | Project foundation with RTL, font, colors                                |
-| 2026-03-21 | Created components        | Header, Footer, Cards, Reader                                            |
-| 2026-03-21 | Created all pages         | Home, Posts, Archive, About                                              |
-| 2026-03-21 | Added PWA files           | Manifest, SW, offline page                                               |
-| 2026-03-25 | Added Android TWA setup   | Bubblewrap configuration for Android APK build                           |
-| 2026-03-25 | Added Digital Asset Links | API route for TWA verification                                           |
-| 2026-03-27 | UI spacing fixes          | Fixed hamburger menu background, button spacing, footer buffer           |
-| 2026-03-27 | Persian text updates      | Replaced "فرسته" with "نوشتار" (8 instances across 5 files)              |
-| 2026-03-27 | Spacing system overhaul   | Added CSS utilities for consistent spacing                               |
-| 2026-03-27 | Hashtag category system   | Implemented #ازـما #ازـشما #ازـدیگران filtering with "no posts" handling |
-| 2026-03-27 | Search feature removal    | Removed search functionality from header - simplified UI                 |
+| Date       | Change                        | Reason                                                                                                                             |
+| ---------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-03-21 | Initial setup                 | Project foundation with RTL, font, colors                                                                                          |
+| 2026-03-21 | Created components            | Header, Footer, Cards, Reader                                                                                                      |
+| 2026-03-21 | Created all pages             | Home, Posts, Archive, About                                                                                                        |
+| 2026-03-21 | Added PWA files               | Manifest, SW, offline page                                                                                                         |
+| 2026-03-25 | Added Android TWA setup       | Bubblewrap configuration for Android APK build                                                                                     |
+| 2026-03-25 | Added Digital Asset Links     | API route for TWA verification                                                                                                     |
+| 2026-03-27 | UI spacing fixes              | Fixed hamburger menu background, button spacing, footer buffer                                                                     |
+| 2026-03-27 | Persian text updates          | Replaced "فرسته" with "نوشتار" (8 instances across 5 files)                                                                        |
+| 2026-03-27 | Spacing system overhaul       | Added CSS utilities for consistent spacing                                                                                         |
+| 2026-03-27 | Hashtag category system       | Implemented #ازـما #ازـشما #ازـدیگران filtering with "no posts" handling                                                           |
+| 2026-03-27 | Search feature removal        | Removed search functionality from header - simplified UI                                                                           |
+| 2026-03-31 | PDF renderer backup branch    | Preserved current PDF rendering implementation in `backup/pdf-render-2026-03-31` before main-branch rewrite                        |
+| 2026-03-31 | Image-first magazine reader   | Replaced runtime PDF.js rendering with image-page reader and kept optional PDF download action                                     |
+| 2026-03-31 | Admin page-management upgrade | Simplified page model to image-first tools in UI (upload/replace/delete/reorder) and added server action for durable page reorder  |
+| 2026-03-31 | Deploy flow safety hardening  | Added `scripts/post-receive.example.sh`; switched container startup to optional DB sync/seed flags; removed startup data-loss path |
+| 2026-03-31 | Env cleanup for deploy flow   | Removed startup DB toggle vars from `.env.example`; keep DB initialization as explicit manual/hook commands                        |
+| 2026-03-31 | Script cleanup for deploy     | Removed obsolete DB toggle env checks from entrypoint/hook template; seed is now explicit manual operation                         |
 
 ## Reuse Decisions
 

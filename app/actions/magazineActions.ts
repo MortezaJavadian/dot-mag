@@ -25,10 +25,25 @@ type CreateMagazineInput = Omit<
   Prisma.MagazineCreateInput,
   "id" | "createdAt" | "updatedAt" | "slug"
 >;
-type CreateMagazinePageInput = Omit<
-  Prisma.MagazinePageCreateInput,
-  "id" | "createdAt" | "updatedAt"
->;
+type MagazinePageInput = {
+  number: number;
+  image: string;
+};
+
+async function syncPageCount(
+  magazineId: string,
+  tx?: Prisma.TransactionClient,
+) {
+  const client = tx ?? prisma;
+  const count = await client.magazinePage.count({
+    where: { magazineId },
+  });
+
+  await client.magazine.update({
+    where: { id: magazineId },
+    data: { pageCount: count },
+  });
+}
 
 export async function getMagazines() {
   try {
@@ -134,7 +149,7 @@ export async function deleteMagazine(id: string) {
 
 export async function addMagazinePage(
   magazineId: string,
-  page: Omit<CreateMagazinePageInput, "magazine">,
+  page: MagazinePageInput,
 ) {
   const adminUser = await getAdminUser();
   if (!adminUser) {
@@ -144,10 +159,15 @@ export async function addMagazinePage(
   try {
     const newPage = await prisma.magazinePage.create({
       data: {
-        ...page,
+        number: page.number,
+        image: page.image,
+        title: `Page ${page.number}`,
+        type: "article",
         magazineId,
       },
     });
+
+    await syncPageCount(magazineId);
 
     revalidateMagazinesCache();
 
@@ -173,10 +193,28 @@ export async function updateMagazinePage(
   }
 
   try {
+    const existingPage = await prisma.magazinePage.findUnique({
+      where: { id: pageId },
+      select: { magazineId: true, number: true },
+    });
+
+    if (!existingPage) {
+      return { success: false, error: "Page not found" };
+    }
+
+    const nextNumber =
+      typeof page.number === "number" ? page.number : existingPage.number;
+
     const updatedPage = await prisma.magazinePage.update({
       where: { id: pageId },
-      data: page,
+      data: {
+        ...page,
+        type: "article",
+        title: `Page ${nextNumber}`,
+      },
     });
+
+    await syncPageCount(existingPage.magazineId);
 
     revalidateMagazinesCache();
 
@@ -194,8 +232,38 @@ export async function deleteMagazinePage(pageId: string) {
   }
 
   try {
-    await prisma.magazinePage.delete({
+    const existingPage = await prisma.magazinePage.findUnique({
       where: { id: pageId },
+      select: { magazineId: true },
+    });
+
+    if (!existingPage) {
+      return { success: false, error: "Page not found" };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.magazinePage.delete({
+        where: { id: pageId },
+      });
+
+      const pages = await tx.magazinePage.findMany({
+        where: { magazineId: existingPage.magazineId },
+        orderBy: { number: "asc" },
+        select: { id: true },
+      });
+
+      for (let i = 0; i < pages.length; i++) {
+        await tx.magazinePage.update({
+          where: { id: pages[i].id },
+          data: {
+            number: i + 1,
+            title: `Page ${i + 1}`,
+            type: "article",
+          },
+        });
+      }
+
+      await syncPageCount(existingPage.magazineId, tx);
     });
 
     revalidateMagazinesCache();
@@ -204,5 +272,70 @@ export async function deleteMagazinePage(pageId: string) {
   } catch (error) {
     console.error("Delete magazine page error:", error);
     return { success: false, error: "Failed to delete page" };
+  }
+}
+
+export async function reorderMagazinePages(
+  magazineId: string,
+  pageIds: string[],
+) {
+  const adminUser = await getAdminUser();
+  if (!adminUser) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    const pages = await prisma.magazinePage.findMany({
+      where: { magazineId },
+      orderBy: { number: "asc" },
+      select: { id: true },
+    });
+
+    const knownIds = new Set(pages.map((page) => page.id));
+    const incomingIds = new Set(pageIds);
+
+    if (knownIds.size !== incomingIds.size || pages.length !== pageIds.length) {
+      return { success: false, error: "Invalid page ordering" };
+    }
+
+    for (const pageId of pageIds) {
+      if (!knownIds.has(pageId)) {
+        return { success: false, error: "Invalid page ordering" };
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      for (let i = 0; i < pageIds.length; i++) {
+        await tx.magazinePage.update({
+          where: { id: pageIds[i] },
+          data: { number: 1000 + i },
+        });
+      }
+
+      for (let i = 0; i < pageIds.length; i++) {
+        await tx.magazinePage.update({
+          where: { id: pageIds[i] },
+          data: {
+            number: i + 1,
+            title: `Page ${i + 1}`,
+            type: "article",
+          },
+        });
+      }
+
+      await syncPageCount(magazineId, tx);
+    });
+
+    const reorderedPages = await prisma.magazinePage.findMany({
+      where: { magazineId },
+      orderBy: { number: "asc" },
+    });
+
+    revalidateMagazinesCache();
+
+    return { success: true, data: reorderedPages };
+  } catch (error) {
+    console.error("Reorder magazine pages error:", error);
+    return { success: false, error: "Failed to reorder pages" };
   }
 }
