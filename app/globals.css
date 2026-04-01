@@ -56,7 +56,7 @@
   --font-vazir: "Vazirmatn", system-ui, sans-serif;
 
   /* Spacing */
-  --container-padding: 1rem;
+  --container-padding: 0.65rem;
   --section-spacing: 4rem;
 }
 
@@ -223,13 +223,18 @@ a {
   padding-inline: var(--container-padding);
 }
 
-/* Single article page compact mobile gutters */
+/* Single article page container kept for explicit route-level hooks */
 .container.article-page-container {
-  padding-inline: calc(var(--container-padding) * 0.65);
+  padding-inline: var(--container-padding);
+}
+
+/* Posts tag bar gets slightly tighter gutters on phones to delay horizontal scroll */
+.container.posts-tabs-container {
+  padding-inline: calc(var(--container-padding) * 0.8);
 }
 
 @media (min-width: 768px) {
-  .container.article-page-container {
+  .container.posts-tabs-container {
     padding-inline: var(--container-padding);
   }
 }
