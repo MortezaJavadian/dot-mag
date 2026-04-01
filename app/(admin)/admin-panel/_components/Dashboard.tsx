@@ -188,7 +188,7 @@ export default function Dashboard() {
               : "text-slate-600 dark:text-slate-400"
           }`}
         >
-          نوشتارها ({articles.length})
+          نوشته‌ها ({articles.length})
         </button>
         <button
           onClick={() => setActiveTab("magazines")}
@@ -225,7 +225,7 @@ export default function Dashboard() {
       {activeTab === "articles" && (
         <div className="space-y-4">
           <Button onClick={() => setEditingArticle({ id: null })}>
-            ایجاد نوشتار
+            ایجاد نوشته
           </Button>
 
           {loading ? (
@@ -238,14 +238,14 @@ export default function Dashboard() {
               onDelete={async (article) => {
                 if (
                   confirm(
-                    "آیا اطمینان دارید که می‌خواهید این نوشتار را حذف کنید؟",
+                    "آیا اطمینان دارید که می‌خواهید این نوشته را حذف کنید؟",
                   )
                 ) {
                   try {
                     await deleteArticle(article.id);
                     await loadData();
                   } catch (error) {
-                    alert("خطا در حذف نوشتار");
+                    alert("خطا در حذف نوشته");
                     console.error(error);
                   }
                 }
@@ -419,7 +419,7 @@ export default function Dashboard() {
                   <div>
                     <h3 className="font-medium">{tag.name}</h3>
                     <p className="text-sm text-slate-600 dark:text-slate-400">
-                      {tag._count?.articles || 0} نوشتار
+                      {tag._count?.articles || 0} نوشته
                     </p>
                   </div>
                   <Button

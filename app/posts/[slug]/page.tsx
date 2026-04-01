@@ -121,51 +121,57 @@ export default async function ArticlePage({ params }: PageProps) {
     <>
       <article>
         <header className="pt-8 pb-12 md:pt-12 md:pb-16">
-          <div className="container max-w-4xl">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-black leading-tight mb-6">
-              {article.title}
-            </h1>
+          <div className="container article-page-container max-w-6xl">
+            <div className="md:flex md:items-start md:gap-8 lg:gap-10">
+              <div className="md:flex-1">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-black leading-tight mb-6">
+                  {article.title}
+                </h1>
 
-            <p className="text-xl text-foreground-secondary leading-relaxed mb-8">
-              {article.excerpt}
-            </p>
+                <p className="text-lg md:text-xl text-foreground-secondary leading-relaxed mb-8">
+                  {article.excerpt}
+                </p>
 
-            {articleImage && (
-              <div className="rounded-2xl overflow-hidden border border-card-border mb-8 bg-background-secondary p-3 md:p-4">
-                <img
-                  src={articleImage}
-                  alt={article.title}
-                  className="w-full h-auto max-h-[65vh] md:max-h-[72vh] object-contain mx-auto"
-                />
+                <div className="flex flex-wrap items-center gap-2 text-foreground-secondary text-sm">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                  <span>{article.publishedAt}</span>
+                </div>
               </div>
-            )}
 
-            <div className="flex flex-wrap items-center gap-2 text-foreground-secondary text-sm">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-              <span>{article.publishedAt}</span>
+              {articleImage && (
+                <div className="mt-8 md:mt-0 md:w-[44%] lg:w-[40%] md:shrink-0">
+                  <div className="rounded-2xl overflow-hidden border border-card-border bg-background-secondary p-2.5 md:p-3">
+                    <img
+                      src={articleImage}
+                      alt={article.title}
+                      className="w-full h-auto max-h-[58vh] md:max-h-[430px] lg:max-h-[500px] object-contain mx-auto"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
 
         <div className="py-8 md:py-12 border-t border-b">
-          <div className="container max-w-4xl">
+          <div className="container article-page-container max-w-4xl">
             <div
-              className="prose dark:prose-invert max-w-none leading-relaxed"
+              className="prose article-content-prose dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: safeContentHtml }}
             />
 
@@ -176,7 +182,7 @@ export default async function ArticlePage({ params }: PageProps) {
                     key={tag.id}
                     className="px-3 py-1.5 bg-foreground/5 text-sm rounded-full"
                   >
-                    {tag.name}
+                    #{tag.name}
                   </span>
                 ))}
               </div>
@@ -187,9 +193,9 @@ export default async function ArticlePage({ params }: PageProps) {
 
       {relatedArticles.length > 0 && (
         <section className="py-12 md:py-16 bg-background-secondary">
-          <div className="container">
+          <div className="container article-page-container">
             <h2 className="text-2xl md:text-3xl font-bold mb-8">
-              نوشتارهای مرتبط
+              نوشته‌های مرتبط
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {relatedArticles.map((related) => (

@@ -202,7 +202,7 @@ dot-mag/
 | 2026-03-25 | Added Android TWA setup         | Bubblewrap configuration for Android APK build                                                                                                                                 |
 | 2026-03-25 | Added Digital Asset Links       | API route for TWA verification                                                                                                                                                 |
 | 2026-03-27 | UI spacing fixes                | Fixed hamburger menu background, button spacing, footer buffer                                                                                                                 |
-| 2026-03-27 | Persian text updates            | Replaced "فرسته" with "نوشتار" (8 instances across 5 files)                                                                                                                    |
+| 2026-03-27 | Persian text updates            | Replaced "فرسته" with "نوشته‌ها" (8 instances across 5 files)                                                                                                                  |
 | 2026-03-27 | Spacing system overhaul         | Added CSS utilities for consistent spacing                                                                                                                                     |
 | 2026-03-27 | Hashtag category system         | Implemented #ازـما #ازـشما #ازـدیگران filtering with "no posts" handling                                                                                                       |
 | 2026-03-27 | Search feature removal          | Removed search functionality from header - simplified UI                                                                                                                       |
@@ -244,6 +244,8 @@ dot-mag/
 | 2026-04-01 | Posts tabs subtitle removal     | Removed descriptive sentence text under post filter tabs so only hashtag tabs remain visible in the sticky filter bar |
 | 2026-04-01 | Rich-text size parity fix       | Updated `lib/articleContent.ts` sanitizer to preserve admin font-size formatting in public post rendering by accepting keyword sizes and converting legacy `<font size>` tags to styled spans |
 | 2026-04-01 | Magazine text-date parity + admin cleanup | Displayed magazine `publishedAt` text in public card/reader views to match text-based date behavior, and removed the unused `featured` toggle from article editor in admin panel |
+| 2026-04-01 | Large/X-Large render parity + wording rename | Expanded article sanitizer `font-size` allowlist for legacy and WebKit large values so public rendering matches admin for Large/X-Large text sizes, and renamed UI wording from `نوشته` to `نوشته‌ها` across public and admin screens |
+| 2026-04-01 | Article detail layout/readability pass | Reworked single article header to desktop two-column (text right, image left) while keeping mobile stacked layout, prefixed article tag chips with `#`, reduced mobile gutters for article page containers, and normalized prose word/line spacing for cleaner Persian reading |
 
 ## Reuse Decisions
 
@@ -496,7 +498,7 @@ See DEPLOYMENT_GUIDE.md for detailed deployment instructions.
 | 2026-03-25 | Added Android TWA setup       | Bubblewrap configuration for Android APK build                                                                                      |
 | 2026-03-25 | Added Digital Asset Links     | API route for TWA verification                                                                                                      |
 | 2026-03-27 | UI spacing fixes              | Fixed hamburger menu background, button spacing, footer buffer                                                                      |
-| 2026-03-27 | Persian text updates          | Replaced "فرسته" with "نوشتار" (8 instances across 5 files)                                                                         |
+| 2026-03-27 | Persian text updates          | Replaced "فرسته" with "نوشته‌ها" (8 instances across 5 files)                                                                       |
 | 2026-03-27 | Spacing system overhaul       | Added CSS utilities for consistent spacing                                                                                          |
 | 2026-03-27 | Hashtag category system       | Implemented #ازـما #ازـشما #ازـدیگران filtering with "no posts" handling                                                            |
 | 2026-03-27 | Search feature removal        | Removed search functionality from header - simplified UI                                                                            |

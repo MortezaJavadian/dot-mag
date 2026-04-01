@@ -7,7 +7,7 @@ import { useThemeContext } from "@/components/shared/ThemeProvider";
 
 const navLinks = [
   { href: "/", label: "خانه" },
-  { href: "/posts", label: "نوشتار" },
+  { href: "/posts", label: "نوشته‌ها" },
   { href: "/radio", label: "رادیو دات" },
   { href: "/archive", label: "آرشیو مجله" },
   { href: "/about", label: "درباره ما" },

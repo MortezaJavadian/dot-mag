@@ -107,8 +107,10 @@ export function toSafeArticleHtml(content: string): string {
     allowedStyles: {
       "*": {
         "font-size": [
-          /^\d+(\.\d+)?(px|em|rem|%)$/,
-          /^(xx-small|x-small|small|medium|large|x-large|xx-large|smaller|larger)$/i,
+          /^\d+(\.\d+)?(px|em|rem|%|pt)$/,
+          /^[1-7]$/,
+          /^(xx-small|x-small|small|medium|large|x-large|xx-large|xxx-large|smaller|larger)$/i,
+          /^-webkit-(xx-small|x-small|small|medium|large|x-large|xx-large|xxx-large)$/i,
         ],
         "font-style": [/^italic$/],
         "font-weight": [/^(bold|[1-9]00)$/],

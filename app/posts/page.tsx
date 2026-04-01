@@ -76,7 +76,7 @@ function PostsContent() {
       <section className="pt-12 pb-8 md:pt-16 md:pb-12 bg-background-secondary">
         <div className="container">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
-            نوشتار
+            نوشته‌ها
           </h1>
         </div>
       </section>
@@ -156,10 +156,10 @@ function PostsContent() {
                   </svg>
                 </div>
                 <h3 className="text-xl font-bold mb-3">
-                  هنوز نوشتاری برای این برچسب نیست
+                  هنوز نوشته‌ای برای این برچسب نیست
                 </h3>
                 <p className="text-foreground-secondary mb-6">
-                  به زودی نوشتارهای بیشتری اضافه خواهد شد.
+                  به زودی نوشته‌های بیشتری اضافه خواهد شد.
                 </p>
                 {tags.length > 0 && (
                   <div className="flex gap-2 justify-center flex-wrap">

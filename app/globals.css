@@ -223,6 +223,17 @@ a {
   padding-inline: var(--container-padding);
 }
 
+/* Single article page compact mobile gutters */
+.container.article-page-container {
+  padding-inline: calc(var(--container-padding) * 0.65);
+}
+
+@media (min-width: 768px) {
+  .container.article-page-container {
+    padding-inline: var(--container-padding);
+  }
+}
+
 /* Prose Styles for Articles */
 .prose {
   max-width: 72ch;
@@ -255,6 +266,20 @@ a {
 
 .prose p {
   margin-bottom: 1.5em;
+}
+
+/* Keep article words and lines at natural Persian spacing */
+.prose.article-content-prose {
+  text-align: right;
+  text-justify: auto;
+  hyphens: none;
+  word-spacing: normal;
+  letter-spacing: normal;
+  line-height: 1.85;
+}
+
+.prose.article-content-prose p {
+  margin-bottom: 1em;
 }
 
 .prose img {

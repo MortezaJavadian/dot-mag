@@ -50,7 +50,7 @@ export default function ArticlesTabs({
               : "text-slate-600 dark:text-slate-400"
           }`}
         >
-          همه نوشتارها ({articles.length})
+          همه نوشته‌ها ({articles.length})
         </button>
 
         {tags.map((tag) => {
@@ -84,8 +84,8 @@ export default function ArticlesTabs({
       {filteredArticles.length === 0 ? (
         <p className="text-slate-600 dark:text-slate-400 py-4">
           {activeTab === "all"
-            ? "هنوز نوشتاری وجود ندارد"
-            : "هنوز نوشتاری برای این برچسب وجود ندارد"}
+            ? "هنوز نوشته‌ای وجود ندارد"
+            : "هنوز نوشته‌ای برای این برچسب وجود ندارد"}
         </p>
       ) : (
         <div className="space-y-2">

@@ -140,7 +140,7 @@ export default async function HomePage() {
                   href="/posts"
                   className="inline-flex items-center gap-2 px-8 py-4 bg-foreground/5 text-foreground font-bold rounded-full hover:bg-foreground/10 transition-all"
                 >
-                  نوشتار
+                  نوشته‌ها
                 </Link>
                 <Link
                   href="/radio"
@@ -226,7 +226,7 @@ export default async function HomePage() {
         <section className="section-spacing">
           <div className="container">
             <div className="flex items-center justify-between mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold">نوشتار ویژه</h2>
+              <h2 className="text-2xl md:text-3xl font-bold">نوشته‌های ویژه</h2>
               <Link
                 href="/posts"
                 className="text-primary font-medium hover:underline hidden md:block"
@@ -252,7 +252,7 @@ export default async function HomePage() {
       <section className="section-spacing bg-background-secondary">
         <div className="container">
           <div className="flex items-center justify-between mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold">آخرین نوشتار</h2>
+            <h2 className="text-2xl md:text-3xl font-bold">آخرین نوشته‌ها</h2>
             <Link
               href="/posts"
               className="text-primary font-medium hover:underline"

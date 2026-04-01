@@ -152,7 +152,7 @@ export default function ArticleEditor({
       if (result.success) {
         onSave();
       } else {
-        setError(result.error || "خطا در ذخیره‌سازی نوشتار");
+        setError(result.error || "خطا در ذخیره‌سازی نوشته");
       }
     } catch (err) {
       setError("خطایی رخ داد");
@@ -168,7 +168,7 @@ export default function ArticleEditor({
       className="space-y-6 max-w-2xl text-slate-900 dark:text-slate-100"
     >
       <h2 className="text-2xl font-bold">
-        {article?.id ? "ویرایش نوشتار" : "ایجاد نوشتار"}
+        {article?.id ? "ویرایش نوشته" : "ایجاد نوشته"}
       </h2>
 
       {error && (
@@ -321,8 +321,8 @@ export default function ArticleEditor({
           {loading
             ? "در حال ذخیره..."
             : article?.id
-              ? "بروزرسانی نوشتار"
-              : "ایجاد نوشتار"}
+              ? "بروزرسانی نوشته"
+              : "ایجاد نوشته"}
         </Button>
         <Button
           type="button"
@@ -340,9 +340,7 @@ export default function ArticleEditor({
               }
 
               if (
-                confirm(
-                  "آیا اطمینان دارید که می‌خواهید این نوشتار را حذف کنید؟",
-                )
+                confirm("آیا اطمینان دارید که می‌خواهید این نوشته را حذف کنید؟")
               ) {
                 await deleteArticle(article.id);
                 onSave();
