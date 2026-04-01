@@ -13,13 +13,15 @@ export default function AboutPage() {
       <section className="pt-10 pb-14 md:pt-14 md:pb-20">
         <div className="container grid gap-10 lg:gap-14 lg:grid-cols-[minmax(340px,520px)_1fr] items-start">
           <div className="order-2 lg:order-1 space-y-6 text-lg leading-relaxed text-foreground md:text-xl">
-            <h1 className="text-3xl md:text-4xl font-black mb-2 inline-flex items-center gap-3">
-              <span
-                className="h-1.5 w-8 rounded-full bg-primary shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+            <div className="space-y-2">
+              <div
+                className="h-2 w-16 rounded-full bg-primary shadow-[0_6px_16px_rgba(0,0,0,0.14)]"
                 aria-hidden="true"
               />
-              درباره دات
-            </h1>
+              <h1 className="text-3xl md:text-4xl font-black inline-flex items-center gap-3 text-transparent bg-clip-text bg-gradient-to-l from-primary via-foreground to-primary/80">
+                درباره دات
+              </h1>
+            </div>
 
             <div className="space-y-4">
               <p>
@@ -36,9 +38,9 @@ export default function AboutPage() {
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
+              <div className="space-y-2">
                 <span
-                  className="h-px flex-1 bg-gradient-to-l from-primary/30 to-transparent"
+                  className="block h-1.5 w-full rounded-full bg-gradient-to-l from-primary/60 via-primary/30 to-transparent"
                   aria-hidden="true"
                 />
                 <p className="text-xl md:text-2xl font-extrabold text-primary drop-shadow-sm">
@@ -66,9 +68,9 @@ export default function AboutPage() {
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
+              <div className="space-y-2">
                 <span
-                  className="h-px flex-1 bg-gradient-to-l from-primary/30 to-transparent"
+                  className="block h-1.5 w-full rounded-full bg-gradient-to-l from-primary/60 via-primary/30 to-transparent"
                   aria-hidden="true"
                 />
                 <p className="text-xl md:text-2xl font-extrabold text-primary drop-shadow-sm">
@@ -92,9 +94,9 @@ export default function AboutPage() {
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
+              <div className="space-y-2">
                 <span
-                  className="h-px flex-1 bg-gradient-to-l from-primary/30 to-transparent"
+                  className="block h-1.5 w-full rounded-full bg-gradient-to-l from-primary/60 via-primary/30 to-transparent"
                   aria-hidden="true"
                 />
                 <p className="text-xl md:text-2xl font-extrabold text-primary drop-shadow-sm">
@@ -109,7 +111,6 @@ export default function AboutPage() {
                 زیاده و ما هم بغل‌مون برای رفقای هم‌دل و هم‌راه بازه تا در این
                 قیام کنار هم فکر کنیم...
               </p>
-              <p className="font-bold">🇮🇷 گوش‌به‌زنگ باشید برای شمارۀ اول...</p>
             </div>
           </div>
 
@@ -120,7 +121,7 @@ export default function AboutPage() {
                 aria-hidden="true"
               />
               <Image
-                src="/assets/images/about_us.jpeg"
+                src="/assets/images/about_us.png"
                 alt="پوستر نور، صدا، حرکت"
                 fill
                 className="object-contain"
@@ -133,8 +134,12 @@ export default function AboutPage() {
       </section>
 
       <section className="bg-background py-16 md:py-20 border-t border-border text-foreground">
-        <div className="container max-w-3xl mx-auto text-center space-y-7">
-          <div className="space-y-3">
+        <div className="container max-w-4xl mx-auto space-y-9">
+          <div className="space-y-3 text-center">
+            <span
+              className="mx-auto block h-1.5 w-28 rounded-full bg-gradient-to-l from-primary via-primary/70 to-transparent"
+              aria-hidden="true"
+            />
             <p className="text-3xl md:text-4xl font-black tracking-tight drop-shadow-sm">
               کیوسک دات
             </p>
@@ -146,23 +151,35 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="flex justify-center">
-            <a
-              href="https://ble.ir/dotmag_kiosk"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full px-7 py-3 font-semibold border bg-primary text-white border-primary/70 shadow-lg transition-all hover:shadow-primary/30 hover:bg-primary/90 hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
-            >
-              <Image
-                src="/assets/images/bale-logo.png"
-                alt="بله"
-                width={20}
-                height={20}
-                className="object-contain brightness-0 invert"
-                priority={false}
-              />
-              <span className="text-lg">بله</span>
-            </a>
+          <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-background-secondary via-background to-background shadow-xl">
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-l from-primary/5 via-transparent to-primary/10"
+              aria-hidden="true"
+            />
+            <div className="relative flex flex-col items-center gap-4 px-6 py-8 sm:flex-row sm:justify-between sm:gap-6">
+              <div className="space-y-1 text-center sm:text-right">
+                <p className="text-lg font-bold">پیامتان را بی‌واسطه بفرستید</p>
+                <p className="text-sm text-foreground-secondary">
+                  هر نقد و پیشنهادی دارید، اینجا می‌شنویم.
+                </p>
+              </div>
+              <a
+                href="https://ble.ir/dotmag_kiosk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-lg font-semibold text-white shadow-[0_12px_30px_rgba(215,59,58,0.28)] transition-all hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(215,59,58,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+              >
+                <Image
+                  src="/assets/images/bale-logo.png"
+                  alt="بله"
+                  width={22}
+                  height={22}
+                  className="object-contain brightness-0 invert"
+                  priority={false}
+                />
+                <span>ورود به کیوسک</span>
+              </a>
+            </div>
           </div>
         </div>
       </section>
