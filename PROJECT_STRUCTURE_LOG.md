@@ -232,6 +232,7 @@ dot-mag/
 | 2026-04-01 | Mobile menu overlay hardening   | Updated `components/shared/Header.tsx` to keep solid mobile menu background while scrolled and lock body scroll when menu is open                                              |
 | 2026-04-01 | Footer tags + post detail sync  | Footer now loads real tags from DB (`برچسب‌ها`), post detail hides reading-time, shows normalized article image, and related posts are filtered by shared/no-tag logic         |
 | 2026-04-01 | Social links refresh            | Footer social row now uses provided PNG logos (Bale, Eitaa, Virasty, Telegram) from public assets, rendered as white masks on transparent backgrounds, and updated targets       |
+| 2026-04-01 | About page manifesto refresh    | Replaced about page with manifesto text, hero poster image, and single contact CTA with Telegram-style button to ble.ir/dotmag_kiosk; removed values/team sections                                    |
 
 ## Reuse Decisions
 
