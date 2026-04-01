@@ -4,84 +4,99 @@ import { prisma } from "@/lib/prisma";
 
 const socialLinks = [
   {
-    name: "Instagram",
-    href: "https://instagram.com/dotmag",
+    name: "Bale",
+    href: "https://ble.ir/dotmag",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        viewBox="0 0 48 48"
         fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        aria-hidden
       >
-        <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-        <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+        <path
+          fill="#1AC39A"
+          d="M24 4C12.95 4 4 12.3 4 22.3c0 5.1 2.6 9.8 6.9 12.9v8.9l8.5-4.8c1.5.3 3 .5 4.6.5 11.05 0 20-8.3 20-18.4C44 12.3 35.05 4 24 4Z"
+        />
+        <path
+          d="M16.5 24.5 22 30l10.5-12"
+          stroke="#fff"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
+  {
+    name: "Eitaa",
+    href: "https://eitaa.ir/dotmag",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 48 48"
+        fill="none"
+        aria-hidden
+      >
+        <rect x="3" y="3" width="42" height="42" rx="10" fill="#E88300" />
+        <path
+          fill="#0B0B0B"
+          d="M33 16.2c-2.5-2-6.1-2.5-9.3-1.6-5 1.4-8 6.2-6.6 10.9 1.3 4.9 6.5 7.4 11.6 6 2.6-.7 4.6-2.4 5.6-4.6H24c-1.1 0-2.1-.7-2.4-1.7-.4-1.3.4-2.7 1.7-3.2.3-.1.7-.2 1-.2h10c.2-2.8-.8-5.3-1.9-5.6Z"
+        />
+        <path
+          fill="#0B0B0B"
+          d="M20.6 22.2c.8-1.8 2.9-2.6 4.9-2.1l3.3.8c1.2.3 1.9 1.5 1.6 2.6-.3 1-1.3 1.7-2.3 1.7h-4.9c-2.2 0-3.5-1.7-2.6-3Z"
+        />
+      </svg>
+    ),
+  },
+  {
+    name: "Virasty",
+    href: "https://virasty.com/dotmag",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 48 48"
+        fill="none"
+        aria-hidden
+      >
+        <path
+          fill="#1DA2F2"
+          d="M42 12c0-5-4-9-9-9H15C9 3 4 8 4 14v8c0 9.9 8.1 18 18 18 9.9 0 18-8.1 18-18V12Z"
+        />
+        <path
+          fill="#0B0B0B"
+          d="M28 12.5c-5.3-1.8-10.6.7-10.6 5.3 0 2.6 1.9 4.5 5 5.1l3.7.7c1.4.3 2.3 1 2.3 2 0 1.3-1.4 2.4-3.4 2.4-2 0-3.6-.7-5.4-2l-2.2 3.3c2 1.6 4.7 2.6 7.7 2.6 4.7 0 8.2-2.6 8.2-6.6 0-3-2-5-5.7-5.7l-3.2-.6c-1.2-.2-1.9-.8-1.9-1.6 0-1.1 1.3-1.9 3-1.9 1.5 0 3 .5 4.4 1.4l2.1-3.4c-1.4-.9-2.8-1.5-4.2-2Z"
+        />
       </svg>
     ),
   },
   {
     name: "Telegram",
-    href: "https://t.me/dotmag",
+    href: "https://t.me/dotmag_ir",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        viewBox="0 0 48 48"
         fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        aria-hidden
       >
-        <path d="m22 2-7 20-4-9-9-4Z" />
-        <path d="M22 2 11 13" />
-      </svg>
-    ),
-  },
-  {
-    name: "LinkedIn",
-    href: "https://linkedin.com/company/dotmag",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-        <rect width="4" height="12" x="2" y="9" />
-        <circle cx="4" cy="4" r="2" />
-      </svg>
-    ),
-  },
-  {
-    name: "Email",
-    href: "mailto:info@dotmag.ir",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect width="20" height="16" x="2" y="4" rx="2" />
-        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+        <circle cx="24" cy="24" r="22" fill="#7D693A" />
+        <path
+          fill="#0B0B0B"
+          d="m34.8 14.6-19.8 7.7c-1.4.5-1.3 2.5.2 2.9l7 2.1 2.3 7c.5 1.4 2.4 1.6 2.9.2l7.7-19.8c.5-1.3-.8-2.6-2.3-2.1Z"
+        />
+        <path
+          fill="#D9CBB8"
+          d="m21.8 28.1 3.2 3.2 6.4-13.8-13.8 6.4 4.2 1.2Z"
+        />
       </svg>
     ),
   },
@@ -135,8 +150,7 @@ export async function Footer() {
           <div className="lg:col-span-2">
             <Logo variant="white" className="mb-4" />
             <p className="text-white/70 max-w-md leading-relaxed mb-6">
-              مجله دات، پلتفرمی برای روایت داستان‌های الهام‌بخش از دنیای طراحی،
-              تکنولوژی و سبک زندگی مدرن. ما به دنبال کشف زیبایی در جزئیات هستیم.
+          مچله دات را در شبکه‌های اجتماعی دنبال کنید و از تازه‌ترین مطالب و رویدادها باخبر شوید!
             </p>
             {/* Social Links */}
             <div className="flex gap-3">
