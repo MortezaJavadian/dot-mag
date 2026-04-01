@@ -142,14 +142,12 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl bg-background-secondary/80 p-5 shadow-lg ring-1 ring-border/70 backdrop-blur-sm">
-            <div
-              className="absolute inset-0 rounded-2xl border border-border/70"
-              aria-hidden="true"
-            />
-            <div className="relative flex flex-col items-center gap-4 px-1 py-2 sm:flex-row sm:justify-between sm:gap-6 sm:px-2 sm:py-3">
+          <div className="rounded-2xl border border-card-border bg-card-bg p-5 md:p-7 text-base md:text-lg leading-relaxed text-foreground-secondary">
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between sm:gap-6">
               <div className="space-y-1 text-center sm:text-right">
-                <p className="text-lg font-bold">در بستر «بله» پیام بگذارید</p>
+                <p className="text-lg font-bold text-foreground">
+                  در بستر «بله» پیام بگذارید
+                </p>
               </div>
               <a
                 href="https://ble.ir/dotmag_kiosk"
