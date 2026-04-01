@@ -134,32 +134,22 @@ export default function AboutPage() {
       <section className="bg-background py-16 md:py-20 border-t border-border text-foreground">
         <div className="container max-w-4xl mx-auto space-y-9">
           <div className="space-y-3 text-center">
-            <span
-              className="mx-auto block h-1.5 w-28 rounded-full bg-gradient-to-l from-primary via-primary/70 to-transparent"
-              aria-hidden="true"
-            />
             <p className="text-3xl md:text-4xl font-black tracking-tight drop-shadow-sm">
-              کیوسک دات
+              کیوسکِِ دات
             </p>
             <p className="text-lg md:text-xl font-semibold text-foreground">
               پذیرای نقد و نظرات شما هستیم...
             </p>
-            <p className="text-sm md:text-base text-foreground-secondary">
-              در بستر «بله» پیام بگذارید.
-            </p>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-background-secondary via-background to-background shadow-xl">
+          <div className="relative overflow-hidden rounded-2xl bg-background-secondary/80 p-5 shadow-lg ring-1 ring-border/70 backdrop-blur-sm">
             <div
-              className="pointer-events-none absolute inset-0 bg-gradient-to-l from-primary/5 via-transparent to-primary/10"
+              className="absolute inset-0 rounded-2xl border border-border/70"
               aria-hidden="true"
             />
-            <div className="relative flex flex-col items-center gap-4 px-6 py-8 sm:flex-row sm:justify-between sm:gap-6">
+            <div className="relative flex flex-col items-center gap-4 px-1 py-2 sm:flex-row sm:justify-between sm:gap-6 sm:px-2 sm:py-3">
               <div className="space-y-1 text-center sm:text-right">
-                <p className="text-lg font-bold">پیامتان را بی‌واسطه بفرستید</p>
-                <p className="text-sm text-foreground-secondary">
-                  هر نقد و پیشنهادی دارید، اینجا می‌شنویم.
-                </p>
+                <p className="text-lg font-bold">در بستر «بله» پیام بگذارید</p>
               </div>
               <a
                 href="https://ble.ir/dotmag_kiosk"
@@ -175,7 +165,7 @@ export default function AboutPage() {
                   className="object-contain brightness-0 invert"
                   priority={false}
                 />
-                <span>ورود به کیوسک</span>
+                <span>کیوسکِِ دات</span>
               </a>
             </div>
           </div>
