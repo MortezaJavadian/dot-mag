@@ -29,24 +29,25 @@ export function Header() {
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
     const originalOverscroll = document.body.style.overscrollBehavior;
+    const originalTouchAction = document.body.style.touchAction;
 
     if (isMenuOpen) {
       document.body.style.overflow = "hidden";
       document.body.style.overscrollBehavior = "contain";
+      document.body.style.touchAction = "none";
     }
 
     return () => {
       document.body.style.overflow = originalOverflow;
       document.body.style.overscrollBehavior = originalOverscroll;
+      document.body.style.touchAction = originalTouchAction;
     };
   }, [isMenuOpen]);
 
   return (
     <header
       className={`fixed top-0 right-0 left-0 z-50 transition-all duration-300 ${
-        isScrolled || isMenuOpen
-          ? "bg-background/95 backdrop-blur-md shadow-sm"
-          : "bg-transparent"
+        isScrolled || isMenuOpen ? "bg-background shadow-sm" : "bg-transparent"
       }`}
     >
       <div className="container">
@@ -165,7 +166,7 @@ export function Header() {
             : "opacity-0 pointer-events-none"
         }`}
       >
-        <div className="absolute inset-0 bg-background/95 backdrop-blur-md" />
+        <div className="absolute inset-0 bg-background" />
         <nav className="container relative z-10 py-8">
           <ul className="space-y-6">
             {navLinks.map((link, index) => (

@@ -28,6 +28,7 @@ type RadioSource = {
   cover?: string | null;
   audioUrl?: string | null;
   publishedAt?: string;
+  sortDate?: string | Date;
   durationSec?: number | null;
   segments?: RadioSegmentSource[];
 };
@@ -89,6 +90,17 @@ function formatDuration(seconds: number | null) {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
+function toDateInputValue(value?: string | Date | null): string {
+  if (!value) return new Date().toISOString().split("T")[0];
+
+  const parsed = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return new Date().toISOString().split("T")[0];
+  }
+
+  return parsed.toISOString().split("T")[0];
+}
+
 async function uploadAsset(file: File): Promise<string> {
   const uploadFormData = new FormData();
   uploadFormData.append("file", file);
@@ -117,7 +129,8 @@ export default function RadioEditor({
     intro: radio?.intro || "",
     cover: getUploadUrl(radio?.cover) || "",
     audioUrl: getUploadUrl(radio?.audioUrl) || "",
-    publishedAt: radio?.publishedAt || new Date().toISOString().split("T")[0],
+    publishedAt: radio?.publishedAt || toDateInputValue(radio?.sortDate),
+    sortDate: toDateInputValue(radio?.sortDate),
     durationSec:
       typeof radio?.durationSec === "number" ? String(radio.durationSec) : "",
   });
@@ -195,6 +208,7 @@ export default function RadioEditor({
         cover: formData.cover || null,
         audioUrl: formData.audioUrl,
         publishedAt: formData.publishedAt,
+        sortDate: formData.sortDate,
         durationSec,
       };
 
@@ -491,15 +505,33 @@ export default function RadioEditor({
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">
-                تاریخ انتشار
+                تاریخ نمایشی
               </label>
               <input
-                type="date"
+                type="text"
                 value={formData.publishedAt}
+                placeholder="Any date text"
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
                     publishedAt: e.target.value,
+                  }))
+                }
+                className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                تاریخ مرتب‌سازی
+              </label>
+              <input
+                type="date"
+                value={formData.sortDate}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    sortDate: e.target.value,
                   }))
                 }
                 className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"

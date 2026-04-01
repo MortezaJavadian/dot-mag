@@ -1,9 +1,9 @@
 import { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArticleCard } from "@/components/feature/ArticleCard";
 import { prisma } from "@/lib/prisma";
 import { getUploadUrl } from "@/lib/uploads";
+import { toSafeArticleHtml } from "@/lib/articleContent";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -24,10 +24,10 @@ interface ArticleItem {
   title: string;
   excerpt: string;
   content: string;
-  author: string;
   category: string;
   image: string;
   publishedAt: string;
+  sortDate: Date;
   readingTime?: number | null;
   tags: ArticleTag[];
 }
@@ -36,7 +36,7 @@ async function getArticles(): Promise<ArticleItem[]> {
   try {
     return await prisma.article.findMany({
       include: { tags: true },
-      orderBy: { publishedAt: "desc" },
+      orderBy: { sortDate: "desc" },
     });
   } catch (error) {
     console.error("Failed to fetch articles for post page:", error);
@@ -81,8 +81,7 @@ export async function generateMetadata({
       title: article.title,
       description: article.excerpt,
       type: "article",
-      publishedTime: article.publishedAt,
-      authors: [article.author],
+      publishedTime: article.sortDate.toISOString(),
     },
   };
 }
@@ -102,6 +101,7 @@ export default async function ArticlePage({ params }: PageProps) {
   const articleImage = getUploadUrl(article.image);
   const articleTagIds = new Set((article.tags || []).map((tag) => tag.id));
   const hasTags = articleTagIds.size > 0;
+  const safeContentHtml = toSafeArticleHtml(article.content);
 
   const relatedArticles = articles
     .filter((a) => {
@@ -122,13 +122,6 @@ export default async function ArticlePage({ params }: PageProps) {
       <article>
         <header className="pt-8 pb-12 md:pt-12 md:pb-16">
           <div className="container max-w-4xl">
-            <Link
-              href={`/posts?category=${article.category}`}
-              className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full mb-6 hover:bg-primary/20 transition-colors"
-            >
-              {article.category}
-            </Link>
-
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-black leading-tight mb-6">
               {article.title}
             </h1>
@@ -138,56 +131,43 @@ export default async function ArticlePage({ params }: PageProps) {
             </p>
 
             {articleImage && (
-              <div className="rounded-2xl overflow-hidden border border-card-border mb-8 bg-background-secondary">
+              <div className="rounded-2xl overflow-hidden border border-card-border mb-8 bg-background-secondary p-3 md:p-4">
                 <img
                   src={articleImage}
                   alt={article.title}
-                  className="w-full h-auto max-h-[520px] object-cover"
+                  className="w-full h-auto max-h-[65vh] md:max-h-[72vh] object-contain mx-auto"
                 />
               </div>
             )}
 
-            <div className="flex flex-wrap items-center gap-6 text-foreground-secondary">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-cream flex items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-khaki"
-                  >
-                    <circle cx="12" cy="8" r="5" />
-                    <path d="M20 21a8 8 0 0 0-16 0" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">
-                    {article.author}
-                  </p>
-                  <p className="text-sm">{article.publishedAt}</p>
-                </div>
-              </div>
+            <div className="flex flex-wrap items-center gap-2 text-foreground-secondary text-sm">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              <span>{article.publishedAt}</span>
             </div>
           </div>
         </header>
 
         <div className="py-8 md:py-12 border-t border-b">
           <div className="container max-w-4xl">
-            <div className="prose dark:prose-invert max-w-none leading-relaxed">
-              {article.content
-                .split("\n")
-                .map((paragraph: string, i: number) => (
-                  <p key={i} className="mb-4 text-foreground-secondary">
-                    {paragraph}
-                  </p>
-                ))}
-            </div>
+            <div
+              className="prose dark:prose-invert max-w-none leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: safeContentHtml }}
+            />
 
             {article.tags && article.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-8">

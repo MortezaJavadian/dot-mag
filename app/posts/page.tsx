@@ -4,10 +4,28 @@ import { ArticleCard } from "@/components/feature/ArticleCard";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
+type TagOption = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+type PostArticle = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  category: string;
+  image: string;
+  publishedAt: string;
+  featured?: boolean;
+  tags?: TagOption[];
+};
+
 function PostsContent() {
   const [selectedTab, setSelectedTab] = useState<"all" | string>("all");
-  const [articles, setArticles] = useState<any[]>([]);
-  const [tags, setTags] = useState<any[]>([]);
+  const [articles, setArticles] = useState<PostArticle[]>([]);
+  const [tags, setTags] = useState<TagOption[]>([]);
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
   const selectedTagFromUrl = searchParams.get("tag");
@@ -50,7 +68,7 @@ function PostsContent() {
     selectedTab === "all"
       ? articles
       : articles.filter((article) =>
-          article.tags?.some((tag: any) => tag.id === selectedTab),
+          article.tags?.some((tag) => tag.id === selectedTab),
         );
 
   return (
@@ -76,7 +94,7 @@ function PostsContent() {
             >
               #همه
             </button>
-            {tags.map((tag: any) => (
+            {tags.map((tag) => (
               <button
                 key={tag.id}
                 onClick={() => setSelectedTab(tag.id)}
@@ -126,12 +144,6 @@ function PostsContent() {
                   </div>
                 ))}
               </div>
-
-              <div className="mt-12 text-center">
-                <button className="px-8 py-4 bg-foreground/5 hover:bg-foreground/10 rounded-full font-medium transition-colors">
-                  بارگذاری بیشتر
-                </button>
-              </div>
             </>
           ) : (
             <div className="text-center py-16">
@@ -162,7 +174,7 @@ function PostsContent() {
                 </p>
                 {tags.length > 0 && (
                   <div className="flex gap-2 justify-center flex-wrap">
-                    {tags.map((tag: any) => (
+                    {tags.map((tag) => (
                       <button
                         key={tag.id}
                         onClick={() => setSelectedTab(tag.id)}

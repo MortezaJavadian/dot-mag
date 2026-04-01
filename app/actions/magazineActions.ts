@@ -21,14 +21,54 @@ function revalidateMagazinesCache() {
   revalidateTag(MAGAZINE_TAG, MAGAZINE_CACHE_PROFILE);
 }
 
-type CreateMagazineInput = Omit<
-  Prisma.MagazineCreateInput,
-  "id" | "createdAt" | "updatedAt" | "slug"
->;
+type CreateMagazineInput = {
+  title: string;
+  subtitle: string;
+  description: string;
+  cover?: string | null;
+  pdfUrl?: string | null;
+  publishedAt: string;
+  sortDate?: string;
+  pageCount: number;
+};
+
+type UpdateMagazineInput = Partial<CreateMagazineInput>;
 type MagazinePageInput = {
   number: number;
   image: string;
 };
+
+function resolveSortDate(value?: string): Date {
+  if (!value) return new Date();
+
+  const normalized = value.trim();
+  if (!normalized) return new Date();
+
+  const isoLike = /^\d{4}-\d{2}-\d{2}$/;
+  const candidate = isoLike.test(normalized)
+    ? new Date(`${normalized}T00:00:00.000Z`)
+    : new Date(normalized);
+
+  if (Number.isNaN(candidate.getTime())) {
+    return new Date();
+  }
+
+  return candidate;
+}
+
+function resolveDisplayDate(displayDate?: string, sortDate?: string): string {
+  const normalizedDisplayDate = displayDate?.trim();
+  if (normalizedDisplayDate) {
+    return normalizedDisplayDate;
+  }
+
+  const normalizedSortDate = sortDate?.trim();
+  if (normalizedSortDate) {
+    return normalizedSortDate;
+  }
+
+  return new Date().toISOString().split("T")[0];
+}
 
 async function syncPageCount(
   magazineId: string,
@@ -49,7 +89,7 @@ export async function getMagazines() {
   try {
     const magazines = await prisma.magazine.findMany({
       include: { pages: { orderBy: { number: "asc" } } },
-      orderBy: { publishedAt: "desc" },
+      orderBy: { sortDate: "desc" },
     });
     return { success: true, data: magazines };
   } catch (error) {
@@ -84,6 +124,8 @@ export async function createMagazine(data: CreateMagazineInput) {
       data: {
         ...data,
         slug,
+        publishedAt: resolveDisplayDate(data.publishedAt, data.sortDate),
+        sortDate: resolveSortDate(data.sortDate),
       },
       include: { pages: { orderBy: { number: "asc" } } },
     });
@@ -97,22 +139,30 @@ export async function createMagazine(data: CreateMagazineInput) {
   }
 }
 
-export async function updateMagazine(
-  id: string,
-  data: Partial<
-    Omit<Prisma.MagazineUpdateInput, "id" | "createdAt" | "updatedAt" | "slug">
-  >,
-) {
+export async function updateMagazine(id: string, data: UpdateMagazineInput) {
   const adminUser = await getAdminUser();
   if (!adminUser) {
     return { success: false, error: "Unauthorized" };
   }
 
   try {
-    const updateData: Prisma.MagazineUpdateInput = { ...data };
+    const updateData: Prisma.MagazineUpdateInput = {
+      ...data,
+    } as Prisma.MagazineUpdateInput;
 
     if (data.title) {
-      updateData.slug = generateSlug(data.title as string);
+      updateData.slug = generateSlug(data.title);
+    }
+
+    if (typeof data.sortDate === "string") {
+      updateData.sortDate = resolveSortDate(data.sortDate);
+    }
+
+    if (typeof data.publishedAt === "string") {
+      updateData.publishedAt = resolveDisplayDate(
+        data.publishedAt,
+        data.sortDate,
+      );
     }
 
     const magazine = await prisma.magazine.update({

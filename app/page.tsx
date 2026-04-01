@@ -8,7 +8,6 @@ type HomeArticle = {
   slug: string;
   title: string;
   excerpt: string;
-  author: string;
   category: string;
   image: string;
   publishedAt: string;

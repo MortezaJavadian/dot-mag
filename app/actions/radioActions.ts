@@ -21,17 +21,17 @@ function revalidateRadiosCache() {
   revalidateTag(RADIO_TAG, RADIO_CACHE_PROFILE);
 }
 
-type CreateRadioInput = Omit<
-  Prisma.RadioCreateInput,
-  "id" | "createdAt" | "updatedAt" | "slug" | "segments"
->;
+type CreateRadioInput = {
+  title: string;
+  intro: string;
+  cover?: string | null;
+  audioUrl: string;
+  publishedAt: string;
+  sortDate?: string;
+  durationSec?: number | null;
+};
 
-type UpdateRadioInput = Partial<
-  Omit<
-    Prisma.RadioUpdateInput,
-    "id" | "createdAt" | "updatedAt" | "slug" | "segments"
-  >
->;
+type UpdateRadioInput = Partial<CreateRadioInput>;
 
 type CreateRadioSegmentInput = {
   title: string;
@@ -46,6 +46,38 @@ type UpdateRadioSegmentInput = Partial<
   >
 >;
 
+function resolveSortDate(value?: string): Date {
+  if (!value) return new Date();
+
+  const normalized = value.trim();
+  if (!normalized) return new Date();
+
+  const isoLike = /^\d{4}-\d{2}-\d{2}$/;
+  const candidate = isoLike.test(normalized)
+    ? new Date(`${normalized}T00:00:00.000Z`)
+    : new Date(normalized);
+
+  if (Number.isNaN(candidate.getTime())) {
+    return new Date();
+  }
+
+  return candidate;
+}
+
+function resolveDisplayDate(displayDate?: string, sortDate?: string): string {
+  const normalizedDisplayDate = displayDate?.trim();
+  if (normalizedDisplayDate) {
+    return normalizedDisplayDate;
+  }
+
+  const normalizedSortDate = sortDate?.trim();
+  if (normalizedSortDate) {
+    return normalizedSortDate;
+  }
+
+  return new Date().toISOString().split("T")[0];
+}
+
 async function requireAdmin() {
   const adminUser = await getAdminUser();
   if (!adminUser) {
@@ -59,7 +91,7 @@ export async function getRadios() {
   try {
     const radios = await prisma.radio.findMany({
       include: { segments: { orderBy: { number: "asc" } } },
-      orderBy: { publishedAt: "desc" },
+      orderBy: { sortDate: "desc" },
     });
 
     return { success: true, data: radios };
@@ -96,6 +128,8 @@ export async function createRadio(data: CreateRadioInput) {
       data: {
         ...data,
         slug,
+        publishedAt: resolveDisplayDate(data.publishedAt, data.sortDate),
+        sortDate: resolveSortDate(data.sortDate),
       },
       include: { segments: { orderBy: { number: "asc" } } },
     });
@@ -116,10 +150,23 @@ export async function updateRadio(id: string, data: UpdateRadioInput) {
   }
 
   try {
-    const updateData: Prisma.RadioUpdateInput = { ...data };
+    const updateData: Prisma.RadioUpdateInput = {
+      ...data,
+    } as Prisma.RadioUpdateInput;
 
     if (data.title) {
-      updateData.slug = generateSlug(data.title as string);
+      updateData.slug = generateSlug(data.title);
+    }
+
+    if (typeof data.sortDate === "string") {
+      updateData.sortDate = resolveSortDate(data.sortDate);
+    }
+
+    if (typeof data.publishedAt === "string") {
+      updateData.publishedAt = resolveDisplayDate(
+        data.publishedAt,
+        data.sortDate,
+      );
     }
 
     const radio = await prisma.radio.update({

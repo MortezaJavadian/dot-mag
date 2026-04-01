@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Button from "@/components/ui/Button";
 
 interface Tag {
@@ -12,7 +12,6 @@ interface Tag {
 interface Article {
   id: string;
   title: string;
-  author: string;
   publishedAt: string;
   tags: Tag[];
 }
@@ -98,7 +97,7 @@ export default function ArticlesTabs({
               <div>
                 <h3 className="font-medium">{article.title}</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {article.author} • {article.publishedAt}
+                  {article.publishedAt}
                   {article.tags.length > 0 && (
                     <span> • {article.tags.map((t) => t.name).join(", ")}</span>
                   )}

@@ -10,11 +10,31 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-async function getMagazines() {
+type MagazineReaderItem = {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  cover: string | null;
+  pdfUrl: string | null;
+  publishedAt: string;
+  sortDate: Date;
+  pageCount: number;
+  pages: {
+    id: string;
+    number: number;
+    type: string;
+    image: string;
+    title: string;
+  }[];
+};
+
+async function getMagazines(): Promise<MagazineReaderItem[]> {
   try {
     const magazines = await prisma.magazine.findMany({
       include: { pages: { orderBy: { number: "asc" } } },
-      orderBy: { publishedAt: "desc" },
+      orderBy: { sortDate: "desc" },
     });
     return magazines;
   } catch (error) {
@@ -70,7 +90,7 @@ export async function generateMetadata({
   const magazines = await getMagazines();
   const normalizedSlug = normalizeSlug(slug);
   const magazine = magazines.find(
-    (m: any) => normalizeSlug(m.slug) === normalizedSlug,
+    (m) => normalizeSlug(m.slug) === normalizedSlug,
   );
 
   if (!magazine) {
@@ -84,22 +104,17 @@ export async function generateMetadata({
 }
 
 export default async function MagazineReaderPage({ params }: PageProps) {
-  try {
-    const { slug: rawSlug } = await params;
-    const slug = decodeSlug(rawSlug);
-    const magazines = await getMagazines();
-    const normalizedSlug = normalizeSlug(slug);
-    const magazine = magazines.find(
-      (m: any) => normalizeSlug(m.slug) === normalizedSlug,
-    );
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
+  const magazines = await getMagazines();
+  const normalizedSlug = normalizeSlug(slug);
+  const magazine = magazines.find(
+    (m) => normalizeSlug(m.slug) === normalizedSlug,
+  );
 
-    if (!magazine) {
-      notFound();
-    }
-
-    return <MagazineReaderClient magazine={magazine} />;
-  } catch (error) {
-    console.error("[archive/[slug]] error", error);
-    throw error;
+  if (!magazine) {
+    notFound();
   }
+
+  return <MagazineReaderClient magazine={magazine} />;
 }

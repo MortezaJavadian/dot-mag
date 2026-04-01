@@ -26,6 +26,7 @@ type RadioDetailItem = {
   title: string;
   intro: string;
   publishedAt: string;
+  sortDate: string;
   cover: string | null;
   audioUrl: string | null;
   durationSec: number | null;
@@ -85,7 +86,7 @@ export async function generateMetadata({
       title: radio.title,
       description: radio.intro,
       type: "article",
-      publishedTime: radio.publishedAt,
+      publishedTime: new Date(radio.sortDate).toISOString(),
     },
   };
 }

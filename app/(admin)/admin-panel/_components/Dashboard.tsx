@@ -13,9 +13,15 @@ import Button from "@/components/ui/Button";
 
 type ArticleItem = {
   id: string;
+  slug?: string;
   title: string;
-  author: string;
+  excerpt?: string;
+  content?: string;
+  category?: string;
+  image?: string;
   publishedAt: string;
+  sortDate?: string | Date;
+  featured?: boolean;
   tags: { id: string; name: string; slug: string }[];
 };
 
@@ -24,6 +30,7 @@ type MagazineItem = {
   title: string;
   pageCount: number;
   publishedAt: string;
+  sortDate?: string | Date;
 };
 
 type RadioSegmentItem = {
@@ -42,6 +49,7 @@ type RadioItem = {
   durationSec?: number | null;
   title: string;
   publishedAt: string;
+  sortDate?: string | Date;
   segments?: RadioSegmentItem[];
 };
 

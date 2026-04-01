@@ -14,10 +14,29 @@ import Button from "@/components/ui/Button";
 import { getUploadUrl } from "@/lib/uploads";
 
 interface MagazineEditorProps {
-  magazine: any;
+  magazine: EditableMagazine | null;
   onSave: () => void;
   onCancel: () => void;
 }
+
+type SourcePage = {
+  id: string;
+  number: number;
+  image: string;
+};
+
+type EditableMagazine = {
+  id?: string | null;
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  cover?: string | null;
+  pdfUrl?: string | null;
+  publishedAt?: string;
+  sortDate?: string | Date;
+  pageCount?: number;
+  pages?: SourcePage[];
+};
 
 type ManagedPage = {
   id: string;
@@ -25,7 +44,26 @@ type ManagedPage = {
   image: string;
 };
 
-function normalizePages(pages: any[] = []): ManagedPage[] {
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
+function toDateInputValue(value?: string | Date | null): string {
+  if (!value) return new Date().toISOString().split("T")[0];
+
+  const parsed = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return new Date().toISOString().split("T")[0];
+  }
+
+  return parsed.toISOString().split("T")[0];
+}
+
+function normalizePages(pages: SourcePage[] = []): ManagedPage[] {
   return [...pages]
     .sort((a, b) => a.number - b.number)
     .map((page) => ({
@@ -64,8 +102,8 @@ export default function MagazineEditor({
     description: magazine?.description || "",
     cover: getUploadUrl(magazine?.cover) || "",
     pdfUrl: getUploadUrl(magazine?.pdfUrl) || "",
-    publishedAt:
-      magazine?.publishedAt || new Date().toISOString().split("T")[0],
+    publishedAt: magazine?.publishedAt || toDateInputValue(magazine?.sortDate),
+    sortDate: toDateInputValue(magazine?.sortDate),
     pageCount: Number(magazine?.pageCount || 0),
   });
 
@@ -82,6 +120,7 @@ export default function MagazineEditor({
   );
 
   const isExistingMagazine = Boolean(magazine?.id);
+  const magazineId = typeof magazine?.id === "string" ? magazine.id : null;
   const sortedPages = useMemo(
     () => [...pages].sort((a, b) => a.number - b.number),
     [pages],
@@ -96,8 +135,8 @@ export default function MagazineEditor({
     try {
       const uploadedUrl = await uploadAsset(file);
       setFormData((prev) => ({ ...prev, cover: uploadedUrl }));
-    } catch (uploadError: any) {
-      setError(uploadError?.message || "خطا در آپلود عکس جلد");
+    } catch (uploadError: unknown) {
+      setError(getErrorMessage(uploadError, "خطا در آپلود عکس جلد"));
     } finally {
       setCoverUploading(false);
     }
@@ -112,8 +151,8 @@ export default function MagazineEditor({
     try {
       const uploadedUrl = await uploadAsset(file);
       setFormData((prev) => ({ ...prev, pdfUrl: uploadedUrl }));
-    } catch (uploadError: any) {
-      setError(uploadError?.message || "خطا در آپلود PDF");
+    } catch (uploadError: unknown) {
+      setError(getErrorMessage(uploadError, "خطا در آپلود PDF"));
     } finally {
       setPdfUploading(false);
     }
@@ -131,7 +170,9 @@ export default function MagazineEditor({
       };
 
       const result = isExistingMagazine
-        ? await updateMagazine(magazine.id, payload)
+        ? magazineId
+          ? await updateMagazine(magazineId, payload)
+          : { success: false, error: "شناسه مجله نامعتبر است" }
         : await createMagazine(payload);
 
       if (!result.success) {
@@ -150,13 +191,13 @@ export default function MagazineEditor({
   };
 
   const syncOrder = async (nextPages: ManagedPage[]) => {
-    if (!isExistingMagazine) return;
+    if (!isExistingMagazine || !magazineId) return;
 
     const order = nextPages
       .sort((a, b) => a.number - b.number)
       .map((page) => page.id);
 
-    const reorderResult = await reorderMagazinePages(magazine.id, order);
+    const reorderResult = await reorderMagazinePages(magazineId, order);
     if (!reorderResult.success) {
       throw new Error(reorderResult.error || "خطا در مرتب‌سازی صفحات");
     }
@@ -168,7 +209,7 @@ export default function MagazineEditor({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!isExistingMagazine) {
+    if (!isExistingMagazine || !magazineId) {
       setError("ابتدا مجله را ذخیره کنید");
       return;
     }
@@ -178,18 +219,18 @@ export default function MagazineEditor({
     try {
       const uploadedUrl = await uploadAsset(file);
       const nextNumber = sortedPages.length + 1;
-      const addResult = await addMagazinePage(magazine.id, {
+      const addResult = await addMagazinePage(magazineId, {
         number: nextNumber,
         image: uploadedUrl,
       });
 
-      if (!addResult.success) {
+      if (!addResult.success || !addResult.data) {
         throw new Error(addResult.error || "خطا در افزودن صفحه");
       }
 
       setPages((prev) => normalizePages([...prev, addResult.data]));
-    } catch (addError: any) {
-      setError(addError?.message || "خطا در افزودن صفحه");
+    } catch (addError: unknown) {
+      setError(getErrorMessage(addError, "خطا در افزودن صفحه"));
     } finally {
       setPageUploading(false);
       e.target.value = "";
@@ -222,8 +263,8 @@ export default function MagazineEditor({
           ),
         ),
       );
-    } catch (replaceError: any) {
-      setError(replaceError?.message || "خطا در جایگزینی تصویر");
+    } catch (replaceError: unknown) {
+      setError(getErrorMessage(replaceError, "خطا در جایگزینی تصویر"));
     } finally {
       setActivePageActionId(null);
       e.target.value = "";
@@ -246,8 +287,8 @@ export default function MagazineEditor({
 
       setPages(compacted);
       await syncOrder(compacted);
-    } catch (deleteError: any) {
-      setError(deleteError?.message || "خطا در حذف صفحه");
+    } catch (deleteError: unknown) {
+      setError(getErrorMessage(deleteError, "خطا در حذف صفحه"));
     } finally {
       setActivePageActionId(null);
     }
@@ -275,8 +316,8 @@ export default function MagazineEditor({
     setError("");
     try {
       await syncOrder(normalizedOrder);
-    } catch (orderError: any) {
-      setError(orderError?.message || "خطا در جابجایی صفحه");
+    } catch (orderError: unknown) {
+      setError(getErrorMessage(orderError, "خطا در جابجایی صفحه"));
       setPages(sortedPages);
     } finally {
       setActivePageActionId(null);
@@ -360,13 +401,28 @@ export default function MagazineEditor({
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">
-                تاریخ انتشار
+                تاریخ نمایشی
+              </label>
+              <input
+                type="text"
+                value={formData.publishedAt}
+                placeholder="Any date text"
+                onChange={(e) =>
+                  setFormData({ ...formData, publishedAt: e.target.value })
+                }
+                className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                تاریخ مرتب‌سازی
               </label>
               <input
                 type="date"
-                value={formData.publishedAt}
+                value={formData.sortDate}
                 onChange={(e) =>
-                  setFormData({ ...formData, publishedAt: e.target.value })
+                  setFormData({ ...formData, sortDate: e.target.value })
                 }
                 className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
               />
@@ -417,7 +473,12 @@ export default function MagazineEditor({
               type="button"
               onClick={async () => {
                 if (confirm("آیا از حذف کامل این مجله مطمئن هستید؟")) {
-                  await deleteMagazine(magazine.id);
+                  if (!magazineId) {
+                    setError("شناسه مجله نامعتبر است");
+                    return;
+                  }
+
+                  await deleteMagazine(magazineId);
                   onSave();
                 }
               }}

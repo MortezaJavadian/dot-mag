@@ -59,7 +59,6 @@ export default function AboutPage() {
               هم بغل‌مون برای رفقای هم‌دل و هم‌راه بازه تا در این قیام کنار هم
               فکر کنیم...
             </p>
-            <p className="font-bold">🇮🇷 گوش‌به‌زنگ باشید برای شمارۀ اول...</p>
           </div>
         </div>
       </section>

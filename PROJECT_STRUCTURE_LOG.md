@@ -132,6 +132,7 @@ dot-mag/
 | `app/(admin)/admin-panel/_components/LoginForm.tsx`      | Login form component                                  |
 | `app/(admin)/admin-panel/_components/Dashboard.tsx`      | Dashboard with Articles, Magazines, Radios, Tags tabs |
 | `app/(admin)/admin-panel/_components/ArticleEditor.tsx`  | Article editor form                                   |
+| `app/(admin)/admin-panel/_components/RichTextEditor.tsx` | WYSIWYG article editor toolbar + contenteditable surface |
 | `app/(admin)/admin-panel/_components/MagazineEditor.tsx` | Magazine editor form                                  |
 | `app/(admin)/admin-panel/_components/RadioEditor.tsx`    | Radio editor + highlighted segment manager            |
 
@@ -141,6 +142,7 @@ dot-mag/
 | -------------------------------- | ------------------------------------- |
 | `lib/auth.ts`                    | JWT, session, password utilities      |
 | `lib/uploads.ts`                 | Normalizes upload URLs for CDN/API    |
+| `lib/articleContent.ts`          | Converts legacy/plain text to safe sanitized HTML for post rendering |
 | `middleware.ts`                  | Route protection for /admin-panel     |
 | `app/actions/authActions.ts`     | Login/logout server actions           |
 | `app/actions/articleActions.ts`  | Article CRUD server actions           |
@@ -234,6 +236,11 @@ dot-mag/
 | 2026-04-01 | Social links refresh            | Footer social row now uses provided PNG logos (Bale, Eitaa, Virasty, Telegram) from public assets, rendered as white masks on transparent backgrounds, and updated targets       |
 | 2026-04-01 | About page layout tweak          | Adjusted about hero to left image/right text, restored manifesto closing line, themed contact block with centered Bale CTA button                                 |
 | 2026-04-01 | About page manifesto refresh    | Replaced about page with manifesto text, hero poster image, and single contact CTA with Telegram-style button to ble.ir/dotmag_kiosk; removed values/team sections                                    |
+| 2026-04-01 | Content date model overhaul     | Added `sortDate` DateTime to Article/Magazine/Radio, kept `publishedAt` as free text, switched all list ordering from `publishedAt` to `sortDate`, and wired create/update normalization across actions and APIs |
+| 2026-04-01 | Article author removal          | Removed `author` from Prisma Article model and aligned article cards, post detail, admin tabs/types, and homepage types to the new schema |
+| 2026-04-01 | Admin writing experience upgrade | Added `RichTextEditor` (bold/italic/underline/strikethrough/font-size), switched article content input from textarea to WYSIWYG HTML, and added safe HTML rendering helper `lib/articleContent.ts` for post detail pages |
+| 2026-04-01 | Post UI cleanup + media fit     | Removed top tag badges/fallback label noise from article cards, removed public posts load-more button, adjusted article image rendering to reduce laptop/desktop cropping for square uploads, and simplified post header meta block |
+| 2026-04-01 | Mobile menu visual fix          | Reworked mobile menu/header backgrounds to fully opaque theme-based layers and tightened scroll lock behavior to prevent translucent overlap with hero text |
 
 ## Reuse Decisions
 
@@ -315,6 +322,19 @@ dot-mag/
   - Automatically run via `npm run db:seed`
   - Idempotent - can be run multiple times safely
   - Creates admin user from env variables
+
+- **Date model split is intentional**
+  - `publishedAt` is display-only free text entered by admin
+  - `sortDate` is DateTime source of truth for ordering and OpenGraph publishedTime
+
+- **Article content format migration**
+  - New edits store HTML from admin WYSIWYG editor
+  - Public article render sanitizes HTML via `lib/articleContent.ts`
+  - Legacy plain-text content is converted to paragraph HTML at render time
+
+- **Local DB sync dependency**
+  - `npm run db:push` requires reachable PostgreSQL service at `postgres:5432`
+  - In this run, schema push was blocked because database container was not reachable
 
 ## Security Notes
 

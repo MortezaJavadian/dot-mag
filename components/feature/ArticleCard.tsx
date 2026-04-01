@@ -12,7 +12,6 @@ interface Article {
   slug: string;
   title: string;
   excerpt: string;
-  author: string;
   category: string;
   image: string;
   publishedAt: string;
@@ -33,13 +32,13 @@ export function ArticleCard({
   if (variant === "featured") {
     return (
       <Link href={`/posts/${article.slug}`} className="group block">
-        <article className="relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden bg-gradient-to-br from-forest to-deep-black">
+        <article className="relative min-h-[380px] md:min-h-[500px] rounded-2xl overflow-hidden bg-gradient-to-br from-forest to-deep-black">
           {/* Image */}
           {imageSrc && (
             <img
               src={imageSrc}
               alt={article.title}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-contain bg-background-secondary/10"
             />
           )}
 
@@ -59,32 +58,13 @@ export function ArticleCard({
 
           {/* Content */}
           <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 md:p-10">
-            {article.tags && article.tags.length > 0 && (
-              <div className="flex gap-2 flex-wrap mb-4">
-                {article.tags.map((tag) => (
-                  <span
-                    key={tag.id}
-                    className="inline-block px-3 py-1 bg-primary text-white text-sm font-medium rounded-full w-fit"
-                  >
-                    {tag.name}
-                  </span>
-                ))}
-              </div>
-            )}
-            {(!article.tags || article.tags.length === 0) && (
-              <span className="inline-block px-3 py-1 bg-primary text-white text-sm font-medium rounded-full w-fit mb-4">
-                بدون برچسب
-              </span>
-            )}
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 leading-snug">
               {article.title}
             </h2>
             <p className="text-white/80 text-base md:text-lg mb-4 line-clamp-2 max-w-2xl">
               {article.excerpt}
             </p>
-            <div className="flex items-center gap-4 text-white/60 text-sm">
-              <span>{article.author}</span>
-              <span>•</span>
+            <div className="flex items-center text-white/60 text-sm">
               <span>{article.publishedAt}</span>
             </div>
           </div>
@@ -103,7 +83,7 @@ export function ArticleCard({
               <img
                 src={imageSrc}
                 alt={article.title}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain bg-background-secondary"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -127,31 +107,13 @@ export function ArticleCard({
 
           {/* Content */}
           <div className="flex-1 py-1">
-            {article.tags && article.tags.length > 0 ? (
-              <div className="flex gap-2 flex-wrap mb-1">
-                {article.tags.map((tag) => (
-                  <span
-                    key={tag.id}
-                    className="text-primary text-sm font-medium"
-                  >
-                    {tag.name}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <span className="text-primary text-sm font-medium">
-                بدون برچسب
-              </span>
-            )}
-            <h3 className="text-lg md:text-xl font-bold mt-1 mb-2 group-hover:text-primary transition-colors line-clamp-2">
+            <h3 className="text-lg md:text-xl font-bold mb-2 group-hover:text-primary transition-colors line-clamp-2">
               {article.title}
             </h3>
             <p className="text-foreground-secondary text-sm line-clamp-2 hidden md:block">
               {article.excerpt}
             </p>
-            <div className="flex items-center gap-3 text-foreground-secondary text-xs mt-2">
-              <span>{article.author}</span>
-              <span>•</span>
+            <div className="flex items-center text-foreground-secondary text-xs mt-2">
               <span>{article.publishedAt}</span>
             </div>
           </div>
@@ -165,12 +127,12 @@ export function ArticleCard({
     <Link href={`/posts/${article.slug}`} className="group block">
       <article className="card-hover bg-card-bg rounded-2xl overflow-hidden border border-card-border">
         {/* Image */}
-        <div className="relative aspect-[4/3] bg-gradient-to-br from-cream to-khaki/20 overflow-hidden">
+        <div className="relative aspect-square bg-gradient-to-br from-cream to-khaki/20 overflow-hidden">
           {imageSrc ? (
             <img
               src={imageSrc}
               alt={article.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain bg-background-secondary"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
@@ -190,16 +152,6 @@ export function ArticleCard({
               </svg>
             </div>
           )}
-          {article.tags && article.tags.length > 0 && (
-            <span className="absolute top-4 right-4 px-3 py-1 bg-primary text-white text-xs font-medium rounded-full">
-              {article.tags[0].name}
-            </span>
-          )}
-          {(!article.tags || article.tags.length === 0) && (
-            <span className="absolute top-4 right-4 px-3 py-1 bg-primary text-white text-xs font-medium rounded-full">
-              بدون برچسب
-            </span>
-          )}
         </div>
 
         {/* Content */}
@@ -210,8 +162,7 @@ export function ArticleCard({
           <p className="text-foreground-secondary text-sm line-clamp-2 mb-4">
             {article.excerpt}
           </p>
-          <div className="flex items-center justify-between text-foreground-secondary text-xs">
-            <span>{article.author}</span>
+          <div className="flex items-center justify-end text-foreground-secondary text-xs">
             <span>{article.publishedAt}</span>
           </div>
         </div>

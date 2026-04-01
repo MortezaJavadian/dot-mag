@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { MagazineCard } from "@/components/feature/MagazineCard";
 
@@ -11,12 +10,32 @@ export const metadata: Metadata = {
   description: "تمام شماره‌های مجله دات را به صورت آنلاین مطالعه کنید",
 };
 
-async function getMagazines() {
+type MagazineArchiveItem = {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  cover: string | null;
+  pdfUrl: string | null;
+  publishedAt: string;
+  sortDate: Date;
+  pageCount: number;
+  pages: {
+    id: string;
+    number: number;
+    type: string;
+    image: string;
+    title: string;
+  }[];
+};
+
+async function getMagazines(): Promise<MagazineArchiveItem[]> {
   try {
     console.log("Fetching magazines from database...");
     const magazines = await prisma.magazine.findMany({
       include: { pages: { orderBy: { number: "asc" } } },
-      orderBy: { publishedAt: "desc" },
+      orderBy: { sortDate: "desc" },
     });
     console.log("Magazines fetched:", magazines.length);
     return magazines;
@@ -75,7 +94,7 @@ export default async function ArchivePage() {
       <section className="py-12 md:py-16">
         <div className="container">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {magazines.map((magazine: any) => (
+            {magazines.map((magazine) => (
               <MagazineCard key={magazine.id} magazine={magazine} />
             ))}
           </div>

@@ -9,11 +9,47 @@ import {
 import { getTags } from "@/app/actions/tagActions";
 import Button from "@/components/ui/Button";
 import { getUploadUrl } from "@/lib/uploads";
+import RichTextEditor from "./RichTextEditor";
+
+type ArticleTag = {
+  id: string;
+  name?: string;
+};
+
+type EditableArticle = {
+  id?: string | null;
+  title?: string;
+  excerpt?: string;
+  content?: string;
+  category?: string;
+  tags?: ArticleTag[];
+  image?: string;
+  publishedAt?: string;
+  sortDate?: string | Date;
+  featured?: boolean;
+};
+
+type TagOption = {
+  id: string;
+  name: string;
+  slug: string;
+};
 
 interface ArticleEditorProps {
-  article: any;
+  article: EditableArticle | null;
   onSave: () => void;
   onCancel: () => void;
+}
+
+function toDateInputValue(value?: string | Date | null): string {
+  if (!value) return new Date().toISOString().split("T")[0];
+
+  const parsed = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return new Date().toISOString().split("T")[0];
+  }
+
+  return parsed.toISOString().split("T")[0];
 }
 
 export default function ArticleEditor({
@@ -25,10 +61,11 @@ export default function ArticleEditor({
     title: article?.title || "",
     excerpt: article?.excerpt || "",
     content: article?.content || "",
-    author: article?.author || "",
-    tagIds: article?.tags?.map((t: any) => t.id) || [],
+    category: article?.category || "",
+    tagIds: article?.tags?.map((t) => t.id) || [],
     image: getUploadUrl(article?.image) || "",
-    publishedAt: article?.publishedAt || new Date().toISOString().split("T")[0],
+    publishedAt: article?.publishedAt || toDateInputValue(article?.sortDate),
+    sortDate: toDateInputValue(article?.sortDate),
     featured: article?.featured || false,
   });
 
@@ -38,7 +75,7 @@ export default function ArticleEditor({
     getUploadUrl(article?.image) || null,
   );
   const [uploading, setUploading] = useState(false);
-  const [tags, setTags] = useState<any[]>([]);
+  const [tags, setTags] = useState<TagOption[]>([]);
   const [loadingTags, setLoadingTags] = useState(true);
 
   useEffect(() => {
@@ -49,7 +86,7 @@ export default function ArticleEditor({
     try {
       const result = await getTags();
       if (result.success) {
-        setTags(result.data || []);
+        setTags((result.data || []) as TagOption[]);
       }
     } catch (err) {
       console.error("Failed to load tags:", err);
@@ -170,23 +207,21 @@ export default function ArticleEditor({
 
         <div>
           <label className="block text-sm font-medium mb-1">متن</label>
-          <textarea
+          <RichTextEditor
             value={formData.content}
-            onChange={(e) =>
-              setFormData({ ...formData, content: e.target.value })
+            onChange={(nextContent) =>
+              setFormData({ ...formData, content: nextContent })
             }
-            rows={8}
-            className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">نویسنده</label>
+          <label className="block text-sm font-medium mb-1">دسته‌بندی</label>
           <input
             type="text"
-            value={formData.author}
+            value={formData.category}
             onChange={(e) =>
-              setFormData({ ...formData, author: e.target.value })
+              setFormData({ ...formData, category: e.target.value })
             }
             className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
           />
@@ -251,14 +286,15 @@ export default function ArticleEditor({
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">
-              تاریخ انتشار
+              تاریخ نمایشی
             </label>
             <input
-              type="date"
+              type="text"
               value={formData.publishedAt}
+              placeholder="Any date text"
               onChange={(e) =>
                 setFormData({ ...formData, publishedAt: e.target.value })
               }
@@ -266,19 +302,33 @@ export default function ArticleEditor({
             />
           </div>
 
-          <div className="flex items-end">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.featured}
-                onChange={(e) =>
-                  setFormData({ ...formData, featured: e.target.checked })
-                }
-                className="w-4 h-4"
-              />
-              <span className="text-sm font-medium">برجسته</span>
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              تاریخ مرتب‌سازی
             </label>
+            <input
+              type="date"
+              value={formData.sortDate}
+              onChange={(e) =>
+                setFormData({ ...formData, sortDate: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
+        </div>
+
+        <div className="flex items-end">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.featured}
+              onChange={(e) =>
+                setFormData({ ...formData, featured: e.target.checked })
+              }
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-medium">برجسته</span>
+          </label>
         </div>
       </div>
 
@@ -301,6 +351,10 @@ export default function ArticleEditor({
           <Button
             type="button"
             onClick={async () => {
+              if (!article?.id) {
+                return;
+              }
+
               if (
                 confirm(
                   "آیا اطمینان دارید که می‌خواهید این نوشتار را حذف کنید؟",

@@ -25,11 +25,11 @@ model Article {
   title       String
   excerpt     String   @db.Text
   content     String   @db.Text
-  author      String
   category    String
   tags        Tag[]
   image       String
   publishedAt String
+  sortDate    DateTime @default(now())
   featured    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -53,6 +53,7 @@ model Magazine {
   cover       String?         @db.Text
   pdfUrl      String?         @db.Text
   publishedAt String
+  sortDate    DateTime        @default(now())
   pageCount   Int
   pages       MagazinePage[]
   createdAt   DateTime        @default(now())
@@ -81,6 +82,7 @@ model Radio {
   cover       String?        @db.Text
   audioUrl    String         @db.Text
   publishedAt String
+  sortDate    DateTime       @default(now())
   durationSec Int?
   segments    RadioSegment[]
   createdAt   DateTime       @default(now())
