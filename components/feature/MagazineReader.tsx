@@ -96,7 +96,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isFullscreen, magazine.slug, nextPage, prevPage, router]);
+  }, [currentPage, isFullscreen, isSpreadView, maxPage, magazine.slug, router]);
 
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout>;
