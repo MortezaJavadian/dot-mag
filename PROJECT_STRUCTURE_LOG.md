@@ -246,6 +246,7 @@ dot-mag/
 | 2026-04-01 | Magazine text-date parity + admin cleanup | Displayed magazine `publishedAt` text in public card/reader views to match text-based date behavior, and removed the unused `featured` toggle from article editor in admin panel |
 | 2026-04-01 | Large/X-Large render parity + wording rename | Expanded article sanitizer `font-size` allowlist for legacy and WebKit large values so public rendering matches admin for Large/X-Large text sizes, and renamed UI wording from `نوشته` to `نوشته‌ها` across public and admin screens |
 | 2026-04-01 | Article detail layout/readability pass | Reworked single article header to desktop two-column (text right, image left) while keeping mobile stacked layout, prefixed article tag chips with `#`, reduced mobile gutters for article page containers, and normalized prose word/line spacing for cleaner Persian reading |
+| 2026-04-01 | Editor selection + excerpt styling upgrade | Improved `RichTextEditor` so font-size changes apply reliably to mid/end text selections and toolbar size state syncs with cursor selection, enabled styled excerpt editing in `ArticleEditor`, rendered excerpt safely in article detail, and kept list cards/meta descriptions plain via `toPlainText` |
 
 ## Reuse Decisions
 

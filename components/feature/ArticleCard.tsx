@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getUploadUrl } from "@/lib/uploads";
+import { toPlainText } from "@/lib/articleContent";
 
 interface Tag {
   id: string;
@@ -28,6 +29,7 @@ export function ArticleCard({
   variant = "default",
 }: ArticleCardProps) {
   const imageSrc = getUploadUrl(article.image);
+  const excerptText = toPlainText(article.excerpt);
 
   if (variant === "featured") {
     return (
@@ -62,7 +64,7 @@ export function ArticleCard({
               {article.title}
             </h2>
             <p className="text-white/80 text-base md:text-lg mb-4 line-clamp-2 max-w-2xl">
-              {article.excerpt}
+              {excerptText}
             </p>
             <div className="flex items-center text-white/60 text-sm">
               <span>{article.publishedAt}</span>
@@ -111,7 +113,7 @@ export function ArticleCard({
               {article.title}
             </h3>
             <p className="text-foreground-secondary text-sm line-clamp-2 hidden md:block">
-              {article.excerpt}
+              {excerptText}
             </p>
             <div className="flex items-center text-foreground-secondary text-xs mt-2">
               <span>{article.publishedAt}</span>
@@ -160,7 +162,7 @@ export function ArticleCard({
             {article.title}
           </h3>
           <p className="text-foreground-secondary text-sm line-clamp-2 mb-4">
-            {article.excerpt}
+            {excerptText}
           </p>
           <div className="flex items-center justify-end text-foreground-secondary text-xs">
             <span>{article.publishedAt}</span>

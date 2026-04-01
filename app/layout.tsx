@@ -16,20 +16,12 @@ const vazirmatn = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "دات | مجله انقلابی",
+    default: "دات | خانه",
     template: "%s | دات",
   },
   description:
-    "مجله دات، پلتفرمی برای روایت داستان‌های الهام‌بخش از دنیای طراحی، تکنولوژی و سبک زندگی مدرن.",
-  keywords: [
-    "مجله انقلابی",
-    "طراحی",
-    "تکنولوژی",
-    "سبک زندگی",
-    "هنر",
-    "معماری",
-    "دات",
-  ],
+    "مجله دات",
+  keywords: ["دات"],
   authors: [{ name: "دات" }],
   creator: "دات",
   publisher: "دات",
@@ -39,14 +31,14 @@ export const metadata: Metadata = {
     locale: "fa_IR",
     url: "https://dotmag.ir",
     siteName: "دات",
-    title: "دات | مجله انقلابی",
+    title: "دات | خانه",
     description:
-      "مجله دات، پلتفرمی برای روایت داستان‌های الهام‌بخش از دنیای طراحی، تکنولوژی و سبک زندگی مدرن.",
+      "مجله دات",
   },
   twitter: {
     card: "summary_large_image",
     title: "دات",
-    description: "مجله انقلابی",
+    description: "خانه",
   },
 };
 

@@ -38,6 +38,17 @@ function plainTextToHtml(content: string): string {
     .join("");
 }
 
+export function toPlainText(content: string): string {
+  if (!content) return "";
+
+  const sanitized = sanitizeHtml(content, {
+    allowedTags: [],
+    allowedAttributes: {},
+  });
+
+  return sanitized.replace(/\s+/g, " ").trim();
+}
+
 export function toSafeArticleHtml(content: string): string {
   const source = looksLikeHtml(content) ? content : plainTextToHtml(content);
 

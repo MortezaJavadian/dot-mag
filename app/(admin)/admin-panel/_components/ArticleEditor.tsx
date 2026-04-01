@@ -193,13 +193,12 @@ export default function ArticleEditor({
 
         <div>
           <label className="block text-sm font-medium mb-1">خلاصه</label>
-          <textarea
+          <RichTextEditor
             value={formData.excerpt}
-            onChange={(e) =>
-              setFormData({ ...formData, excerpt: e.target.value })
+            onChange={(nextExcerpt) =>
+              setFormData({ ...formData, excerpt: nextExcerpt })
             }
-            rows={2}
-            className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+            minHeightClass="min-h-[120px]"
           />
         </div>
 

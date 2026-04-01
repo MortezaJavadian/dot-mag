@@ -273,13 +273,26 @@ a {
   text-align: right;
   text-justify: auto;
   hyphens: none;
-  word-spacing: normal;
+  word-spacing: -0.015em;
   letter-spacing: normal;
-  line-height: 1.85;
+  line-height: 1.68;
 }
 
 .prose.article-content-prose p {
-  margin-bottom: 1em;
+  margin-bottom: 0.72em;
+}
+
+.prose.article-excerpt-prose {
+  text-align: right;
+  text-justify: auto;
+  hyphens: none;
+  word-spacing: -0.01em;
+  line-height: 1.7;
+  font-size: 1.05rem;
+}
+
+.prose.article-excerpt-prose p {
+  margin-bottom: 0.5em;
 }
 
 .prose img {

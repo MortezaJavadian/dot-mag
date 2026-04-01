@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArticleCard } from "@/components/feature/ArticleCard";
 import { prisma } from "@/lib/prisma";
 import { getUploadUrl } from "@/lib/uploads";
-import { toSafeArticleHtml } from "@/lib/articleContent";
+import { toPlainText, toSafeArticleHtml } from "@/lib/articleContent";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -74,12 +74,14 @@ export async function generateMetadata({
     return { title: "مقاله یافت نشد" };
   }
 
+  const plainExcerpt = toPlainText(article.excerpt);
+
   return {
     title: article.title,
-    description: article.excerpt,
+    description: plainExcerpt || article.title,
     openGraph: {
       title: article.title,
-      description: article.excerpt,
+      description: plainExcerpt || article.title,
       type: "article",
       publishedTime: article.sortDate.toISOString(),
     },
@@ -102,6 +104,7 @@ export default async function ArticlePage({ params }: PageProps) {
   const articleTagIds = new Set((article.tags || []).map((tag) => tag.id));
   const hasTags = articleTagIds.size > 0;
   const safeContentHtml = toSafeArticleHtml(article.content);
+  const safeExcerptHtml = toSafeArticleHtml(article.excerpt);
 
   const relatedArticles = articles
     .filter((a) => {
@@ -128,9 +131,10 @@ export default async function ArticlePage({ params }: PageProps) {
                   {article.title}
                 </h1>
 
-                <p className="text-lg md:text-xl text-foreground-secondary leading-relaxed mb-8">
-                  {article.excerpt}
-                </p>
+                <div
+                  className="prose article-excerpt-prose dark:prose-invert max-w-none mb-6"
+                  dangerouslySetInnerHTML={{ __html: safeExcerptHtml }}
+                />
 
                 <div className="flex flex-wrap items-center gap-2 text-foreground-secondary text-sm">
                   <svg
@@ -151,6 +155,26 @@ export default async function ArticlePage({ params }: PageProps) {
                   </svg>
                   <span>{article.publishedAt}</span>
                 </div>
+
+                <div className="hidden md:block mt-8">
+                  <div
+                    className="prose article-content-prose dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{ __html: safeContentHtml }}
+                  />
+
+                  {article.tags && article.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-8">
+                      {article.tags.map((tag) => (
+                        <span
+                          key={tag.id}
+                          className="px-3 py-1.5 bg-foreground/5 text-sm rounded-full"
+                        >
+                          #{tag.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {articleImage && (
@@ -168,7 +192,7 @@ export default async function ArticlePage({ params }: PageProps) {
           </div>
         </header>
 
-        <div className="py-8 md:py-12 border-t border-b">
+        <div className="py-8 border-t border-b md:hidden">
           <div className="container article-page-container max-w-4xl">
             <div
               className="prose article-content-prose dark:prose-invert max-w-none"
