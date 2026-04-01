@@ -2,7 +2,7 @@ import Image from "next/image";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "درباره دات",
+  title: "درباره ما",
   description:
     "معرفی دات و مسیری که برای روایت صداها و همراهی در مسیر درست برگزیده‌ایم",
 };
@@ -10,21 +10,19 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <section className="pt-10 pb-14 md:pt-14 md:pb-20">
-        <div className="container grid gap-10 lg:gap-14 lg:grid-cols-[minmax(340px,520px)_1fr] items-start">
-          <div className="order-2 lg:order-1 space-y-6 text-lg leading-relaxed text-foreground md:text-xl">
-            <div className="space-y-2">
-              <div
-                className="h-2 w-16 rounded-full bg-primary shadow-[0_6px_16px_rgba(0,0,0,0.14)]"
-                aria-hidden="true"
-              />
-              <h1 className="text-3xl md:text-4xl font-black inline-flex items-center gap-3 text-transparent bg-clip-text bg-gradient-to-l from-primary via-foreground to-primary/80">
-                درباره دات
-              </h1>
-            </div>
+      <section className="pt-12 pb-8 md:pt-16 md:pb-12 bg-background-secondary">
+        <div className="container">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-black">
+            درباره ما
+          </h1>
+        </div>
+      </section>
 
+      <section className="section-spacing-sm">
+        <div className="container grid gap-10 lg:gap-14 lg:grid-cols-[minmax(340px,520px)_1fr] items-start">
+          <div className="order-2 lg:order-1 space-y-6 rounded-2xl border border-card-border bg-card-bg p-5 md:p-7 text-base md:text-lg leading-relaxed text-foreground-secondary">
             <div className="space-y-4">
-              <p>
+              <p className="text-foreground font-semibold">
                 به نام الله؛
                 <br />
                 هم‌او که نامش میان پرچم‌هامان نقش بسته...
@@ -43,9 +41,9 @@ export default function AboutPage() {
                   className="block h-1.5 w-full rounded-full bg-gradient-to-l from-primary/60 via-primary/30 to-transparent"
                   aria-hidden="true"
                 />
-                <p className="text-xl md:text-2xl font-extrabold text-primary drop-shadow-sm">
-                  🔻 حالا ما کی باشیم؟
-                </p>
+                <h2 className="text-xl md:text-2xl font-extrabold text-foreground">
+                  حالا ما کی باشیم؟
+                </h2>
               </div>
               <p>
                 یه گروه از دانشجوهای دانشگاه علم و صنعت ایران.
@@ -73,9 +71,9 @@ export default function AboutPage() {
                   className="block h-1.5 w-full rounded-full bg-gradient-to-l from-primary/60 via-primary/30 to-transparent"
                   aria-hidden="true"
                 />
-                <p className="text-xl md:text-2xl font-extrabold text-primary drop-shadow-sm">
-                  🔻 خودمونیم و خدای خودمون
-                </p>
+                <h2 className="text-xl md:text-2xl font-extrabold text-foreground">
+                  خودمونیم و خدای خودمون
+                </h2>
               </div>
               <p>
                 محدودیت و وابستگی و عضو گروه و حزب ویژه‌ای بودن نداریم.
@@ -99,9 +97,9 @@ export default function AboutPage() {
                   className="block h-1.5 w-full rounded-full bg-gradient-to-l from-primary/60 via-primary/30 to-transparent"
                   aria-hidden="true"
                 />
-                <p className="text-xl md:text-2xl font-extrabold text-primary drop-shadow-sm">
-                  🔻 الآن که الآنه
-                </p>
+                <h2 className="text-xl md:text-2xl font-extrabold text-foreground">
+                  ب بسم‌الله
+                </h2>
               </div>
               <p>
                 الآن که الآنه، یعنی روزهای اول سال ۱۴۰۵ یه عده‌ای از این دانشگاه

@@ -1,6 +1,6 @@
 import { Metadata } from "next";
-import { prisma } from "@/lib/prisma";
 import { MagazineCard } from "@/components/feature/MagazineCard";
+import { getPublicMagazines } from "@/lib/magazines";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -10,88 +10,20 @@ export const metadata: Metadata = {
   description: "تمام شماره‌های مجله دات را به صورت آنلاین مطالعه کنید",
 };
 
-type MagazineArchiveItem = {
-  id: string;
-  slug: string;
-  title: string;
-  subtitle: string;
-  description: string;
-  cover: string | null;
-  pdfUrl: string | null;
-  publishedAt: string;
-  sortDate: Date;
-  pageCount: number;
-  pages: {
-    id: string;
-    number: number;
-    type: string;
-    image: string;
-    title: string;
-  }[];
-};
-
-async function getMagazines(): Promise<MagazineArchiveItem[]> {
-  try {
-    console.log("Fetching magazines from database...");
-    const magazines = await prisma.magazine.findMany({
-      include: { pages: { orderBy: { number: "asc" } } },
-      orderBy: { sortDate: "desc" },
-    });
-    console.log("Magazines fetched:", magazines.length);
-    return magazines;
-  } catch (error) {
-    console.error("Error fetching magazines:", error);
-    return [];
-  }
-}
-
 export default async function ArchivePage() {
-  const magazines = await getMagazines();
+  const magazines = await getPublicMagazines();
 
   return (
     <>
-      <section className="pt-12 pb-8 md:pt-16 md:pb-12 bg-gradient-to-b from-forest/10 to-background">
+      <section className="pt-12 pb-8 md:pt-16 md:pb-12 bg-background-secondary">
         <div className="container">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-black">
             آرشیو مجله
           </h1>
-          <p className="text-foreground-secondary text-lg max-w-2xl">
-            تمام شماره‌های مجله دات را مستقیماً در مرورگر مطالعه کنید. بدون نیاز
-            به دانلود فایل.
-          </p>
         </div>
       </section>
 
-      <section className="py-6 bg-cream/30 border-y border-cream">
-        <div className="container">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 flex items-center justify-center rounded-full bg-forest/10">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-forest"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 16v-4" />
-                <path d="M12 8h.01" />
-              </svg>
-            </div>
-            <p className="text-foreground-secondary">
-              روی جلد هر شماره کلیک کنید تا مجله‌خوان باز شود. می‌توانید با
-              کشیدن به چپ و راست صفحات را ورق بزنید.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-12 md:py-16">
+      <section className="section-spacing-sm bg-background">
         <div className="container">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {magazines.map((magazine) => (

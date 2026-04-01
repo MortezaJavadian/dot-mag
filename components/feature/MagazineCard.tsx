@@ -20,9 +20,9 @@ export function MagazineCard({ magazine }: MagazineCardProps) {
 
   return (
     <Link href={`/archive/${magazine.slug}`} className="group block">
-      <article className="card-hover">
+      <article className="card-hover rounded-2xl border border-card-border bg-card-bg p-3 md:p-4 shadow-[0_10px_28px_rgba(0,0,0,0.08)]">
         {/* Cover */}
-        <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gradient-to-br from-cream to-khaki/30 shadow-xl mb-4 border border-card-border">
+        <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gradient-to-br from-cream to-khaki/30 mb-4 border border-card-border/80 shadow-[0_10px_24px_rgba(0,0,0,0.14)]">
           {coverSrc ? (
             <img
               src={coverSrc}
@@ -49,25 +49,23 @@ export function MagazineCard({ magazine }: MagazineCardProps) {
           {/* Hover Overlay */}
           <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/20 transition-all duration-300 flex items-center justify-center">
             <span className="px-5 py-2.5 bg-white text-deep-black font-bold rounded-full opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 text-sm">
-              مطالعه مجله
+              مشاهده جزئیات
             </span>
           </div>
         </div>
 
         {/* Info */}
-        <div className="text-center">
+        <div className="px-1 text-right">
           <h3 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors">
             {magazine.title}
           </h3>
-          <p className="text-foreground-secondary text-sm mb-1">
+          <p className="text-foreground-secondary text-sm mb-3">
             {magazine.subtitle}
           </p>
-          <p className="text-xs text-foreground-secondary">
-            {magazine.pageCount} صفحه
-          </p>
-          <p className="text-xs text-foreground-secondary mt-1">
-            {magazine.publishedAt}
-          </p>
+          <div className="border-t border-card-border pt-3 text-xs text-foreground-secondary flex items-center justify-between">
+            <span>{magazine.pageCount} صفحه</span>
+            <span>{magazine.publishedAt}</span>
+          </div>
         </div>
       </article>
     </Link>

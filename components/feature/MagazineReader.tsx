@@ -33,6 +33,8 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
 
@@ -46,6 +48,16 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   }, [magazine.pages]);
 
   const pdfDownloadUrl = getUploadUrl(magazine.pdfUrl);
+  const downloadFileName = useMemo(() => {
+    const base = (magazine.slug || magazine.title || "magazine")
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/[^\w\u0600-\u06FF-]/g, "")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    return `${base || "magazine"}.pdf`;
+  }, [magazine.slug, magazine.title]);
   const isSpreadView = viewportWidth >= 1024;
   const maxPage = pages.length;
 
@@ -54,6 +66,17 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     updateWidth();
     window.addEventListener("resize", updateWidth);
     return () => window.removeEventListener("resize", updateWidth);
+  }, []);
+
+  useEffect(() => {
+    const syncFullscreenState = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener("fullscreenchange", syncFullscreenState);
+    return () => {
+      document.removeEventListener("fullscreenchange", syncFullscreenState);
+    };
   }, []);
 
   useEffect(() => {
@@ -66,17 +89,17 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         if (isFullscreen) {
           exitFullscreen();
         } else {
-          router.push("/archive");
+          router.push(`/archive/${magazine.slug}`);
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentPage, isFullscreen, router, maxPage, isSpreadView]);
+  }, [isFullscreen, magazine.slug, nextPage, prevPage, router]);
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout>;
 
     const handleMouseMove = () => {
       setShowControls(true);
@@ -128,6 +151,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    setShowControls(true);
     setTouchStart(e.touches[0].clientX);
   };
 
@@ -148,6 +172,44 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     setTouchStart(null);
   };
 
+  const handlePdfDownload = useCallback(async () => {
+    if (!pdfDownloadUrl || isDownloading) {
+      return;
+    }
+
+    setIsDownloading(true);
+    setDownloadError("");
+
+    try {
+      const response = await fetch(pdfDownloadUrl, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("PDF download request failed");
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = downloadFileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.open(objectUrl, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    } catch (error) {
+      console.error("PDF download failed:", error);
+      setDownloadError("دانلود فایل انجام نشد");
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [downloadFileName, isDownloading, pdfDownloadUrl]);
+
   const leftIndex = isSpreadView ? currentPage * 2 : currentPage;
   const rightIndex = isSpreadView ? leftIndex + 1 : -1;
   const leftPage = pages[leftIndex];
@@ -160,21 +222,19 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 bg-deep-black flex flex-col ${
-        isFullscreen ? "" : "pt-16 md:pt-20"
-      }`}
+      className="fixed inset-0 z-[70] overflow-hidden bg-deep-black"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
       <header
-        className={`absolute top-0 right-0 left-0 z-10 transition-all duration-300 ${
+        className={`absolute inset-x-0 top-0 z-20 transition-all duration-300 ${
           showControls ? "opacity-100" : "opacity-0 pointer-events-none"
-        } ${isFullscreen ? "" : "top-16 md:top-20"}`}
+        }`}
       >
-        <div className="bg-gradient-to-b from-deep-black/90 to-transparent">
-          <div className="container py-4 flex items-center justify-between">
+        <div className="bg-gradient-to-b from-deep-black/95 via-deep-black/75 to-transparent">
+          <div className="container py-3 md:py-4 flex items-center justify-between gap-3">
             <Link
-              href="/archive"
+              href={`/archive/${magazine.slug}`}
               className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
             >
               <svg
@@ -190,25 +250,30 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
               >
                 <path d="m15 18-6-6 6-6" />
               </svg>
-              <span className="hidden md:inline">بازگشت به آرشیو</span>
+              <span className="hidden md:inline">بازگشت</span>
             </Link>
 
-            <div className="text-center">
-              <h1 className="text-white font-bold">{magazine.title}</h1>
-              <p className="text-white/60 text-sm">{magazine.subtitle}</p>
-              <p className="text-white/60 text-xs">{magazine.publishedAt}</p>
+            <div className="text-center min-w-0">
+              <h1 className="text-white font-bold text-sm md:text-base truncate">
+                {magazine.title}
+              </h1>
+              <p className="text-white/60 text-xs md:text-sm truncate">
+                {magazine.subtitle}
+              </p>
+              <p className="text-white/60 text-[11px] md:text-xs">
+                {magazine.publishedAt}
+              </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 md:gap-2">
               {pdfDownloadUrl && (
-                <a
-                  href={pdfDownloadUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-2 rounded-full text-xs md:text-sm bg-white text-deep-black font-semibold hover:bg-white/90 transition-colors"
+                <button
+                  onClick={handlePdfDownload}
+                  disabled={isDownloading}
+                  className="px-3 py-2 rounded-full text-xs md:text-sm bg-white text-deep-black font-semibold hover:bg-white/90 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
                 >
-                  دانلود PDF
-                </a>
+                  {isDownloading ? "در حال دانلود..." : "دانلود PDF"}
+                </button>
               )}
               <button
                 onClick={toggleFullscreen}
@@ -253,10 +318,16 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
               </button>
             </div>
           </div>
+
+          {downloadError && (
+            <div className="container pb-2">
+              <p className="text-xs text-red-300 text-left">{downloadError}</p>
+            </div>
+          )}
         </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center relative">
+      <main className="relative h-full w-full flex items-center justify-center px-2 md:px-4 pt-20 md:pt-24 pb-20 md:pb-24">
         {maxPage > 0 && (
           <>
             <button
@@ -310,10 +381,10 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         )}
 
         {maxPage > 0 ? (
-          <div className="w-full h-full flex items-center justify-center p-2 md:p-4">
+          <div className="w-full h-full flex items-center justify-center">
             {isSpreadView ? (
-              <div className="flex gap-2 md:gap-4 w-full max-w-6xl">
-                <div className="flex-1 flex items-center justify-center bg-white rounded-lg overflow-hidden min-h-[60vh]">
+              <div className="grid grid-cols-2 gap-2 md:gap-4 w-full max-w-6xl h-full max-h-full">
+                <div className="h-full min-h-0 flex items-center justify-center bg-white rounded-lg overflow-hidden shadow-2xl">
                   {leftPage?.imageUrl ? (
                     <img
                       src={leftPage.imageUrl}
@@ -324,7 +395,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                     <div className="text-slate-500">Image not available</div>
                   )}
                 </div>
-                <div className="flex-1 flex items-center justify-center bg-white rounded-lg overflow-hidden min-h-[60vh]">
+                <div className="h-full min-h-0 flex items-center justify-center bg-white rounded-lg overflow-hidden shadow-2xl">
                   {rightPage?.imageUrl ? (
                     <img
                       src={rightPage.imageUrl}
@@ -337,16 +408,18 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                 </div>
               </div>
             ) : (
-              <div className="w-full max-w-4xl aspect-[3/4] bg-white rounded-lg shadow-2xl overflow-hidden flex items-center justify-center">
-                {leftPage?.imageUrl ? (
-                  <img
-                    src={leftPage.imageUrl}
-                    alt={`Page ${leftPage.number}`}
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <div className="text-slate-500">Image not available</div>
-                )}
+              <div className="w-full max-w-4xl h-full max-h-full flex items-center justify-center">
+                <div className="w-full h-full bg-white rounded-lg shadow-2xl overflow-hidden flex items-center justify-center">
+                  {leftPage?.imageUrl ? (
+                    <img
+                      src={leftPage.imageUrl}
+                      alt={`Page ${leftPage.number}`}
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="text-slate-500">Image not available</div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -358,13 +431,13 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       </main>
 
       <footer
-        className={`transition-all duration-300 ${
+        className={`absolute inset-x-0 bottom-0 z-20 transition-all duration-300 ${
           showControls ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
-        <div className="bg-gradient-to-t from-deep-black/90 to-transparent">
-          <div className="container py-4">
-            <div className="mb-4">
+        <div className="bg-gradient-to-t from-deep-black/95 via-deep-black/75 to-transparent">
+          <div className="container py-3 md:py-4">
+            <div className="mb-3 md:mb-4">
               <div className="h-1 bg-white/10 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-primary transition-all duration-300"
@@ -382,7 +455,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
             </div>
 
             <div className="text-center">
-              <span className="text-white/60 text-sm">
+              <span className="text-white/60 text-xs md:text-sm">
                 صفحه {displayPageNum} از {maxPage}
               </span>
             </div>
