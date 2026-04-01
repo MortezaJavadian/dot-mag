@@ -108,17 +108,6 @@ function PostsContent() {
               </button>
             ))}
           </div>
-          {selectedTab !== "all" && (
-            <p className="text-foreground-secondary text-sm mt-3">
-              نوشتارهای برچسب‌شده با{" "}
-              {tags.find((t) => t.id === selectedTab)?.name}
-            </p>
-          )}
-          {selectedTab === "all" && (
-            <p className="text-foreground-secondary text-sm mt-3">
-              تمام نوشتارهای منتشر‌شده
-            </p>
-          )}
         </div>
       </section>
 

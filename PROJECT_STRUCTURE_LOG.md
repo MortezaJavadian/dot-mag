@@ -234,13 +234,14 @@ dot-mag/
 | 2026-04-01 | Mobile menu overlay hardening   | Updated `components/shared/Header.tsx` to keep solid mobile menu background while scrolled and lock body scroll when menu is open                                              |
 | 2026-04-01 | Footer tags + post detail sync  | Footer now loads real tags from DB (`برچسب‌ها`), post detail hides reading-time, shows normalized article image, and related posts are filtered by shared/no-tag logic         |
 | 2026-04-01 | Social links refresh            | Footer social row now uses provided PNG logos (Bale, Eitaa, Virasty, Telegram) from public assets, rendered as white masks on transparent backgrounds, and updated targets       |
-| 2026-04-01 | About page layout tweak          | Adjusted about hero to left image/right text, restored manifesto closing line, themed contact block with centered Bale CTA button                                 |
+| 2026-04-01 | About page layout tweak          | Adjusted about hero to right-aligned image with padded frame, enforced line breaks per manifesto, and updated contact block with centered Bale CTA and white logo                 |
 | 2026-04-01 | About page manifesto refresh    | Replaced about page with manifesto text, hero poster image, and single contact CTA with Telegram-style button to ble.ir/dotmag_kiosk; removed values/team sections                                    |
 | 2026-04-01 | Content date model overhaul     | Added `sortDate` DateTime to Article/Magazine/Radio, kept `publishedAt` as free text, switched all list ordering from `publishedAt` to `sortDate`, and wired create/update normalization across actions and APIs |
 | 2026-04-01 | Article author removal          | Removed `author` from Prisma Article model and aligned article cards, post detail, admin tabs/types, and homepage types to the new schema |
 | 2026-04-01 | Admin writing experience upgrade | Added `RichTextEditor` (bold/italic/underline/strikethrough/font-size), switched article content input from textarea to WYSIWYG HTML, and added safe HTML rendering helper `lib/articleContent.ts` for post detail pages |
 | 2026-04-01 | Post UI cleanup + media fit     | Removed top tag badges/fallback label noise from article cards, removed public posts load-more button, adjusted article image rendering to reduce laptop/desktop cropping for square uploads, and simplified post header meta block |
 | 2026-04-01 | Mobile menu visual fix          | Reworked mobile menu/header backgrounds to fully opaque theme-based layers and tightened scroll lock behavior to prevent translucent overlap with hero text |
+| 2026-04-01 | Posts tabs subtitle removal     | Removed descriptive sentence text under post filter tabs so only hashtag tabs remain visible in the sticky filter bar |
 
 ## Reuse Decisions
 
