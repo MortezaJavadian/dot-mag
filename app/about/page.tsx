@@ -135,7 +135,7 @@ export default function AboutPage() {
         <div className="container max-w-4xl mx-auto space-y-9">
           <div className="space-y-3 text-center">
             <p className="text-3xl md:text-4xl font-black tracking-tight drop-shadow-sm">
-              کیوسکِِ دات
+              کیوسکِ دات
             </p>
             <p className="text-lg md:text-xl font-semibold text-foreground">
               پذیرای نقد و نظرات شما هستیم...
@@ -163,7 +163,7 @@ export default function AboutPage() {
                   className="object-contain brightness-0 invert"
                   priority={false}
                 />
-                <span>کیوسکِِ دات</span>
+                <span>کیوسکِ دات</span>
               </a>
             </div>
           </div>
