@@ -11,13 +11,14 @@ export default function AboutPage() {
   return (
     <>
       <section className="pt-10 pb-14 md:pt-14 md:pb-20">
-        <div className="container space-y-10">
-          <div className="relative w-full overflow-hidden rounded-2xl bg-primary/10 shadow-sm aspect-[4/3]">
+        <div className="container grid gap-10 lg:grid-cols-[minmax(260px,420px)_1fr] items-start">
+          <div className="relative w-full overflow-hidden rounded-2xl bg-primary/5 shadow-sm aspect-[4/3]">
             <Image
               src="/assets/images/about_us.jpeg"
               alt="پوستر نور، صدا، حرکت"
               fill
-              className="object-cover"
+              className="object-contain"
+              sizes="(min-width:1024px) 420px, 100vw"
               priority
             />
           </div>
@@ -63,41 +64,36 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="bg-khaki py-16 md:py-20 text-deep-black">
-        <div className="container text-center space-y-6">
-          <div className="space-y-2">
-            <p className="text-2xl md:text-3xl font-black">کیوسک دات</p>
-            <p className="text-lg md:text-xl font-semibold">
+      <section className="bg-background py-16 md:py-20 border-t border-border text-foreground">
+        <div className="container max-w-3xl mx-auto text-center space-y-6">
+          <div className="space-y-3">
+            <p className="text-3xl md:text-4xl font-black">کیوسک دات</p>
+            <p className="text-lg md:text-xl font-semibold text-foreground/90">
               پذیرای نقد و نظرات شما هستیم...
             </p>
             <p className="text-sm md:text-base text-foreground-secondary">
-              در سروش‌پلاس پیام بگذارید.
+              در بستر «بله» پیام بگذارید.
             </p>
           </div>
 
-          <a
-            href="https://ble.ir/dotmag_kiosk"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full bg-deep-black px-6 py-3 text-white font-semibold shadow-lg transition-colors hover:bg-deep-black/90"
-          >
-            <span className="text-lg">تلگرام</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mt-[1px]"
+          <div className="flex justify-center">
+            <a
+              href="https://ble.ir/dotmag_kiosk"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full bg-deep-black px-7 py-3 text-white font-semibold shadow-lg transition-colors hover:bg-deep-black/90"
             >
-              <path d="m22 2-7 20-4-9-9-4Z" />
-              <path d="M22 2 11 13" />
-            </svg>
-          </a>
+              <Image
+                src="/assets/images/bale-logo.png"
+                alt="بله"
+                width={20}
+                height={20}
+                className="object-contain"
+                priority={false}
+              />
+              <span className="text-lg">بله</span>
+            </a>
+          </div>
         </div>
       </section>
     </>
