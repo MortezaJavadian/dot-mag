@@ -83,10 +83,10 @@ function PostsContent() {
 
       <section className="py-6 border-b border-card-border sticky top-16 md:top-20 bg-background/95 backdrop-blur-md z-30">
         <div className="container posts-tabs-container">
-          <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex flex-wrap gap-2 md:gap-3 pb-2">
             <button
               onClick={() => setSelectedTab("all")}
-              className={`px-4 md:px-5 py-2 md:py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`px-4 md:px-5 py-2 md:py-2.5 rounded-full text-sm font-medium transition-colors text-center break-words flex-1 min-w-[8rem] md:flex-none ${
                 selectedTab === "all"
                   ? "bg-primary text-white"
                   : "bg-foreground/5 hover:bg-foreground/10"
@@ -98,7 +98,7 @@ function PostsContent() {
               <button
                 key={tag.id}
                 onClick={() => setSelectedTab(tag.id)}
-                className={`px-4 md:px-5 py-2 md:py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                className={`px-4 md:px-5 py-2 md:py-2.5 rounded-full text-sm font-medium transition-colors text-center break-words flex-1 min-w-[8rem] md:flex-none ${
                   selectedTab === tag.id
                     ? "bg-primary text-white"
                     : "bg-foreground/5 hover:bg-foreground/10"

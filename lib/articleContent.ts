@@ -130,5 +130,7 @@ export function toSafeArticleHtml(content: string): string {
         ],
       },
     },
+    textFilter: (text) =>
+      text.replace(/\u00a0/g, " ").replace(/[ \t]{2,}/g, " "),
   });
 }
