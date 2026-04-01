@@ -13,7 +13,6 @@ export default function AboutPage() {
       <section className="pt-10 pb-14 md:pt-14 md:pb-20">
         <div className="container grid gap-8 lg:gap-12 lg:grid-cols-[minmax(320px,460px)_1fr] items-start lg:items-center">
           <div className="order-2 lg:order-1 space-y-4 text-lg leading-relaxed text-foreground md:text-xl">
-            <h1 className="text-3xl md:text-4xl font-black mb-4">درباره دات</h1>
             <p>
               به نام الله؛
               <br />
@@ -67,7 +66,6 @@ export default function AboutPage() {
               و ما هم بغل‌مون برای رفقای هم‌دل و هم‌راه بازه تا در این قیام کنار
               هم فکر کنیم...
             </p>
-            <p className="font-bold">🇮🇷 گوش‌به‌زنگ باشید برای شمارۀ اول...</p>
           </div>
 
           <div className="order-1 lg:order-2 w-full">

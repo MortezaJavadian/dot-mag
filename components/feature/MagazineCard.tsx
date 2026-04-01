@@ -65,6 +65,9 @@ export function MagazineCard({ magazine }: MagazineCardProps) {
           <p className="text-xs text-foreground-secondary">
             {magazine.pageCount} صفحه
           </p>
+          <p className="text-xs text-foreground-secondary mt-1">
+            {magazine.publishedAt}
+          </p>
         </div>
       </article>
     </Link>

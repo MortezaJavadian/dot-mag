@@ -196,6 +196,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
             <div className="text-center">
               <h1 className="text-white font-bold">{magazine.title}</h1>
               <p className="text-white/60 text-sm">{magazine.subtitle}</p>
+              <p className="text-white/60 text-xs">{magazine.publishedAt}</p>
             </div>
 
             <div className="flex items-center gap-2">

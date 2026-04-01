@@ -1,5 +1,20 @@
 import sanitizeHtml from "sanitize-html";
 
+const LEGACY_FONT_SIZE_MAP: Record<string, string> = {
+  "1": "10px",
+  "2": "13px",
+  "3": "16px",
+  "4": "18px",
+  "5": "24px",
+  "6": "32px",
+  "7": "48px",
+};
+
+function mapLegacyFontSize(size?: string): string | null {
+  if (!size) return null;
+  return LEGACY_FONT_SIZE_MAP[size.trim()] || null;
+}
+
 function escapeHtml(input: string): string {
   return input
     .replace(/&/g, "&amp;")
@@ -49,10 +64,12 @@ export function toSafeArticleHtml(content: string): string {
       "h5",
       "h6",
       "a",
+      "font",
     ],
     allowedAttributes: {
       a: ["href", "target", "rel"],
       span: ["style"],
+      font: ["size", "style"],
       p: ["style"],
       h1: ["style"],
       h2: ["style"],
@@ -67,10 +84,32 @@ export function toSafeArticleHtml(content: string): string {
         target: "_blank",
         rel: "noopener noreferrer",
       }),
+      font: (_tagName, attribs) => {
+        const mappedSize = mapLegacyFontSize(attribs.size);
+        const styleParts = [
+          attribs.style?.trim(),
+          mappedSize ? `font-size: ${mappedSize}` : "",
+        ]
+          .filter(Boolean)
+          .join("; ");
+        const nextAttribs: Record<string, string> = {};
+
+        if (styleParts) {
+          nextAttribs.style = styleParts;
+        }
+
+        return {
+          tagName: "span",
+          attribs: nextAttribs,
+        };
+      },
     },
     allowedStyles: {
       "*": {
-        "font-size": [/^\d+(px|em|rem|%)$/],
+        "font-size": [
+          /^\d+(\.\d+)?(px|em|rem|%)$/,
+          /^(xx-small|x-small|small|medium|large|x-large|xx-large|smaller|larger)$/i,
+        ],
         "font-style": [/^italic$/],
         "font-weight": [/^(bold|[1-9]00)$/],
         "text-decoration": [

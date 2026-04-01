@@ -242,6 +242,8 @@ dot-mag/
 | 2026-04-01 | Post UI cleanup + media fit     | Removed top tag badges/fallback label noise from article cards, removed public posts load-more button, adjusted article image rendering to reduce laptop/desktop cropping for square uploads, and simplified post header meta block |
 | 2026-04-01 | Mobile menu visual fix          | Reworked mobile menu/header backgrounds to fully opaque theme-based layers and tightened scroll lock behavior to prevent translucent overlap with hero text |
 | 2026-04-01 | Posts tabs subtitle removal     | Removed descriptive sentence text under post filter tabs so only hashtag tabs remain visible in the sticky filter bar |
+| 2026-04-01 | Rich-text size parity fix       | Updated `lib/articleContent.ts` sanitizer to preserve admin font-size formatting in public post rendering by accepting keyword sizes and converting legacy `<font size>` tags to styled spans |
+| 2026-04-01 | Magazine text-date parity + admin cleanup | Displayed magazine `publishedAt` text in public card/reader views to match text-based date behavior, and removed the unused `featured` toggle from article editor in admin panel |
 
 ## Reuse Decisions
 

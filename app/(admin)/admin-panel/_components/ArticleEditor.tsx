@@ -26,7 +26,6 @@ type EditableArticle = {
   image?: string;
   publishedAt?: string;
   sortDate?: string | Date;
-  featured?: boolean;
 };
 
 type TagOption = {
@@ -66,7 +65,6 @@ export default function ArticleEditor({
     image: getUploadUrl(article?.image) || "",
     publishedAt: article?.publishedAt || toDateInputValue(article?.sortDate),
     sortDate: toDateInputValue(article?.sortDate),
-    featured: article?.featured || false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -315,20 +313,6 @@ export default function ArticleEditor({
               className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-        </div>
-
-        <div className="flex items-end">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.featured}
-              onChange={(e) =>
-                setFormData({ ...formData, featured: e.target.checked })
-              }
-              className="w-4 h-4"
-            />
-            <span className="text-sm font-medium">برجسته</span>
-          </label>
         </div>
       </div>
 
