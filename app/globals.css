@@ -56,14 +56,14 @@
   --font-vazir: "Vazirmatn", system-ui, sans-serif;
 
   /* Spacing */
-  --container-padding: calc(0.65rem * 0.7);
+  --container-padding: 0.35rem;
   --section-spacing: 4rem;
 }
 
 @media (min-width: 768px) {
   /* stylelint-disable-next-line unknown-at-rule */
   @theme inline {
-    --container-padding: 2rem;
+    --container-padding: 1rem;
     --section-spacing: 6rem;
   }
 }
@@ -71,8 +71,15 @@
 @media (min-width: 1024px) {
   /* stylelint-disable-next-line unknown-at-rule */
   @theme inline {
-    --container-padding: 4rem;
+    --container-padding: 1.5rem;
     --section-spacing: 8rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  /* stylelint-disable-next-line unknown-at-rule */
+  @theme inline {
+    --container-padding: 2rem;
   }
 }
 
@@ -228,15 +235,9 @@ a {
   padding-inline: var(--container-padding);
 }
 
-/* Posts tag bar keeps slightly tighter phone gutters for a compact wrapped layout */
+/* Posts tag bar uses the same global gutter to keep page margins consistent */
 .container.posts-tabs-container {
-  padding-inline: calc(var(--container-padding) * 0.8);
-}
-
-@media (min-width: 768px) {
-  .container.posts-tabs-container {
-    padding-inline: var(--container-padding);
-  }
+  padding-inline: var(--container-padding);
 }
 
 /* Prose Styles for Articles */
