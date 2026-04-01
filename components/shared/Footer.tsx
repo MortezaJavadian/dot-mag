@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { prisma } from "@/lib/prisma";
@@ -25,6 +24,28 @@ const socialLinks = [
     src: "/assets/images/telegram-logo.png",
   },
 ];
+
+function MaskIcon({ src, label }: { src: string; label: string }) {
+  return (
+    <span
+      aria-hidden
+      className="h-6 w-6"
+      style={{
+        backgroundColor: "white",
+        WebkitMaskImage: `url(${src})`,
+        maskImage: `url(${src})`,
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+        display: "inline-block",
+      }}
+      title={label}
+    />
+  );
+}
 
 const pageLinks = [
   { label: "خانه", href: "/" },
@@ -88,13 +109,7 @@ export async function Footer() {
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-primary transition-colors"
                   aria-label={social.name}
                 >
-                  <Image
-                    src={social.src}
-                    alt={`${social.name} logo`}
-                    width={24}
-                    height={24}
-                    className="h-6 w-6 object-contain"
-                  />
+                  <MaskIcon src={social.src} label={social.name} />
                 </a>
               ))}
             </div>
