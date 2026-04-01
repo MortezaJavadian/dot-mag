@@ -231,7 +231,7 @@ dot-mag/
 | 2026-04-01 | Dynamic route render hardening  | Marked `app/posts/[slug]/page.tsx` and `app/radio/[slug]/page.tsx` as `force-dynamic` and removed empty `generateStaticParams` to fix production `DYNAMIC_SERVER_USAGE` errors |
 | 2026-04-01 | Mobile menu overlay hardening   | Updated `components/shared/Header.tsx` to keep solid mobile menu background while scrolled and lock body scroll when menu is open                                              |
 | 2026-04-01 | Footer tags + post detail sync  | Footer now loads real tags from DB (`برچسب‌ها`), post detail hides reading-time, shows normalized article image, and related posts are filtered by shared/no-tag logic         |
-| 2026-04-01 | Social links refresh            | Footer social row now shows Bale, Eitaa, Virasty, and updated Telegram targets with custom brand-colored icons                                                                 |
+| 2026-04-01 | Social links refresh            | Footer social row now shows Bale, Eitaa, Virasty, and updated Telegram targets with white glyph icons on transparent backgrounds                                               |
 
 ## Reuse Decisions
 
