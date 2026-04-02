@@ -103,3 +103,16 @@ model RadioSegment {
 
   @@unique([radioId, number])
 }
+
+model HomeHeroConfigStore {
+  id                 String   @id
+  badgeText          String
+  heroHtml           String   @db.Text
+  secondLineAsTitle  Boolean  @default(true)
+  featuredArticleIds Json
+  image              String?  @db.Text
+  ctaMode            String   @default("none")
+  ctaTargetId        String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}

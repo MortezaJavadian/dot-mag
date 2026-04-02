@@ -155,10 +155,13 @@ export default async function HomePage() {
     readHomeHeroConfig(),
   ]);
 
-  const featuredArticles = articles.filter((article) => article.featured);
   const selectedHomeFeaturedArticles = homeHeroConfig.featuredArticleIds
     .map((articleId) => articles.find((article) => article.id === articleId))
     .filter((article): article is HomeArticle => Boolean(article));
+  const curatedHomeFeaturedArticles =
+    selectedHomeFeaturedArticles.length > 0
+      ? selectedHomeFeaturedArticles
+      : articles.slice(0, 3);
   const latestRadios = radios.slice(0, 3);
   const heroBadge = homeHeroConfig.badgeText.trim();
   const safeHeroHtml = applySecondLineMode(
@@ -214,7 +217,7 @@ export default async function HomePage() {
               )}
 
               <div
-                className="max-w-2xl lg:ml-auto [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4 [&_.hero-line-two-strong]:block [&_.hero-line-two-strong]:font-black [&_.hero-line-two-normal]:block [&_.hero-line-two-normal]:text-lg md:[&_.hero-line-two-normal]:text-xl [&_.hero-line-two-normal]:font-normal [&_.hero-line-two-normal]:leading-relaxed"
+                className="max-w-2xl lg:ml-auto [&_h1]:!text-right [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:!text-right [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4 [&_.hero-line-two-strong]:block [&_.hero-line-two-strong]:font-black [&_.hero-line-two-strong]:!text-right [&_.hero-line-two-normal]:block [&_.hero-line-two-normal]:text-lg md:[&_.hero-line-two-normal]:text-xl [&_.hero-line-two-normal]:font-normal [&_.hero-line-two-normal]:leading-relaxed [&_.hero-line-two-normal]:!text-right"
                 dangerouslySetInnerHTML={{ __html: safeHeroHtml }}
               />
 
@@ -247,34 +250,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Featured Articles */}
-      {featuredArticles.length > 0 && (
-        <section className="section-spacing">
-          <div className="container">
-            <div className="flex items-center justify-between mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold">نوشته‌های ویژه</h2>
-              <Link
-                href="/posts"
-                className="text-primary font-medium hover:underline hidden md:block"
-              >
-                مشاهده همه ←
-              </Link>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              {featuredArticles.slice(0, 2).map((article) => (
-                <ArticleCard
-                  key={article.id}
-                  article={article}
-                  variant="featured"
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {selectedHomeFeaturedArticles.length > 0 && (
+      {curatedHomeFeaturedArticles.length > 0 && (
         <section className="section-spacing bg-background-secondary">
           <div className="container">
             <div className="flex items-center justify-between mb-10">
@@ -290,7 +266,7 @@ export default async function HomePage() {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {selectedHomeFeaturedArticles.map((article) => (
+              {curatedHomeFeaturedArticles.map((article) => (
                 <ArticleCard key={article.id} article={article} />
               ))}
             </div>
@@ -319,58 +295,6 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-
-      {/* CTA Section */}
-      <section className="section-spacing">
-        <div className="container">
-          <div className="relative overflow-hidden rounded-3xl bg-deep-black text-white p-8 md:p-16">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div
-                className="absolute inset-0"
-                style={{
-                  backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
-                  backgroundSize: "40px 40px",
-                }}
-              />
-            </div>
-
-            <div className="relative z-10 max-w-2xl">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                آرشیو مجله را کاوش کنید
-              </h2>
-              <p className="text-white/70 text-lg mb-8">
-                تمام شماره‌های مجله دات را به صورت آنلاین مطالعه کنید. بدون نیاز
-                به دانلود، مستقیماً در مرورگر.
-              </p>
-              <Link
-                href="/archive"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-deep-black font-bold rounded-full hover:bg-cream transition-colors"
-              >
-                ورود به آرشیو
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="rotate-180"
-                >
-                  <path d="m9 18 6-6-6-6" />
-                </svg>
-              </Link>
-            </div>
-
-            {/* Decorative */}
-            <div className="absolute top-0 left-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 right-0 w-96 h-96 bg-forest/20 rounded-full blur-3xl" />
-          </div>
-        </div>
-      </section>
     </>
   );
 }

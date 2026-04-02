@@ -1,5 +1,6 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
-import { dirname, join } from "path";
+import { readFile } from "fs/promises";
+import { join } from "path";
+import { prisma } from "@/lib/prisma";
 
 export type HomeHeroCtaMode = "none" | "article" | "radio" | "magazine";
 
@@ -14,7 +15,12 @@ export type HomeHeroConfig = {
   updatedAt: string;
 };
 
-const HOME_HERO_FILE_PATH = join(process.cwd(), "data", "home-hero.json");
+const HOME_HERO_RECORD_ID = "home";
+const LEGACY_HOME_HERO_FILE_PATH = join(
+  process.cwd(),
+  "data",
+  "home-hero.json",
+);
 
 const DEFAULT_HOME_HERO_CONFIG: HomeHeroConfig = {
   badgeText: "شماره جدید منتشر شد",
@@ -97,16 +103,180 @@ function normalizeConfig(input: unknown): HomeHeroConfig {
   };
 }
 
+async function ensureHomeHeroStoreTable(): Promise<void> {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "HomeHeroConfigStore" (
+      "id" TEXT PRIMARY KEY,
+      "badgeText" TEXT NOT NULL,
+      "heroHtml" TEXT NOT NULL,
+      "secondLineAsTitle" BOOLEAN NOT NULL DEFAULT TRUE,
+      "featuredArticleIds" JSONB NOT NULL DEFAULT '[]'::jsonb,
+      "image" TEXT,
+      "ctaMode" TEXT NOT NULL DEFAULT 'none',
+      "ctaTargetId" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+}
+
+async function readLegacyHomeHeroConfig(): Promise<HomeHeroConfig | null> {
+  try {
+    const content = await readFile(LEGACY_HOME_HERO_FILE_PATH, "utf-8");
+    return normalizeConfig(JSON.parse(content));
+  } catch {
+    return null;
+  }
+}
+
+function toStorePayload(config: HomeHeroConfig) {
+  return {
+    badgeText: config.badgeText,
+    heroHtml: config.heroHtml,
+    secondLineAsTitle: config.secondLineAsTitle,
+    featuredArticleIds: config.featuredArticleIds,
+    image: config.image,
+    ctaMode: config.ctaMode,
+    ctaTargetId: config.ctaTargetId,
+  };
+}
+
+type HomeHeroStoreRow = {
+  badgeText: string;
+  heroHtml: string;
+  secondLineAsTitle: boolean;
+  featuredArticleIds: unknown;
+  image: string | null;
+  ctaMode: string;
+  ctaTargetId: string | null;
+  updatedAt: Date;
+};
+
+async function readStoreRow(): Promise<HomeHeroStoreRow | null> {
+  const rows = await prisma.$queryRawUnsafe<HomeHeroStoreRow[]>(
+    `
+      SELECT
+        "badgeText",
+        "heroHtml",
+        "secondLineAsTitle",
+        "featuredArticleIds",
+        "image",
+        "ctaMode",
+        "ctaTargetId",
+        "updatedAt"
+      FROM "HomeHeroConfigStore"
+      WHERE "id" = $1
+      LIMIT 1
+    `,
+    HOME_HERO_RECORD_ID,
+  );
+
+  return rows[0] || null;
+}
+
+async function upsertStoreRow(
+  config: HomeHeroConfig,
+): Promise<HomeHeroStoreRow> {
+  const payload = toStorePayload(config);
+  const rows = await prisma.$queryRawUnsafe<HomeHeroStoreRow[]>(
+    `
+      INSERT INTO "HomeHeroConfigStore" (
+        "id",
+        "badgeText",
+        "heroHtml",
+        "secondLineAsTitle",
+        "featuredArticleIds",
+        "image",
+        "ctaMode",
+        "ctaTargetId",
+        "updatedAt"
+      )
+      VALUES (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5::jsonb,
+        $6,
+        $7,
+        $8,
+        CURRENT_TIMESTAMP
+      )
+      ON CONFLICT ("id")
+      DO UPDATE SET
+        "badgeText" = EXCLUDED."badgeText",
+        "heroHtml" = EXCLUDED."heroHtml",
+        "secondLineAsTitle" = EXCLUDED."secondLineAsTitle",
+        "featuredArticleIds" = EXCLUDED."featuredArticleIds",
+        "image" = EXCLUDED."image",
+        "ctaMode" = EXCLUDED."ctaMode",
+        "ctaTargetId" = EXCLUDED."ctaTargetId",
+        "updatedAt" = CURRENT_TIMESTAMP
+      RETURNING
+        "badgeText",
+        "heroHtml",
+        "secondLineAsTitle",
+        "featuredArticleIds",
+        "image",
+        "ctaMode",
+        "ctaTargetId",
+        "updatedAt"
+    `,
+    HOME_HERO_RECORD_ID,
+    payload.badgeText,
+    payload.heroHtml,
+    payload.secondLineAsTitle,
+    JSON.stringify(payload.featuredArticleIds),
+    payload.image,
+    payload.ctaMode,
+    payload.ctaTargetId,
+  );
+
+  const saved = rows[0];
+  if (!saved) {
+    throw new Error("Home hero config upsert did not return a record");
+  }
+
+  return saved;
+}
+
+function fromStoreRecord(record: HomeHeroStoreRow): HomeHeroConfig {
+  return normalizeConfig({
+    badgeText: record.badgeText,
+    heroHtml: record.heroHtml,
+    secondLineAsTitle: record.secondLineAsTitle,
+    featuredArticleIds: record.featuredArticleIds,
+    image: record.image,
+    ctaMode: record.ctaMode,
+    ctaTargetId: record.ctaTargetId,
+    updatedAt: record.updatedAt.toISOString(),
+  });
+}
+
 export function getDefaultHomeHeroConfig(): HomeHeroConfig {
   return { ...DEFAULT_HOME_HERO_CONFIG };
 }
 
 export async function readHomeHeroConfig(): Promise<HomeHeroConfig> {
   try {
-    const content = await readFile(HOME_HERO_FILE_PATH, "utf-8");
-    return normalizeConfig(JSON.parse(content));
-  } catch {
-    return getDefaultHomeHeroConfig();
+    await ensureHomeHeroStoreTable();
+
+    const existing = await readStoreRow();
+
+    if (existing) {
+      return fromStoreRecord(existing);
+    }
+
+    const legacyConfig = await readLegacyHomeHeroConfig();
+    const initialConfig = legacyConfig || getDefaultHomeHeroConfig();
+
+    const seeded = await upsertStoreRow(initialConfig);
+
+    return fromStoreRecord(seeded);
+  } catch (error) {
+    console.error("Error reading home hero config:", error);
+    const legacyConfig = await readLegacyHomeHeroConfig();
+    return legacyConfig || getDefaultHomeHeroConfig();
   }
 }
 
@@ -118,14 +288,11 @@ export async function writeHomeHeroConfig(
     updatedAt: new Date().toISOString(),
   });
 
-  await mkdir(dirname(HOME_HERO_FILE_PATH), { recursive: true });
-  await writeFile(
-    HOME_HERO_FILE_PATH,
-    JSON.stringify(normalized, null, 2),
-    "utf-8",
-  );
+  await ensureHomeHeroStoreTable();
 
-  return normalized;
+  const saved = await upsertStoreRow(normalized);
+
+  return fromStoreRecord(saved);
 }
 
 export function getHomeHeroCtaLabel(mode: HomeHeroCtaMode): string {
