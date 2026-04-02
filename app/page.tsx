@@ -5,6 +5,8 @@ import { toSafeArticleHtml } from "@/lib/articleContent";
 import { getHomeHeroCtaLabel, readHomeHeroConfig } from "@/lib/homeHero";
 import { getUploadUrl } from "@/lib/uploads";
 
+export const dynamic = "force-dynamic";
+
 type HomeArticle = {
   id: string;
   slug: string;
@@ -47,7 +49,9 @@ function resolveHeroCta(
 
   if (ctaMode === "article") {
     const target =
-      articles.find((item) => item.id === ctaTargetId) || articles[0];
+      articles.find(
+        (item) => item.id === ctaTargetId || item.slug === ctaTargetId,
+      ) || articles[0];
     return {
       href: target ? `/posts/${target.slug}` : "/posts",
       label: getHomeHeroCtaLabel("article"),
@@ -55,7 +59,10 @@ function resolveHeroCta(
   }
 
   if (ctaMode === "radio") {
-    const target = radios.find((item) => item.id === ctaTargetId) || radios[0];
+    const target =
+      radios.find(
+        (item) => item.id === ctaTargetId || item.slug === ctaTargetId,
+      ) || radios[0];
     return {
       href: target ? `/radio/${target.slug}` : "/radio",
       label: getHomeHeroCtaLabel("radio"),
@@ -64,7 +71,9 @@ function resolveHeroCta(
 
   if (ctaMode === "magazine") {
     const target =
-      magazines.find((item) => item.id === ctaTargetId) || magazines[0];
+      magazines.find(
+        (item) => item.id === ctaTargetId || item.slug === ctaTargetId,
+      ) || magazines[0];
     return {
       href: target ? `/archive/${target.slug}` : "/archive",
       label: getHomeHeroCtaLabel("magazine"),
@@ -105,46 +114,41 @@ function applySecondLineMode(html: string, secondLineAsTitle: boolean): string {
   return html.replace(headingPattern, rebuiltHeading);
 }
 
-async function getArticles(): Promise<HomeArticle[]> {
+function stabilizeRtlSentenceEnding(html: string): string {
+  return html.replace(/([.!?؟])(?=\s*<\/p>)/g, "$1\u200f");
+}
+
+const INTERNAL_API_BASE_URL =
+  process.env.INTERNAL_API_BASE_URL?.trim() || "http://127.0.0.1:3000";
+
+async function fetchHomeCollection<T>(
+  path: string,
+  tags: string[] = [],
+): Promise<T[]> {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/articles`,
-      {
-        next: { revalidate: 60 },
-      },
-    );
-    return await res.json();
+    const res = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
+      next: tags.length ? { revalidate: 60, tags } : { revalidate: 60 },
+    });
+
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    return Array.isArray(data) ? (data as T[]) : [];
   } catch {
     return [];
   }
+}
+
+async function getArticles(): Promise<HomeArticle[]> {
+  return fetchHomeCollection<HomeArticle>("/api/articles");
 }
 
 async function getMagazines(): Promise<HomeMagazine[]> {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/magazines`,
-      {
-        next: { revalidate: 60, tags: ["magazines"] },
-      },
-    );
-    return await res.json();
-  } catch {
-    return [];
-  }
+  return fetchHomeCollection<HomeMagazine>("/api/magazines", ["magazines"]);
 }
 
 async function getRadios(): Promise<HomeRadio[]> {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/radios`,
-      {
-        next: { revalidate: 60, tags: ["radios"] },
-      },
-    );
-    return await res.json();
-  } catch {
-    return [];
-  }
+  return fetchHomeCollection<HomeRadio>("/api/radios", ["radios"]);
 }
 
 export default async function HomePage() {
@@ -156,7 +160,11 @@ export default async function HomePage() {
   ]);
 
   const selectedHomeFeaturedArticles = homeHeroConfig.featuredArticleIds
-    .map((articleId) => articles.find((article) => article.id === articleId))
+    .map((articleId) =>
+      articles.find(
+        (article) => article.id === articleId || article.slug === articleId,
+      ),
+    )
     .filter((article): article is HomeArticle => Boolean(article));
   const curatedHomeFeaturedArticles =
     selectedHomeFeaturedArticles.length > 0
@@ -164,9 +172,11 @@ export default async function HomePage() {
       : articles.slice(0, 3);
   const latestRadios = radios.slice(0, 3);
   const heroBadge = homeHeroConfig.badgeText.trim();
-  const safeHeroHtml = applySecondLineMode(
-    toSafeArticleHtml(homeHeroConfig.heroHtml),
-    homeHeroConfig.secondLineAsTitle,
+  const safeHeroHtml = stabilizeRtlSentenceEnding(
+    applySecondLineMode(
+      toSafeArticleHtml(homeHeroConfig.heroHtml),
+      homeHeroConfig.secondLineAsTitle,
+    ),
   );
   const heroImage = getUploadUrl(homeHeroConfig.image || "");
   const heroCta = resolveHeroCta(
@@ -217,7 +227,7 @@ export default async function HomePage() {
               )}
 
               <div
-                className="max-w-2xl lg:ml-auto [&_h1]:!text-right [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:!text-right [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4 [&_.hero-line-two-strong]:block [&_.hero-line-two-strong]:font-black [&_.hero-line-two-strong]:!text-right [&_.hero-line-two-normal]:block [&_.hero-line-two-normal]:text-lg md:[&_.hero-line-two-normal]:text-xl [&_.hero-line-two-normal]:font-normal [&_.hero-line-two-normal]:leading-relaxed [&_.hero-line-two-normal]:!text-right"
+                className="max-w-2xl lg:ml-auto [&_h1]:!text-right [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:!text-right [&_p]:[unicode-bidi:plaintext] [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4 [&_.hero-line-two-strong]:block [&_.hero-line-two-strong]:font-black [&_.hero-line-two-strong]:!text-right [&_.hero-line-two-normal]:block [&_.hero-line-two-normal]:text-lg md:[&_.hero-line-two-normal]:text-xl [&_.hero-line-two-normal]:font-normal [&_.hero-line-two-normal]:leading-relaxed [&_.hero-line-two-normal]:!text-right"
                 dangerouslySetInnerHTML={{ __html: safeHeroHtml }}
               />
 

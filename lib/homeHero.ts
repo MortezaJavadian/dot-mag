@@ -54,6 +54,17 @@ function normalizeNullableText(value: unknown): string | null {
 }
 
 function normalizeFeaturedArticleIds(value: unknown): string[] {
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    if (!normalized) return [];
+
+    try {
+      return normalizeFeaturedArticleIds(JSON.parse(normalized));
+    } catch {
+      return [normalized].slice(0, 3);
+    }
+  }
+
   if (!Array.isArray(value)) return [];
 
   const uniqueIds: string[] = [];
@@ -67,6 +78,28 @@ function normalizeFeaturedArticleIds(value: unknown): string[] {
   }
 
   return uniqueIds;
+}
+
+function normalizeUpdatedAt(value: unknown): string {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime())
+      ? new Date().toISOString()
+      : value.toISOString();
+  }
+
+  if (typeof value === "string") {
+    const normalized = normalizeTextValue(value);
+    if (!normalized) return new Date().toISOString();
+
+    const parsed = new Date(normalized);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+
+    return normalized;
+  }
+
+  return new Date().toISOString();
 }
 
 function normalizeConfig(input: unknown): HomeHeroConfig {
@@ -149,7 +182,7 @@ type HomeHeroStoreRow = {
   image: string | null;
   ctaMode: string;
   ctaTargetId: string | null;
-  updatedAt: Date;
+  updatedAt: unknown;
 };
 
 async function readStoreRow(): Promise<HomeHeroStoreRow | null> {
@@ -249,7 +282,7 @@ function fromStoreRecord(record: HomeHeroStoreRow): HomeHeroConfig {
     image: record.image,
     ctaMode: record.ctaMode,
     ctaTargetId: record.ctaTargetId,
-    updatedAt: record.updatedAt.toISOString(),
+    updatedAt: normalizeUpdatedAt(record.updatedAt),
   });
 }
 
