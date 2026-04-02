@@ -149,6 +149,7 @@ dot-mag/
 | `lib/auth.ts`                    | JWT, session, password utilities                                     |
 | `lib/magazines.ts`               | Shared archive magazine fetch + slug normalize/decode helpers        |
 | `lib/uploads.ts`                 | Normalizes upload URLs for CDN/API                                   |
+| `lib/clientUpload.ts`            | Shared admin uploader with progress callbacks, timeout, and retry    |
 | `lib/articleContent.ts`          | Converts legacy/plain text to safe sanitized HTML for post rendering |
 | `middleware.ts`                  | Route protection for /admin-panel                                    |
 | `app/actions/authActions.ts`     | Login/logout server actions                                          |
@@ -168,6 +169,7 @@ dot-mag/
 | File                                    | Purpose                                                                  |
 | --------------------------------------- | ------------------------------------------------------------------------ |
 | `components/ui/Logo.tsx`                | Logo with dark/light variants                                            |
+| `components/ui/UploadStatus.tsx`        | Unified upload progress/success/error indicator for admin file inputs    |
 | `components/shared/Header.tsx`          | Sticky header, navigation, theme toggle, mobile menu                     |
 | `components/shared/Footer.tsx`          | Footer with links, social, copyright                                     |
 | `components/shared/ThemeProvider.tsx`   | Dark/Light mode context with localStorage                                |
@@ -264,6 +266,7 @@ dot-mag/
 | 2026-04-02 | Radio/posts copy cleanup + tag ordering controls | Removed requested helper/empty-state copy from public radio and posts pages, added admin up/down controls for tag ordering with persistent `Tag.sortOrder`, applied that order to public tags API/footer/posts tabs, and moved magazine detail mobile cover position between subtitle and description                                             |
 | 2026-04-02 | Excerpt plain-text rollback + about frame align  | Reverted article excerpt input/render from rich HTML to plain text for uniform cards/details, tightened mobile gap between excerpt and date on single-post header, and rebuilt About hero image frame using the same border/padding shell pattern as single-post image cards                                                                      |
 | 2026-04-02 | Card excerpt clamp + magazine rich-description   | Enforced one-line excerpt slot with blank-line fallback on article cards, added active-state toolbar feedback for rich editor marks, switched magazine description to rich-text editing with sanitized public rendering, and hardened newest-first ordering with `sortDate` + `createdAt` tie-breakers across admin/public article-magazine feeds |
+| 2026-04-02 | Stable uploads + original PDF filename           | Rebuilt upload API to store files with unique stable keys while preserving original file names for download headers/links, added shared XHR upload helper with retry/progress, and unified all admin image/PDF/audio uploads with consistent percent progress + green success + red failure status UI                                             |
 | 2026-04-01 | Archive/detail reader split + UI unification     | Converted `/archive/[slug]` into magazine detail page, moved full reader to `/archive/[slug]/read`, unified archive/about title sections with posts style, removed archive helper texts, upgraded magazine cards (shadow/border + date/pages row), pinned reader bars to viewport edges, and switched PDF action to real file download flow       |
 | 2026-04-01 | MagazineReader type-check hotfix                 | Fixed `useEffect` dependency array in `MagazineReader` to remove pre-declaration references (`nextPage`/`prevPage`) that broke production TypeScript build during deploy                                                                                                                                                                          |
 

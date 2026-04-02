@@ -2,6 +2,46 @@ import { NextRequest, NextResponse } from "next/server";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 
+function sanitizeDownloadFileName(
+  raw: string | null,
+  fallback: string,
+): string {
+  const normalized = (raw || "")
+    .replace(/[\u0000-\u001F\u007F]/g, "")
+    .replace(/[\\/]+/g, "-")
+    .replace(/[\r\n]+/g, " ")
+    .trim();
+
+  if (!normalized) {
+    return fallback;
+  }
+
+  return normalized;
+}
+
+function toAsciiFallback(value: string): string {
+  return (
+    value
+      .normalize("NFKD")
+      .replace(/[^\x20-\x7E]+/g, "")
+      .replace(/["\\]/g, "")
+      .trim() || "download"
+  );
+}
+
+function encodeForHeader(value: string): string {
+  return encodeURIComponent(value).replace(
+    /[!'()*]/g,
+    (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+}
+
+function buildContentDisposition(fileName: string): string {
+  const asciiFallback = toAsciiFallback(fileName);
+  const encoded = encodeForHeader(fileName);
+  return `inline; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ filename: string }> },
@@ -44,6 +84,12 @@ export async function GET(
     };
     const contentType =
       (ext && contentTypeMap[ext]) || "application/octet-stream";
+    const requestedName = request.nextUrl.searchParams.get("name");
+    const fileNameForDownload = sanitizeDownloadFileName(
+      requestedName,
+      filename,
+    );
+    const contentDisposition = buildContentDisposition(fileNameForDownload);
 
     const range = request.headers.get("range");
     if (range) {
@@ -87,6 +133,7 @@ export async function GET(
           "Content-Range": `bytes ${start}-${end}/${fileSize}`,
           "Accept-Ranges": "bytes",
           "Cache-Control": "public, max-age=31536000, immutable",
+          "Content-Disposition": contentDisposition,
         },
       });
     }
@@ -97,6 +144,7 @@ export async function GET(
         "Content-Length": String(fileSize),
         "Accept-Ranges": "bytes",
         "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Disposition": contentDisposition,
       },
     });
   } catch (error) {

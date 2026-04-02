@@ -1,7 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFileSync, mkdirSync } from "fs";
+import { mkdir, rename, writeFile } from "fs/promises";
 import { join } from "path";
+import { randomUUID } from "crypto";
 import { getAdminUser } from "@/lib/auth";
+
+const EXT_BY_MIME: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "application/pdf": "pdf",
+  "audio/mpeg": "mp3",
+  "audio/mp3": "mp3",
+  "audio/mp4": "m4a",
+  "audio/aac": "aac",
+  "audio/wav": "wav",
+  "audio/ogg": "ogg",
+  "audio/webm": "webm",
+};
+
+function getExtension(file: File): string {
+  const extFromName = file.name.split(".").pop()?.trim().toLowerCase();
+  if (extFromName && /^[a-z0-9]{1,10}$/.test(extFromName)) {
+    return extFromName;
+  }
+
+  return EXT_BY_MIME[file.type] || "bin";
+}
+
+function sanitizeStorageBaseName(name: string): string {
+  const withoutExt = name.replace(/\.[^./\\]+$/, "");
+  const normalized = withoutExt
+    .normalize("NFKD")
+    .replace(/[^\x00-\x7F]+/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-zA-Z0-9_-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[-_.]+|[-_.]+$/g, "")
+    .trim();
+
+  return normalized.slice(0, 64) || "file";
+}
+
+function normalizeOriginalFileName(file: File, ext: string): string {
+  const rawName = (file.name || "").trim();
+  const cleaned = rawName
+    .replace(/[\u0000-\u001F\u007F]/g, "")
+    .replace(/[\\/]+/g, "-")
+    .trim();
+
+  if (!cleaned) {
+    return `file.${ext}`;
+  }
+
+  if (/\.[^./\\]+$/.test(cleaned)) {
+    return cleaned;
+  }
+
+  return `${cleaned}.${ext}`;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -79,26 +136,43 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const timestamp = Date.now();
-    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const filename = `${timestamp}-${Math.random().toString(36).substring(7)}.${ext}`;
+    const ext = getExtension(file);
+    const originalFileName = normalizeOriginalFileName(file, ext);
+    const storageBaseName = sanitizeStorageBaseName(originalFileName);
+    const uniqueId = randomUUID().replace(/-/g, "");
+    const filename = `${storageBaseName}-${uniqueId}.${ext}`;
 
     const cwd = process.cwd();
     const uploadsDir = join(cwd, "public", "uploads");
     console.log("Creating directory:", uploadsDir);
 
-    mkdirSync(uploadsDir, { recursive: true });
+    await mkdir(uploadsDir, { recursive: true });
 
     const filepath = join(uploadsDir, filename);
+    const tempPath = `${filepath}.tmp-${randomUUID().replace(/-/g, "")}`;
     console.log("Saving file to:", filepath);
 
     const bytes = await file.arrayBuffer();
-    writeFileSync(filepath, Buffer.from(bytes));
+    if (bytes.byteLength === 0) {
+      return NextResponse.json(
+        { success: false, error: "فایل ارسالی خالی است" },
+        { status: 400 },
+      );
+    }
+
+    await writeFile(tempPath, Buffer.from(bytes));
+    await rename(tempPath, filepath);
 
     console.log("File saved successfully:", filename);
 
-    const url = `/api/uploads/${filename}`;
-    return NextResponse.json({ success: true, url });
+    const encodedOriginalName = encodeURIComponent(originalFileName);
+    const url = `/api/uploads/${filename}?name=${encodedOriginalName}`;
+    return NextResponse.json({
+      success: true,
+      url,
+      originalFileName,
+      storedFileName: filename,
+    });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json(

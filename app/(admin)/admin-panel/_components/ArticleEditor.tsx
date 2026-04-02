@@ -8,6 +8,11 @@ import {
 } from "@/app/actions/articleActions";
 import { getTags } from "@/app/actions/tagActions";
 import Button from "@/components/ui/Button";
+import UploadStatus from "@/components/ui/UploadStatus";
+import {
+  createIdleUploadTaskState,
+  uploadAssetWithProgress,
+} from "@/lib/clientUpload";
 import { getUploadUrl } from "@/lib/uploads";
 import RichTextEditor from "./RichTextEditor";
 
@@ -82,7 +87,9 @@ export default function ArticleEditor({
   const [imagePreview, setImagePreview] = useState<string | null>(
     getUploadUrl(article?.image) || null,
   );
-  const [uploading, setUploading] = useState(false);
+  const [imageUploadStatus, setImageUploadStatus] = useState(
+    createIdleUploadTaskState,
+  );
   const [tags, setTags] = useState<TagOption[]>([]);
   const [loadingTags, setLoadingTags] = useState(true);
 
@@ -107,32 +114,31 @@ export default function ArticleEditor({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
+    setImageUploadStatus({ phase: "uploading", progress: 0, error: "" });
     setError("");
 
     try {
-      const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
-
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: uploadFormData,
-        credentials: "include",
+      const result = await uploadAssetWithProgress(file, {
+        retries: 1,
+        onProgress: (percent) =>
+          setImageUploadStatus({
+            phase: "uploading",
+            progress: percent,
+            error: "",
+          }),
       });
 
-      const result = await response.json();
-
-      if (result.success) {
-        setFormData((prev) => ({ ...prev, image: result.url }));
-        setImagePreview(result.url);
-      } else {
-        setError(result.error || "خطا در آپلود عکس");
-      }
+      setFormData((prev) => ({ ...prev, image: result.url }));
+      setImagePreview(result.url);
+      setImageUploadStatus({ phase: "success", progress: 100, error: "" });
     } catch (err) {
-      setError("خطا در آپلود عکس");
+      const message =
+        err instanceof Error && err.message ? err.message : "خطا در آپلود عکس";
+      setError(message);
+      setImageUploadStatus({ phase: "error", progress: 0, error: message });
       console.error(err);
     } finally {
-      setUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -242,12 +248,15 @@ export default function ArticleEditor({
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
               onChange={handleImageUpload}
-              disabled={uploading}
+              disabled={imageUploadStatus.phase === "uploading"}
               className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            {uploading && (
-              <p className="text-sm text-blue-600">در حال آپلود...</p>
-            )}
+            <UploadStatus
+              status={imageUploadStatus}
+              uploadingLabel="در حال آپلود عکس..."
+              successLabel="عکس با موفقیت آپلود شد"
+              errorLabel="آپلود عکس انجام نشد"
+            />
             {imagePreview && (
               <div className="mt-2">
                 <img

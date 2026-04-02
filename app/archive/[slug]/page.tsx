@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getUploadUrl } from "@/lib/uploads";
+import { getUploadOriginalFileName, getUploadUrl } from "@/lib/uploads";
 import { getMagazineBySlug } from "@/lib/magazines";
 import { toPlainText, toSafeArticleHtml } from "@/lib/articleContent";
 
@@ -38,6 +38,8 @@ export default async function MagazineDetailPage({ params }: PageProps) {
 
   const coverSrc = getUploadUrl(magazine.cover);
   const pdfDownloadUrl = getUploadUrl(magazine.pdfUrl);
+  const pdfFileName =
+    getUploadOriginalFileName(pdfDownloadUrl) || `${magazine.slug}.pdf`;
   const safeDescriptionHtml = toSafeArticleHtml(
     magazine.description || "برای این شماره توضیحی ثبت نشده است.",
   );
@@ -101,7 +103,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
                 {pdfDownloadUrl && (
                   <a
                     href={pdfDownloadUrl}
-                    download
+                    download={pdfFileName}
                     className="inline-flex items-center justify-center rounded-full border border-card-border px-7 py-3 text-foreground font-semibold hover:bg-foreground/5 transition-colors"
                   >
                     دانلود PDF

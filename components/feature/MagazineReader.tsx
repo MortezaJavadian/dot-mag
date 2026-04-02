@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getUploadUrl } from "@/lib/uploads";
+import { getUploadOriginalFileName, getUploadUrl } from "@/lib/uploads";
 
 interface Magazine {
   id: string;
@@ -49,6 +49,11 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
   const pdfDownloadUrl = getUploadUrl(magazine.pdfUrl);
   const downloadFileName = useMemo(() => {
+    const originalName = getUploadOriginalFileName(pdfDownloadUrl);
+    if (originalName) {
+      return originalName;
+    }
+
     const base = (magazine.slug || magazine.title || "magazine")
       .trim()
       .replace(/\s+/g, "-")
@@ -57,7 +62,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       .replace(/^-|-$/g, "");
 
     return `${base || "magazine"}.pdf`;
-  }, [magazine.slug, magazine.title]);
+  }, [magazine.slug, magazine.title, pdfDownloadUrl]);
   const isSpreadView = viewportWidth >= 1024;
   const maxPage = pages.length;
 

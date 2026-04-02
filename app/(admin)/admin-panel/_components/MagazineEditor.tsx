@@ -11,6 +11,12 @@ import {
   updateMagazinePage,
 } from "@/app/actions/magazineActions";
 import Button from "@/components/ui/Button";
+import UploadStatus from "@/components/ui/UploadStatus";
+import {
+  createIdleUploadTaskState,
+  uploadAssetWithProgress,
+  type UploadTaskState,
+} from "@/lib/clientUpload";
 import { getUploadUrl } from "@/lib/uploads";
 import RichTextEditor from "./RichTextEditor";
 
@@ -45,6 +51,12 @@ type ManagedPage = {
   image: string;
 };
 
+const IDLE_UPLOAD_STATUS: UploadTaskState = {
+  phase: "idle",
+  progress: 0,
+  error: "",
+};
+
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message) {
     return error.message;
@@ -74,24 +86,6 @@ function normalizePages(pages: SourcePage[] = []): ManagedPage[] {
     }));
 }
 
-async function uploadAsset(file: File): Promise<string> {
-  const uploadFormData = new FormData();
-  uploadFormData.append("file", file);
-
-  const response = await fetch("/api/upload", {
-    method: "POST",
-    body: uploadFormData,
-    credentials: "include",
-  });
-
-  const result = await response.json();
-  if (!result.success) {
-    throw new Error(result.error || "Upload failed");
-  }
-
-  return result.url;
-}
-
 export default function MagazineEditor({
   magazine,
   onSave,
@@ -113,9 +107,18 @@ export default function MagazineEditor({
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [coverUploading, setCoverUploading] = useState(false);
-  const [pdfUploading, setPdfUploading] = useState(false);
-  const [pageUploading, setPageUploading] = useState(false);
+  const [coverUploadStatus, setCoverUploadStatus] = useState(
+    createIdleUploadTaskState,
+  );
+  const [pdfUploadStatus, setPdfUploadStatus] = useState(
+    createIdleUploadTaskState,
+  );
+  const [pageUploadStatus, setPageUploadStatus] = useState(
+    createIdleUploadTaskState,
+  );
+  const [pageReplaceUploadStatuses, setPageReplaceUploadStatuses] = useState<
+    Record<string, UploadTaskState>
+  >({});
   const [activePageActionId, setActivePageActionId] = useState<string | null>(
     null,
   );
@@ -127,19 +130,42 @@ export default function MagazineEditor({
     [pages],
   );
 
+  const setPageReplaceUploadStatus = (
+    pageId: string,
+    status: UploadTaskState,
+  ) => {
+    setPageReplaceUploadStatuses((prev) => ({
+      ...prev,
+      [pageId]: status,
+    }));
+  };
+
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setCoverUploading(true);
+    setCoverUploadStatus({ phase: "uploading", progress: 0, error: "" });
     setError("");
     try {
-      const uploadedUrl = await uploadAsset(file);
+      const result = await uploadAssetWithProgress(file, {
+        retries: 1,
+        onProgress: (percent) =>
+          setCoverUploadStatus({
+            phase: "uploading",
+            progress: percent,
+            error: "",
+          }),
+      });
+
+      const uploadedUrl = result.url;
       setFormData((prev) => ({ ...prev, cover: uploadedUrl }));
+      setCoverUploadStatus({ phase: "success", progress: 100, error: "" });
     } catch (uploadError: unknown) {
-      setError(getErrorMessage(uploadError, "خطا در آپلود عکس جلد"));
+      const message = getErrorMessage(uploadError, "خطا در آپلود عکس جلد");
+      setError(message);
+      setCoverUploadStatus({ phase: "error", progress: 0, error: message });
     } finally {
-      setCoverUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -147,15 +173,28 @@ export default function MagazineEditor({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setPdfUploading(true);
+    setPdfUploadStatus({ phase: "uploading", progress: 0, error: "" });
     setError("");
     try {
-      const uploadedUrl = await uploadAsset(file);
+      const result = await uploadAssetWithProgress(file, {
+        retries: 1,
+        onProgress: (percent) =>
+          setPdfUploadStatus({
+            phase: "uploading",
+            progress: percent,
+            error: "",
+          }),
+      });
+
+      const uploadedUrl = result.url;
       setFormData((prev) => ({ ...prev, pdfUrl: uploadedUrl }));
+      setPdfUploadStatus({ phase: "success", progress: 100, error: "" });
     } catch (uploadError: unknown) {
-      setError(getErrorMessage(uploadError, "خطا در آپلود PDF"));
+      const message = getErrorMessage(uploadError, "خطا در آپلود PDF");
+      setError(message);
+      setPdfUploadStatus({ phase: "error", progress: 0, error: message });
     } finally {
-      setPdfUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -215,10 +254,20 @@ export default function MagazineEditor({
       return;
     }
 
-    setPageUploading(true);
+    setPageUploadStatus({ phase: "uploading", progress: 0, error: "" });
     setError("");
     try {
-      const uploadedUrl = await uploadAsset(file);
+      const result = await uploadAssetWithProgress(file, {
+        retries: 1,
+        onProgress: (percent) =>
+          setPageUploadStatus({
+            phase: "uploading",
+            progress: percent,
+            error: "",
+          }),
+      });
+
+      const uploadedUrl = result.url;
       const nextNumber = sortedPages.length + 1;
       const addResult = await addMagazinePage(magazineId, {
         number: nextNumber,
@@ -230,10 +279,12 @@ export default function MagazineEditor({
       }
 
       setPages((prev) => normalizePages([...prev, addResult.data]));
+      setPageUploadStatus({ phase: "success", progress: 100, error: "" });
     } catch (addError: unknown) {
-      setError(getErrorMessage(addError, "خطا در افزودن صفحه"));
+      const message = getErrorMessage(addError, "خطا در افزودن صفحه");
+      setError(message);
+      setPageUploadStatus({ phase: "error", progress: 0, error: message });
     } finally {
-      setPageUploading(false);
       e.target.value = "";
     }
   };
@@ -246,9 +297,24 @@ export default function MagazineEditor({
     if (!file) return;
 
     setActivePageActionId(pageId);
+    setPageReplaceUploadStatus(pageId, {
+      phase: "uploading",
+      progress: 0,
+      error: "",
+    });
     setError("");
     try {
-      const uploadedUrl = await uploadAsset(file);
+      const result = await uploadAssetWithProgress(file, {
+        retries: 1,
+        onProgress: (percent) =>
+          setPageReplaceUploadStatus(pageId, {
+            phase: "uploading",
+            progress: percent,
+            error: "",
+          }),
+      });
+
+      const uploadedUrl = result.url;
       const updateResult = await updateMagazinePage(pageId, {
         image: uploadedUrl,
       });
@@ -264,8 +330,19 @@ export default function MagazineEditor({
           ),
         ),
       );
+      setPageReplaceUploadStatus(pageId, {
+        phase: "success",
+        progress: 100,
+        error: "",
+      });
     } catch (replaceError: unknown) {
-      setError(getErrorMessage(replaceError, "خطا در جایگزینی تصویر"));
+      const message = getErrorMessage(replaceError, "خطا در جایگزینی تصویر");
+      setError(message);
+      setPageReplaceUploadStatus(pageId, {
+        phase: "error",
+        progress: 0,
+        error: message,
+      });
     } finally {
       setActivePageActionId(null);
       e.target.value = "";
@@ -385,12 +462,15 @@ export default function MagazineEditor({
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
               onChange={handleCoverUpload}
-              disabled={coverUploading}
+              disabled={coverUploadStatus.phase === "uploading"}
               className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
             />
-            {coverUploading && (
-              <p className="text-sm text-blue-600 mt-2">در حال آپلود...</p>
-            )}
+            <UploadStatus
+              status={coverUploadStatus}
+              uploadingLabel="در حال آپلود عکس جلد..."
+              successLabel="عکس جلد با موفقیت آپلود شد"
+              errorLabel="آپلود عکس جلد انجام نشد"
+            />
             {formData.cover && (
               <img
                 src={getUploadUrl(formData.cover) || ""}
@@ -438,14 +518,15 @@ export default function MagazineEditor({
                 type="file"
                 accept="application/pdf"
                 onChange={handlePdfUpload}
-                disabled={pdfUploading}
+                disabled={pdfUploadStatus.phase === "uploading"}
                 className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
               />
-              {pdfUploading && (
-                <p className="text-sm text-blue-600 mt-2">
-                  در حال آپلود PDF...
-                </p>
-              )}
+              <UploadStatus
+                status={pdfUploadStatus}
+                uploadingLabel="در حال آپلود PDF..."
+                successLabel="PDF با موفقیت آپلود شد"
+                errorLabel="آپلود PDF انجام نشد"
+              />
               {formData.pdfUrl && (
                 <p className="text-xs text-green-700 dark:text-green-400 mt-2 break-all">
                   {getUploadUrl(formData.pdfUrl)}
@@ -504,15 +585,18 @@ export default function MagazineEditor({
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/gif"
                 onChange={handleAddPage}
-                disabled={pageUploading}
+                disabled={pageUploadStatus.phase === "uploading"}
                 className="hidden"
               />
             </label>
           </div>
 
-          {pageUploading && (
-            <p className="text-sm text-blue-600">در حال آپلود صفحه جدید...</p>
-          )}
+          <UploadStatus
+            status={pageUploadStatus}
+            uploadingLabel="در حال آپلود صفحه جدید..."
+            successLabel="صفحه جدید با موفقیت آپلود شد"
+            errorLabel="آپلود صفحه جدید انجام نشد"
+          />
 
           {sortedPages.length === 0 ? (
             <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -522,6 +606,8 @@ export default function MagazineEditor({
             <div className="space-y-3">
               {sortedPages.map((page, index) => {
                 const imageSrc = getUploadUrl(page.image) || "";
+                const pageReplaceStatus =
+                  pageReplaceUploadStatuses[page.id] || IDLE_UPLOAD_STATUS;
                 const pageBusy = activePageActionId === page.id;
 
                 return (
@@ -571,6 +657,13 @@ export default function MagazineEditor({
                           className="hidden"
                         />
                       </label>
+
+                      <UploadStatus
+                        status={pageReplaceStatus}
+                        uploadingLabel="در حال آپلود تصویر صفحه..."
+                        successLabel="تصویر صفحه با موفقیت آپلود شد"
+                        errorLabel="آپلود تصویر صفحه انجام نشد"
+                      />
 
                       <Button
                         type="button"

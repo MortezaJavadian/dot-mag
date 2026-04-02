@@ -11,6 +11,12 @@ import {
   updateRadioSegment,
 } from "@/app/actions/radioActions";
 import Button from "@/components/ui/Button";
+import UploadStatus from "@/components/ui/UploadStatus";
+import {
+  createIdleUploadTaskState,
+  uploadAssetWithProgress,
+  type UploadTaskState,
+} from "@/lib/clientUpload";
 import { getUploadUrl } from "@/lib/uploads";
 
 type RadioSegmentSource = {
@@ -45,6 +51,12 @@ type ManagedSegment = {
   title: string;
   audioUrl: string;
   durationSec: number | null;
+};
+
+const IDLE_UPLOAD_STATUS: UploadTaskState = {
+  phase: "idle",
+  progress: 0,
+  error: "",
 };
 
 function normalizeSegments(
@@ -101,24 +113,6 @@ function toDateInputValue(value?: string | Date | null): string {
   return parsed.toISOString().split("T")[0];
 }
 
-async function uploadAsset(file: File): Promise<string> {
-  const uploadFormData = new FormData();
-  uploadFormData.append("file", file);
-
-  const response = await fetch("/api/upload", {
-    method: "POST",
-    body: uploadFormData,
-    credentials: "include",
-  });
-
-  const result = await response.json();
-  if (!result.success) {
-    throw new Error(result.error || "Upload failed");
-  }
-
-  return result.url;
-}
-
 export default function RadioEditor({
   radio,
   onSave,
@@ -143,9 +137,17 @@ export default function RadioEditor({
   const [newSegmentFile, setNewSegmentFile] = useState<File | null>(null);
 
   const [loading, setLoading] = useState(false);
-  const [coverUploading, setCoverUploading] = useState(false);
-  const [audioUploading, setAudioUploading] = useState(false);
-  const [segmentUploading, setSegmentUploading] = useState(false);
+  const [coverUploadStatus, setCoverUploadStatus] = useState(
+    createIdleUploadTaskState,
+  );
+  const [audioUploadStatus, setAudioUploadStatus] = useState(
+    createIdleUploadTaskState,
+  );
+  const [segmentUploadStatus, setSegmentUploadStatus] = useState(
+    createIdleUploadTaskState,
+  );
+  const [segmentReplaceUploadStatuses, setSegmentReplaceUploadStatuses] =
+    useState<Record<string, UploadTaskState>>({});
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -153,20 +155,42 @@ export default function RadioEditor({
   const radioId = typeof radio.id === "string" ? radio.id : null;
   const sortedSegments = useMemo(() => normalizeSegments(segments), [segments]);
 
+  const setSegmentReplaceUploadStatus = (
+    segmentId: string,
+    status: UploadTaskState,
+  ) => {
+    setSegmentReplaceUploadStatuses((prev) => ({
+      ...prev,
+      [segmentId]: status,
+    }));
+  };
+
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setCoverUploading(true);
+    setCoverUploadStatus({ phase: "uploading", progress: 0, error: "" });
     setError("");
 
     try {
-      const uploadedUrl = await uploadAsset(file);
+      const result = await uploadAssetWithProgress(file, {
+        retries: 1,
+        onProgress: (percent) =>
+          setCoverUploadStatus({
+            phase: "uploading",
+            progress: percent,
+            error: "",
+          }),
+      });
+
+      const uploadedUrl = result.url;
       setFormData((prev) => ({ ...prev, cover: uploadedUrl }));
+      setCoverUploadStatus({ phase: "success", progress: 100, error: "" });
     } catch (uploadError: unknown) {
-      setError(getErrorMessage(uploadError, "خطا در آپلود عکس جلد"));
+      const message = getErrorMessage(uploadError, "خطا در آپلود عکس جلد");
+      setError(message);
+      setCoverUploadStatus({ phase: "error", progress: 0, error: message });
     } finally {
-      setCoverUploading(false);
       e.target.value = "";
     }
   };
@@ -175,16 +199,28 @@ export default function RadioEditor({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setAudioUploading(true);
+    setAudioUploadStatus({ phase: "uploading", progress: 0, error: "" });
     setError("");
 
     try {
-      const uploadedUrl = await uploadAsset(file);
+      const result = await uploadAssetWithProgress(file, {
+        retries: 1,
+        onProgress: (percent) =>
+          setAudioUploadStatus({
+            phase: "uploading",
+            progress: percent,
+            error: "",
+          }),
+      });
+
+      const uploadedUrl = result.url;
       setFormData((prev) => ({ ...prev, audioUrl: uploadedUrl }));
+      setAudioUploadStatus({ phase: "success", progress: 100, error: "" });
     } catch (uploadError: unknown) {
-      setError(getErrorMessage(uploadError, "خطا در آپلود فایل صوتی"));
+      const message = getErrorMessage(uploadError, "خطا در آپلود فایل صوتی");
+      setError(message);
+      setAudioUploadStatus({ phase: "error", progress: 0, error: message });
     } finally {
-      setAudioUploading(false);
       e.target.value = "";
     }
   };
@@ -249,11 +285,21 @@ export default function RadioEditor({
       return;
     }
 
-    setSegmentUploading(true);
+    setSegmentUploadStatus({ phase: "uploading", progress: 0, error: "" });
     setError("");
 
     try {
-      const uploadedUrl = await uploadAsset(newSegmentFile);
+      const uploadResult = await uploadAssetWithProgress(newSegmentFile, {
+        retries: 1,
+        onProgress: (percent) =>
+          setSegmentUploadStatus({
+            phase: "uploading",
+            progress: percent,
+            error: "",
+          }),
+      });
+
+      const uploadedUrl = uploadResult.url;
       const durationSec = parseDurationSeconds(newSegmentDuration);
 
       const result = await addRadioSegment(radioId, {
@@ -271,10 +317,16 @@ export default function RadioEditor({
       setNewSegmentTitle("");
       setNewSegmentDuration("");
       setNewSegmentFile(null);
+      setSegmentUploadStatus({ phase: "success", progress: 100, error: "" });
     } catch (segmentError: unknown) {
-      setError(getErrorMessage(segmentError, "خطا در افزودن بخش برگزیده"));
+      const message = getErrorMessage(
+        segmentError,
+        "خطا در افزودن بخش برگزیده",
+      );
+      setError(message);
+      setSegmentUploadStatus({ phase: "error", progress: 0, error: message });
     } finally {
-      setSegmentUploading(false);
+      // keep latest status visible for user feedback
     }
   };
 
@@ -333,10 +385,25 @@ export default function RadioEditor({
     if (!file) return;
 
     setActiveSegmentId(segmentId);
+    setSegmentReplaceUploadStatus(segmentId, {
+      phase: "uploading",
+      progress: 0,
+      error: "",
+    });
     setError("");
 
     try {
-      const uploadedUrl = await uploadAsset(file);
+      const uploadResult = await uploadAssetWithProgress(file, {
+        retries: 1,
+        onProgress: (percent) =>
+          setSegmentReplaceUploadStatus(segmentId, {
+            phase: "uploading",
+            progress: percent,
+            error: "",
+          }),
+      });
+
+      const uploadedUrl = uploadResult.url;
 
       const result = await updateRadioSegment(segmentId, {
         audioUrl: uploadedUrl,
@@ -356,8 +423,22 @@ export default function RadioEditor({
             : segment,
         ),
       );
+      setSegmentReplaceUploadStatus(segmentId, {
+        phase: "success",
+        progress: 100,
+        error: "",
+      });
     } catch (segmentError: unknown) {
-      setError(getErrorMessage(segmentError, "خطا در جایگزینی فایل صوتی"));
+      const message = getErrorMessage(
+        segmentError,
+        "خطا در جایگزینی فایل صوتی",
+      );
+      setError(message);
+      setSegmentReplaceUploadStatus(segmentId, {
+        phase: "error",
+        progress: 0,
+        error: message,
+      });
     } finally {
       setActiveSegmentId(null);
       e.target.value = "";
@@ -487,12 +568,15 @@ export default function RadioEditor({
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
               onChange={handleCoverUpload}
-              disabled={coverUploading}
+              disabled={coverUploadStatus.phase === "uploading"}
               className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
             />
-            {coverUploading && (
-              <p className="text-sm text-blue-600 mt-2">در حال آپلود...</p>
-            )}
+            <UploadStatus
+              status={coverUploadStatus}
+              uploadingLabel="در حال آپلود عکس جلد..."
+              successLabel="عکس جلد با موفقیت آپلود شد"
+              errorLabel="آپلود عکس جلد انجام نشد"
+            />
             {formData.cover && (
               <img
                 src={getUploadUrl(formData.cover) || ""}
@@ -566,14 +650,15 @@ export default function RadioEditor({
             type="file"
             accept="audio/mpeg,audio/mp3,audio/mp4,audio/aac,audio/wav,audio/ogg,audio/webm"
             onChange={handleAudioUpload}
-            disabled={audioUploading}
+            disabled={audioUploadStatus.phase === "uploading"}
             className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
           />
-          {audioUploading && (
-            <p className="text-sm text-blue-600 mt-2">
-              در حال آپلود فایل صوتی...
-            </p>
-          )}
+          <UploadStatus
+            status={audioUploadStatus}
+            uploadingLabel="در حال آپلود فایل صوتی..."
+            successLabel="فایل صوتی با موفقیت آپلود شد"
+            errorLabel="آپلود فایل صوتی انجام نشد"
+          />
           {mainAudioUrl && (
             <div className="mt-3">
               <audio
@@ -655,10 +740,18 @@ export default function RadioEditor({
             <Button
               type="button"
               onClick={handleAddSegment}
-              disabled={segmentUploading}
+              disabled={segmentUploadStatus.phase === "uploading"}
             >
-              {segmentUploading ? "در حال افزودن..." : "افزودن بخش برگزیده"}
+              {segmentUploadStatus.phase === "uploading"
+                ? "در حال افزودن..."
+                : "افزودن بخش برگزیده"}
             </Button>
+            <UploadStatus
+              status={segmentUploadStatus}
+              uploadingLabel="در حال آپلود فایل بخش برگزیده..."
+              successLabel="فایل بخش برگزیده با موفقیت آپلود شد"
+              errorLabel="آپلود فایل بخش برگزیده انجام نشد"
+            />
           </div>
 
           {sortedSegments.length === 0 ? (
@@ -670,6 +763,9 @@ export default function RadioEditor({
               {sortedSegments.map((segment, index) => {
                 const segmentBusy = activeSegmentId === segment.id;
                 const segmentAudioUrl = getUploadUrl(segment.audioUrl) || "";
+                const segmentReplaceStatus =
+                  segmentReplaceUploadStatuses[segment.id] ||
+                  IDLE_UPLOAD_STATUS;
 
                 return (
                   <div
@@ -763,6 +859,13 @@ export default function RadioEditor({
                           className="hidden"
                         />
                       </label>
+
+                      <UploadStatus
+                        status={segmentReplaceStatus}
+                        uploadingLabel="در حال آپلود فایل جایگزین..."
+                        successLabel="فایل جایگزین با موفقیت آپلود شد"
+                        errorLabel="آپلود فایل جایگزین انجام نشد"
+                      />
 
                       <Button
                         type="button"
