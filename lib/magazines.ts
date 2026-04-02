@@ -63,7 +63,7 @@ export async function getPublicMagazines(): Promise<MagazinePageData[]> {
   try {
     return await prisma.magazine.findMany({
       include: { pages: { orderBy: { number: "asc" } } },
-      orderBy: { sortDate: "desc" },
+      orderBy: [{ sortDate: "desc" }, { createdAt: "desc" }],
     });
   } catch (error) {
     console.error("Error fetching magazines:", error);

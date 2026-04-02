@@ -39,7 +39,7 @@ function resolveDisplayDate(displayDate?: string, sortDate?: string): string {
 export async function GET() {
   try {
     const articles = await prisma.article.findMany({
-      orderBy: { sortDate: "desc" },
+      orderBy: [{ sortDate: "desc" }, { createdAt: "desc" }],
       include: { tags: true },
     });
     return NextResponse.json(articles);

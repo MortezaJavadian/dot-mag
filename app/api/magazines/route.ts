@@ -52,7 +52,7 @@ export async function GET() {
     console.log("GET /api/magazines - fetching magazines...");
     const magazines = await prisma.magazine.findMany({
       include: { pages: { orderBy: { number: "asc" } } },
-      orderBy: { sortDate: "desc" },
+      orderBy: [{ sortDate: "desc" }, { createdAt: "desc" }],
     });
     console.log(
       `Found ${magazines.length} magazines:`,

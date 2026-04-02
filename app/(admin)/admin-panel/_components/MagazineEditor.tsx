@@ -12,6 +12,7 @@ import {
 } from "@/app/actions/magazineActions";
 import Button from "@/components/ui/Button";
 import { getUploadUrl } from "@/lib/uploads";
+import RichTextEditor from "./RichTextEditor";
 
 interface MagazineEditorProps {
   magazine: EditableMagazine | null;
@@ -364,13 +365,14 @@ export default function MagazineEditor({
 
         <div>
           <label className="block text-sm font-medium mb-1">توضیح</label>
-          <textarea
+          <RichTextEditor
             value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
+            onChange={(value) =>
+              setFormData({ ...formData, description: value })
             }
-            rows={4}
-            className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+            disabled={loading}
+            placeholder="توضیح مجله را بنویسید..."
+            minHeightClass="min-h-[180px]"
           />
         </div>
 

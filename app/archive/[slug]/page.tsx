@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getUploadUrl } from "@/lib/uploads";
 import { getMagazineBySlug } from "@/lib/magazines";
+import { toPlainText, toSafeArticleHtml } from "@/lib/articleContent";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -23,7 +24,7 @@ export async function generateMetadata({
 
   return {
     title: `${magazine.title} - آرشیو مجله`,
-    description: magazine.description || magazine.subtitle,
+    description: toPlainText(magazine.description) || magazine.subtitle,
   };
 }
 
@@ -37,6 +38,9 @@ export default async function MagazineDetailPage({ params }: PageProps) {
 
   const coverSrc = getUploadUrl(magazine.cover);
   const pdfDownloadUrl = getUploadUrl(magazine.pdfUrl);
+  const safeDescriptionHtml = toSafeArticleHtml(
+    magazine.description || "برای این شماره توضیحی ثبت نشده است.",
+  );
 
   return (
     <article>
@@ -76,9 +80,10 @@ export default async function MagazineDetailPage({ params }: PageProps) {
             </div>
 
             <div className="mt-6 md:mt-0 md:col-start-1">
-              <p className="text-base md:text-lg leading-8 text-foreground-secondary mb-8">
-                {magazine.description || "برای این شماره توضیحی ثبت نشده است."}
-              </p>
+              <div
+                className="prose article-content-prose dark:prose-invert max-w-none text-base md:text-lg text-foreground-secondary mb-8"
+                dangerouslySetInnerHTML={{ __html: safeDescriptionHtml }}
+              />
 
               <div className="flex items-center justify-between text-sm text-foreground-secondary border-y border-card-border py-3">
                 <span>{magazine.pageCount} صفحه</span>

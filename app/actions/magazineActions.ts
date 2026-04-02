@@ -89,7 +89,7 @@ export async function getMagazines() {
   try {
     const magazines = await prisma.magazine.findMany({
       include: { pages: { orderBy: { number: "asc" } } },
-      orderBy: { sortDate: "desc" },
+      orderBy: [{ sortDate: "desc" }, { createdAt: "desc" }],
     });
     return { success: true, data: magazines };
   } catch (error) {

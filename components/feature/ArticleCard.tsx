@@ -30,6 +30,7 @@ export function ArticleCard({
 }: ArticleCardProps) {
   const imageSrc = getUploadUrl(article.image);
   const excerptText = toPlainText(article.excerpt);
+  const hasExcerpt = excerptText.length > 0;
 
   if (variant === "featured") {
     return (
@@ -161,8 +162,8 @@ export function ArticleCard({
           <h3 className="text-lg md:text-xl font-bold mb-2 group-hover:text-primary transition-colors line-clamp-2">
             {article.title}
           </h3>
-          <p className="text-foreground-secondary text-sm line-clamp-2 mb-4">
-            {excerptText}
+          <p className="text-foreground-secondary text-sm leading-5 line-clamp-1 min-h-[1.25rem] mb-4">
+            {hasExcerpt ? excerptText : "\u00a0"}
           </p>
           <div className="flex items-center justify-end text-foreground-secondary text-xs">
             <span>{article.publishedAt}</span>

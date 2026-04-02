@@ -10,6 +10,13 @@ type RichTextEditorProps = {
   minHeightClass?: string;
 };
 
+type MarkState = {
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  strikeThrough: boolean;
+};
+
 const FONT_SIZE_OPTIONS = [
   { label: "Small", value: "2" },
   { label: "Normal", value: "3" },
@@ -94,6 +101,125 @@ function getActiveFontSize(editorEl: HTMLDivElement): string | null {
   return mapFontSizeTokenToOption(computed);
 }
 
+function isBoldWeight(fontWeight: string): boolean {
+  const normalized = fontWeight.trim().toLowerCase();
+  if (normalized === "bold") return true;
+
+  const numericValue = Number(normalized);
+  return Number.isFinite(numericValue) && numericValue >= 600;
+}
+
+function getActiveMarks(editorEl: HTMLDivElement): MarkState | null {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return null;
+
+  const anchorNode = selection.anchorNode;
+  if (!anchorNode || !editorEl.contains(anchorNode)) return null;
+
+  const startElement =
+    anchorNode.nodeType === Node.TEXT_NODE
+      ? anchorNode.parentElement
+      : (anchorNode as HTMLElement);
+
+  if (!startElement) {
+    return {
+      bold: false,
+      italic: false,
+      underline: false,
+      strikeThrough: false,
+    };
+  }
+
+  let marks: MarkState = {
+    bold: false,
+    italic: false,
+    underline: false,
+    strikeThrough: false,
+  };
+
+  let current: HTMLElement | null = startElement;
+  while (current && editorEl.contains(current)) {
+    const tagName = current.tagName.toLowerCase();
+
+    if (tagName === "b" || tagName === "strong") {
+      marks.bold = true;
+    }
+
+    if (tagName === "i" || tagName === "em") {
+      marks.italic = true;
+    }
+
+    if (tagName === "u") {
+      marks.underline = true;
+    }
+
+    if (tagName === "s" || tagName === "strike") {
+      marks.strikeThrough = true;
+    }
+
+    if (current.style.fontStyle.trim().toLowerCase() === "italic") {
+      marks.italic = true;
+    }
+
+    if (isBoldWeight(current.style.fontWeight)) {
+      marks.bold = true;
+    }
+
+    const inlineDecoration = (
+      current.style.textDecorationLine || current.style.textDecoration
+    )
+      .trim()
+      .toLowerCase();
+
+    if (inlineDecoration.includes("underline")) {
+      marks.underline = true;
+    }
+
+    if (inlineDecoration.includes("line-through")) {
+      marks.strikeThrough = true;
+    }
+
+    current = current.parentElement;
+  }
+
+  const computed = window.getComputedStyle(startElement);
+  if (isBoldWeight(computed.fontWeight)) {
+    marks.bold = true;
+  }
+
+  if (computed.fontStyle.trim().toLowerCase() === "italic") {
+    marks.italic = true;
+  }
+
+  const computedDecoration = (
+    computed.textDecorationLine || computed.textDecoration
+  )
+    .trim()
+    .toLowerCase();
+
+  if (computedDecoration.includes("underline")) {
+    marks.underline = true;
+  }
+
+  if (computedDecoration.includes("line-through")) {
+    marks.strikeThrough = true;
+  }
+
+  try {
+    marks = {
+      bold: marks.bold || document.queryCommandState("bold"),
+      italic: marks.italic || document.queryCommandState("italic"),
+      underline: marks.underline || document.queryCommandState("underline"),
+      strikeThrough:
+        marks.strikeThrough || document.queryCommandState("strikeThrough"),
+    };
+  } catch {
+    // Keep DOM-based detection result when queryCommandState is unavailable.
+  }
+
+  return marks;
+}
+
 function escapeHtml(input: string): string {
   return input
     .replace(/&/g, "&amp;")
@@ -126,6 +252,12 @@ export default function RichTextEditor({
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [activeFontSize, setActiveFontSize] = useState("3");
+  const [activeMarks, setActiveMarks] = useState<MarkState>({
+    bold: false,
+    italic: false,
+    underline: false,
+    strikeThrough: false,
+  });
 
   const normalizedValue = useMemo(() => {
     if (!value?.trim()) return "";
@@ -145,6 +277,11 @@ export default function RichTextEditor({
 
   const syncToolbarStateFromSelection = useCallback(() => {
     if (!editorRef.current) return;
+
+    const nextMarks = getActiveMarks(editorRef.current);
+    if (nextMarks) {
+      setActiveMarks(nextMarks);
+    }
 
     const nextSize = getActiveFontSize(editorRef.current);
     if (nextSize) {
@@ -178,11 +315,21 @@ export default function RichTextEditor({
         setActiveFontSize(commandValue);
       }
       emitChange();
+      syncToolbarStateFromSelection();
       return;
     }
     document.execCommand(command, false, commandValue);
     emitChange();
+    syncToolbarStateFromSelection();
   };
+
+  const getToolbarButtonClass = (isActive: boolean) =>
+    [
+      "px-2.5 py-1 rounded border text-sm disabled:opacity-50 transition-colors",
+      isActive
+        ? "border-primary bg-primary text-white hover:bg-primary/90"
+        : "border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800",
+    ].join(" ");
 
   return (
     <div className="border border-slate-300 rounded-md dark:border-slate-600 overflow-hidden">
@@ -191,7 +338,7 @@ export default function RichTextEditor({
           type="button"
           onClick={() => runCommand("bold")}
           disabled={disabled}
-          className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-600 text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
+          className={`${getToolbarButtonClass(activeMarks.bold)} font-bold`}
           aria-label="Bold"
           title="Bold"
         >
@@ -201,7 +348,7 @@ export default function RichTextEditor({
           type="button"
           onClick={() => runCommand("italic")}
           disabled={disabled}
-          className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-600 text-sm italic hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
+          className={`${getToolbarButtonClass(activeMarks.italic)} italic`}
           aria-label="Italic"
           title="Italic"
         >
@@ -211,7 +358,7 @@ export default function RichTextEditor({
           type="button"
           onClick={() => runCommand("underline")}
           disabled={disabled}
-          className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-600 text-sm underline hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
+          className={`${getToolbarButtonClass(activeMarks.underline)} underline`}
           aria-label="Underline"
           title="Underline"
         >
@@ -221,7 +368,7 @@ export default function RichTextEditor({
           type="button"
           onClick={() => runCommand("strikeThrough")}
           disabled={disabled}
-          className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-600 text-sm line-through hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
+          className={`${getToolbarButtonClass(activeMarks.strikeThrough)} line-through`}
           aria-label="Strikethrough"
           title="Strikethrough"
         >

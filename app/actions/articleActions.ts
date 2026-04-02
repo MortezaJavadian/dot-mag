@@ -62,7 +62,7 @@ function resolveSortDate(value?: string): Date {
 export async function getArticles() {
   try {
     const articles = await prisma.article.findMany({
-      orderBy: { sortDate: "desc" },
+      orderBy: [{ sortDate: "desc" }, { createdAt: "desc" }],
       include: { tags: true },
     });
     return { success: true, data: articles };
