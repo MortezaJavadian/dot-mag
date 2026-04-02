@@ -48,20 +48,16 @@ function resolveHeroCta(
   if (ctaMode === "article") {
     const target =
       articles.find((item) => item.id === ctaTargetId) || articles[0];
-    if (!target) return null;
-
     return {
-      href: `/posts/${target.slug}`,
+      href: target ? `/posts/${target.slug}` : "/posts",
       label: getHomeHeroCtaLabel("article"),
     };
   }
 
   if (ctaMode === "radio") {
     const target = radios.find((item) => item.id === ctaTargetId) || radios[0];
-    if (!target) return null;
-
     return {
-      href: `/radio/${target.slug}`,
+      href: target ? `/radio/${target.slug}` : "/radio",
       label: getHomeHeroCtaLabel("radio"),
     };
   }
@@ -69,15 +65,44 @@ function resolveHeroCta(
   if (ctaMode === "magazine") {
     const target =
       magazines.find((item) => item.id === ctaTargetId) || magazines[0];
-    if (!target) return null;
-
     return {
-      href: `/archive/${target.slug}`,
+      href: target ? `/archive/${target.slug}` : "/archive",
       label: getHomeHeroCtaLabel("magazine"),
     };
   }
 
   return null;
+}
+
+function applySecondLineMode(html: string, secondLineAsTitle: boolean): string {
+  const headingPattern = /<h1([^>]*)>([\s\S]*?)<\/h1>/i;
+  const match = html.match(headingPattern);
+  if (!match) return html;
+
+  const headingAttributes = match[1] || "";
+  const headingInner = match[2] || "";
+  const brMatch = headingInner.match(/<br\s*\/?\s*>/i);
+  if (!brMatch || brMatch.index === undefined) return html;
+
+  const splitIndex = brMatch.index + brMatch[0].length;
+  const firstLine = headingInner.slice(0, splitIndex);
+  const secondLineRaw = headingInner
+    .slice(splitIndex)
+    .replace(
+      /<span class="hero-line-two-(strong|normal)">([\s\S]*?)<\/span>/gi,
+      "$2",
+    )
+    .trim();
+
+  if (!secondLineRaw) return html;
+
+  const secondLineClass = secondLineAsTitle
+    ? "hero-line-two-strong"
+    : "hero-line-two-normal";
+
+  const rebuiltHeading = `<h1${headingAttributes}>${firstLine}<span class="${secondLineClass}">${secondLineRaw}</span></h1>`;
+
+  return html.replace(headingPattern, rebuiltHeading);
 }
 
 async function getArticles(): Promise<HomeArticle[]> {
@@ -134,7 +159,10 @@ export default async function HomePage() {
   const latestArticles = articles.slice(0, 6);
   const latestRadios = radios.slice(0, 3);
   const heroBadge = homeHeroConfig.badgeText.trim();
-  const safeHeroHtml = toSafeArticleHtml(homeHeroConfig.heroHtml);
+  const safeHeroHtml = applySecondLineMode(
+    toSafeArticleHtml(homeHeroConfig.heroHtml),
+    homeHeroConfig.secondLineAsTitle,
+  );
   const heroImage = getUploadUrl(homeHeroConfig.image || "");
   const heroCta = resolveHeroCta(
     homeHeroConfig.ctaMode,
@@ -155,9 +183,9 @@ export default async function HomePage() {
         </div>
 
         <div className="container relative z-10">
-          <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:items-center lg:gap-12">
+          <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:items-center lg:gap-5 lg:[direction:ltr]">
             <div className="order-1 lg:order-1 animate-fade-in">
-              <div className="mx-auto my-3 lg:my-6 w-full max-w-sm sm:max-w-md lg:max-w-none lg:w-[80%]">
+              <div className="mx-auto my-1 lg:my-2 w-full max-w-sm sm:max-w-md lg:max-w-none lg:w-[80%]">
                 <div className="image-frame-shell">
                   <div className="image-frame-inner">
                     {heroImage ? (
@@ -184,7 +212,7 @@ export default async function HomePage() {
               )}
 
               <div
-                className="max-w-2xl [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4"
+                className="max-w-2xl [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4 [&_.hero-line-two-strong]:block [&_.hero-line-two-strong]:font-black [&_.hero-line-two-normal]:block [&_.hero-line-two-normal]:text-lg md:[&_.hero-line-two-normal]:text-xl [&_.hero-line-two-normal]:font-normal [&_.hero-line-two-normal]:leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: safeHeroHtml }}
               />
 

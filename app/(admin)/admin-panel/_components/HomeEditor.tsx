@@ -29,6 +29,7 @@ type HomeEditorProps = {
 type HomeFormState = {
   badgeText: string;
   heroHtml: string;
+  secondLineAsTitle: boolean;
   image: string | null;
   ctaMode: HomeHeroCtaMode;
   ctaTargetId: string | null;
@@ -38,6 +39,7 @@ function toInitialForm(config: HomeHeroConfig): HomeFormState {
   return {
     badgeText: config.badgeText || "",
     heroHtml: config.heroHtml || "",
+    secondLineAsTitle: config.secondLineAsTitle,
     image: config.image || null,
     ctaMode: config.ctaMode || "none",
     ctaTargetId: config.ctaTargetId || null,
@@ -113,6 +115,7 @@ export default function HomeEditor({
       const result = await updateHomeHeroContent({
         badgeText: formData.badgeText,
         heroHtml: formData.heroHtml,
+        secondLineAsTitle: formData.secondLineAsTitle,
         image: formData.image,
         ctaMode: formData.ctaMode,
         ctaTargetId: formData.ctaMode === "none" ? null : formData.ctaTargetId,
@@ -178,6 +181,26 @@ export default function HomeEditor({
             setFormData((prev) => ({ ...prev, heroHtml: nextContent }))
           }
         />
+        <div className="mt-2 space-y-2">
+          <label className="inline-flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={formData.secondLineAsTitle}
+              onChange={(event) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  secondLineAsTitle: event.target.checked,
+                }))
+              }
+              className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+            />
+            <span>خط دوم تیتر هم درشت و بلد نمایش داده شود</span>
+          </label>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            خط اول همیشه به صورت تیتر درشت نمایش داده می شود. می توانید خط دوم
+            را هم درشت نگه دارید یا آن را مثل متن عادی نمایش دهید.
+          </p>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -198,18 +221,14 @@ export default function HomeEditor({
 
         {currentImage ? (
           <div className="mt-3 w-full max-w-xs sm:max-w-sm">
-            <div className="image-frame-shell">
-              <div className="image-frame-inner">
-                <Image
-                  src={currentImage}
-                  alt="پیش نمایش تصویر هدر"
-                  fill
-                  className="image-frame-media object-cover"
-                  sizes="(max-width: 640px) 90vw, 360px"
-                  unoptimized
-                />
-              </div>
-            </div>
+            <Image
+              src={currentImage}
+              alt="پیش نمایش تصویر هدر"
+              width={640}
+              height={420}
+              className="w-full h-auto max-h-64 rounded-xl border border-slate-300 dark:border-slate-700 object-cover"
+              unoptimized
+            />
           </div>
         ) : (
           <p className="text-xs text-slate-500 dark:text-slate-400">

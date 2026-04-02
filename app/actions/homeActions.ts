@@ -13,6 +13,7 @@ import {
 export type UpdateHomeHeroInput = {
   badgeText?: string;
   heroHtml?: string;
+  secondLineAsTitle?: boolean;
   image?: string | null;
   ctaMode?: HomeHeroCtaMode;
   ctaTargetId?: string | null;
@@ -46,6 +47,10 @@ function normalizeInput(
       typeof input.heroHtml === "string" && input.heroHtml.trim()
         ? input.heroHtml.trim()
         : fallback.heroHtml,
+    secondLineAsTitle:
+      typeof input.secondLineAsTitle === "boolean"
+        ? input.secondLineAsTitle
+        : fallback.secondLineAsTitle,
     image:
       typeof input.image === "string" && input.image.trim()
         ? input.image.trim()

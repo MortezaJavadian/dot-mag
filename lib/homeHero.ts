@@ -6,6 +6,7 @@ export type HomeHeroCtaMode = "none" | "article" | "radio" | "magazine";
 export type HomeHeroConfig = {
   badgeText: string;
   heroHtml: string;
+  secondLineAsTitle: boolean;
   image: string | null;
   ctaMode: HomeHeroCtaMode;
   ctaTargetId: string | null;
@@ -18,6 +19,7 @@ const DEFAULT_HOME_HERO_CONFIG: HomeHeroConfig = {
   badgeText: "شماره جدید منتشر شد",
   heroHtml:
     '<h1>داستان\u200cهایی که<br /><span style="color: #d73b3a;">الهام\u200cبخش</span> هستند</h1><p>مجله دات، پلتفرمی برای روایت داستان\u200cهای الهام\u200cبخش از دنیای طراحی، تکنولوژی و سبک زندگی مدرن.</p>',
+  secondLineAsTitle: true,
   image: null,
   ctaMode: "none",
   ctaTargetId: null,
@@ -53,6 +55,8 @@ function normalizeConfig(input: unknown): HomeHeroConfig {
   const ctaMode = isValidCtaMode(nextModeRaw) ? nextModeRaw : "none";
   const ctaTargetId =
     ctaMode === "none" ? null : normalizeNullableText(raw.ctaTargetId);
+  const secondLineAsTitle =
+    typeof raw.secondLineAsTitle === "boolean" ? raw.secondLineAsTitle : true;
 
   return {
     badgeText: normalizeTextValue(
@@ -63,6 +67,7 @@ function normalizeConfig(input: unknown): HomeHeroConfig {
       raw.heroHtml,
       DEFAULT_HOME_HERO_CONFIG.heroHtml,
     ),
+    secondLineAsTitle,
     image: normalizeNullableText(raw.image),
     ctaMode,
     ctaTargetId,
