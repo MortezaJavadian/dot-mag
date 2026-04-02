@@ -240,6 +240,36 @@ a {
   padding-inline: var(--container-padding);
 }
 
+/* Shared framed image style for key detail pages */
+.image-frame-shell {
+  border: 1px solid var(--card-border);
+  border-radius: 1rem;
+  background: var(--card-bg);
+  padding: 0.625rem;
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.18),
+    0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .image-frame-shell {
+  box-shadow:
+    0 22px 48px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.image-frame-inner {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: var(--background-secondary);
+}
+
+.image-frame-media {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: inherit;
+}
+
 /* Prose Styles for Articles */
 .prose {
   max-width: 72ch;

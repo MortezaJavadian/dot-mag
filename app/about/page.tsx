@@ -114,16 +114,18 @@ export default function AboutPage() {
 
           <div className="order-1 lg:order-2 w-full">
             <div className="w-full max-w-[520px] mx-auto lg:mx-0 lg:max-w-none">
-              <div className="rounded-2xl overflow-hidden border border-card-border bg-background-secondary p-2.5 md:p-3 lg:sticky lg:top-28">
-                <div className="relative aspect-square">
-                  <Image
-                    src="/assets/images/about_us.png"
-                    alt="پوستر نور، صدا، حرکت"
-                    fill
-                    className="object-contain"
-                    sizes="(min-width:1280px) 520px, (min-width:1024px) 460px, 100vw"
-                    priority
-                  />
+              <div className="image-frame-shell lg:sticky lg:top-28">
+                <div className="image-frame-inner">
+                  <div className="relative aspect-square">
+                    <Image
+                      src="/assets/images/about_us.png"
+                      alt="پوستر نور، صدا، حرکت"
+                      fill
+                      className="object-cover"
+                      sizes="(min-width:1280px) 520px, (min-width:1024px) 460px, 100vw"
+                      priority
+                    />
+                  </div>
                 </div>
               </div>
             </div>

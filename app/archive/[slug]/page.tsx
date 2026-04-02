@@ -60,22 +60,26 @@ export default async function MagazineDetailPage({ params }: PageProps) {
             </div>
 
             <div className="mt-3 md:mt-0 md:col-start-2 md:row-span-3 md:w-full md:shrink-0">
-              <div className="rounded-2xl overflow-hidden border border-card-border bg-card-bg p-2.5 md:p-3 shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
+              <div className="image-frame-shell">
                 {coverSrc ? (
-                  <img
-                    src={coverSrc}
-                    alt={magazine.title}
-                    className="w-full h-auto max-h-[70vh] object-contain mx-auto"
-                  />
+                  <div className="image-frame-inner">
+                    <img
+                      src={coverSrc}
+                      alt={magazine.title}
+                      className="image-frame-media"
+                    />
+                  </div>
                 ) : (
-                  <div className="aspect-[3/4] rounded-xl bg-background-secondary flex flex-col items-center justify-center text-center p-6">
-                    <span className="text-primary text-5xl font-black mb-3">
-                      .
-                    </span>
-                    <p className="text-lg font-bold mb-1">{magazine.title}</p>
-                    <p className="text-sm text-foreground-secondary">
-                      تصویر جلد در دسترس نیست
-                    </p>
+                  <div className="image-frame-inner">
+                    <div className="aspect-[3/4] bg-background-secondary flex flex-col items-center justify-center text-center p-6">
+                      <span className="text-primary text-5xl font-black mb-3">
+                        .
+                      </span>
+                      <p className="text-lg font-bold mb-1">{magazine.title}</p>
+                      <p className="text-sm text-foreground-secondary">
+                        تصویر جلد در دسترس نیست
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>

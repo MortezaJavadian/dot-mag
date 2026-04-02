@@ -65,6 +65,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   }, [magazine.slug, magazine.title, pdfDownloadUrl]);
   const isSpreadView = viewportWidth >= 1024;
   const maxPage = pages.length;
+  const spreadCount = Math.ceil(maxPage / 2);
 
   useEffect(() => {
     const updateWidth = () => setViewportWidth(window.innerWidth);
@@ -220,10 +221,26 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   const leftPage = pages[leftIndex];
   const rightPage = rightIndex >= 0 ? pages[rightIndex] : null;
 
-  let displayPageNum = currentPage + 1;
-  if (isSpreadView) {
-    displayPageNum = leftPage?.number ?? currentPage * 2 + 1;
-  }
+  const isLastOddSpread =
+    isSpreadView && maxPage % 2 === 1 && currentPage === spreadCount - 1;
+  const spreadLeftPage = isLastOddSpread ? null : leftPage;
+  const spreadRightPage = isSpreadView
+    ? isLastOddSpread
+      ? leftPage
+      : rightPage
+    : null;
+
+  const displayPageNum = Math.min(
+    maxPage,
+    Math.max(
+      0,
+      isSpreadView
+        ? (spreadRightPage?.number ?? spreadLeftPage?.number ?? 0)
+        : (leftPage?.number ?? currentPage + 1),
+    ),
+  );
+  const progressPercent =
+    maxPage === 0 ? 0 : Math.min(100, (displayPageNum / maxPage) * 100);
 
   return (
     <div
@@ -332,39 +349,13 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         </div>
       </header>
 
-      <main className="relative h-full w-full flex items-center justify-center px-2 md:px-4 pt-20 md:pt-24 pb-20 md:pb-24">
+      <main className="relative h-full w-full flex items-center justify-center px-2 md:px-4 pt-14 md:pt-16 pb-14 md:pb-16">
         {maxPage > 0 && (
           <>
             <button
-              onClick={nextPage}
-              disabled={
-                isSpreadView
-                  ? currentPage >= Math.ceil(maxPage / 2) - 1
-                  : currentPage >= maxPage - 1
-              }
-              className={`absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center ${
-                showControls ? "opacity-100" : "opacity-0"
-              }`}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m15 18-6-6 6-6" />
-              </svg>
-            </button>
-
-            <button
               onClick={prevPage}
               disabled={currentPage <= 0}
-              className={`absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center ${
+              className={`absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center ${
                 showControls ? "opacity-100" : "opacity-0"
               }`}
             >
@@ -382,49 +373,67 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                 <path d="m9 18 6-6-6-6" />
               </svg>
             </button>
+
+            <button
+              onClick={nextPage}
+              disabled={
+                isSpreadView
+                  ? currentPage >= spreadCount - 1
+                  : currentPage >= maxPage - 1
+              }
+              className={`absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center ${
+                showControls ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
           </>
         )}
 
         {maxPage > 0 ? (
           <div className="w-full h-full flex items-center justify-center">
             {isSpreadView ? (
-              <div className="grid grid-cols-2 gap-2 md:gap-4 w-full max-w-6xl h-full max-h-full">
-                <div className="h-full min-h-0 flex items-center justify-center bg-white rounded-lg overflow-hidden shadow-2xl">
-                  {leftPage?.imageUrl ? (
+              <div className="grid grid-cols-2 gap-1 md:gap-1.5 w-full max-w-6xl h-full max-h-full">
+                <div className="h-full min-h-0 flex items-center justify-end">
+                  {spreadLeftPage?.imageUrl ? (
                     <img
-                      src={leftPage.imageUrl}
-                      alt={`Page ${leftPage.number}`}
-                      className="w-full h-full object-contain"
+                      src={spreadLeftPage.imageUrl}
+                      alt={`Page ${spreadLeftPage.number}`}
+                      className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
                     />
-                  ) : (
-                    <div className="text-slate-500">Image not available</div>
-                  )}
+                  ) : null}
                 </div>
-                <div className="h-full min-h-0 flex items-center justify-center bg-white rounded-lg overflow-hidden shadow-2xl">
-                  {rightPage?.imageUrl ? (
+                <div className="h-full min-h-0 flex items-center justify-start">
+                  {spreadRightPage?.imageUrl ? (
                     <img
-                      src={rightPage.imageUrl}
-                      alt={`Page ${rightPage.number}`}
-                      className="w-full h-full object-contain"
+                      src={spreadRightPage.imageUrl}
+                      alt={`Page ${spreadRightPage.number}`}
+                      className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
                     />
-                  ) : (
-                    <div className="text-slate-400">&nbsp;</div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             ) : (
               <div className="w-full max-w-4xl h-full max-h-full flex items-center justify-center">
-                <div className="w-full h-full bg-white rounded-lg shadow-2xl overflow-hidden flex items-center justify-center">
-                  {leftPage?.imageUrl ? (
-                    <img
-                      src={leftPage.imageUrl}
-                      alt={`Page ${leftPage.number}`}
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <div className="text-slate-500">Image not available</div>
-                  )}
-                </div>
+                {leftPage?.imageUrl ? (
+                  <img
+                    src={leftPage.imageUrl}
+                    alt={`Page ${leftPage.number}`}
+                    className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
+                  />
+                ) : null}
               </div>
             )}
           </div>
@@ -447,13 +456,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                 <div
                   className="h-full bg-primary transition-all duration-300"
                   style={{
-                    width: `${
-                      maxPage === 0
-                        ? 0
-                        : isSpreadView
-                          ? ((currentPage + 1) / Math.ceil(maxPage / 2)) * 100
-                          : ((currentPage + 1) / maxPage) * 100
-                    }%`,
+                    width: `${progressPercent}%`,
                   }}
                 />
               </div>

@@ -180,12 +180,14 @@ export default async function ArticlePage({ params }: PageProps) {
 
               {articleImage && (
                 <div className="mt-8 md:mt-0 md:w-[44%] lg:w-[40%] md:shrink-0">
-                  <div className="rounded-2xl overflow-hidden border border-card-border bg-background-secondary p-2.5 md:p-3">
-                    <img
-                      src={articleImage}
-                      alt={article.title}
-                      className="w-full h-auto max-h-[58vh] md:max-h-[430px] lg:max-h-[500px] object-contain mx-auto"
-                    />
+                  <div className="image-frame-shell">
+                    <div className="image-frame-inner">
+                      <img
+                        src={articleImage}
+                        alt={article.title}
+                        className="image-frame-media"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
