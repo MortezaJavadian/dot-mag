@@ -86,6 +86,13 @@
 /* Base Styles */
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 4rem;
+}
+
+@media (min-width: 768px) {
+  html {
+    scroll-padding-top: 5rem;
+  }
 }
 
 body {
@@ -161,7 +168,7 @@ a {
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -198,28 +205,12 @@ a {
 }
 
 .animate-slide-up {
-  animation: slideUp 0.6s ease forwards;
+  animation: slideUp 0.46s ease-out forwards;
+  will-change: transform, opacity;
 }
 
 .animate-slide-in-right {
   animation: slideInRight 0.5s ease forwards;
-}
-
-/* Staggered Animation Delays */
-.delay-100 {
-  animation-delay: 100ms;
-}
-.delay-200 {
-  animation-delay: 200ms;
-}
-.delay-300 {
-  animation-delay: 300ms;
-}
-.delay-400 {
-  animation-delay: 400ms;
-}
-.delay-500 {
-  animation-delay: 500ms;
 }
 
 /* Container */
@@ -448,5 +439,25 @@ a {
   .section-spacing-sm {
     padding-top: 3rem;
     padding-bottom: 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-slide-in-right {
+    animation: none !important;
+  }
+
+  .card-hover {
+    transition: none;
+  }
+
+  .card-hover:hover {
+    transform: none;
   }
 }

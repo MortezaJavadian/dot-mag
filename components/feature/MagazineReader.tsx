@@ -101,7 +101,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       }
     }
 
-    router.push(`/archive/${magazine.slug}`);
+    router.push(`/archive/${magazine.slug}`, { scroll: true });
   }, [magazine.slug, router]);
 
   useEffect(() => {

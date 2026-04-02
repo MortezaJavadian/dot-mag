@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { LoadingScreen } from "@/components/shared/LoadingScreen";
 
 interface AppWrapperProps {
@@ -9,6 +10,7 @@ interface AppWrapperProps {
 
 export function AppWrapper({ children }: AppWrapperProps) {
   const [isLoading, setIsLoading] = useState(true);
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) {
@@ -27,6 +29,17 @@ export function AppWrapper({ children }: AppWrapperProps) {
 
     registerServiceWorker();
   }, []);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    const frameId = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [pathname]);
 
   return (
     <>

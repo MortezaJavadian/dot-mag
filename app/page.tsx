@@ -226,6 +226,7 @@ export default async function HomePage() {
                 <div className="mt-8">
                   <Link
                     href={heroCta.href}
+                    scroll={true}
                     className="inline-flex items-center gap-3 px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-all hover:scale-105"
                   >
                     <svg
@@ -267,8 +268,14 @@ export default async function HomePage() {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {curatedHomeFeaturedArticles.map((article) => (
-                <ArticleCard key={article.id} article={article} />
+              {curatedHomeFeaturedArticles.map((article, index) => (
+                <div
+                  key={article.id}
+                  className="animate-slide-up"
+                  style={{ animationDelay: `${Math.min(index * 60, 420)}ms` }}
+                >
+                  <ArticleCard article={article} />
+                </div>
               ))}
             </div>
           </div>
@@ -289,8 +296,14 @@ export default async function HomePage() {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {latestRadios.map((radio) => (
-                <RadioCard key={radio.id} radio={radio} />
+              {latestRadios.map((radio, index) => (
+                <div
+                  key={radio.id}
+                  className="animate-slide-up"
+                  style={{ animationDelay: `${Math.min(index * 60, 420)}ms` }}
+                >
+                  <RadioCard radio={radio} />
+                </div>
               ))}
             </div>
           </div>

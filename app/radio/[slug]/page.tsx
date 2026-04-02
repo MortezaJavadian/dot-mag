@@ -257,8 +257,14 @@ export default async function RadioDetailPage({ params }: PageProps) {
               رادیوهای دیگر
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {related.map((item) => (
-                <RadioCard key={item.id} radio={item} />
+              {related.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="animate-slide-up"
+                  style={{ animationDelay: `${Math.min(index * 60, 420)}ms` }}
+                >
+                  <RadioCard radio={item} />
+                </div>
               ))}
             </div>
           </div>

@@ -173,18 +173,19 @@ dot-mag/
 
 ### Components
 
-| File                                    | Purpose                                                                  |
-| --------------------------------------- | ------------------------------------------------------------------------ |
-| `components/ui/Logo.tsx`                | Logo with dark/light variants                                            |
-| `components/ui/UploadStatus.tsx`        | Unified upload progress/success/error indicator for admin file inputs    |
-| `components/shared/Header.tsx`          | Sticky header, navigation, theme toggle, mobile menu                     |
-| `components/shared/Footer.tsx`          | Footer with links, social, copyright                                     |
-| `components/shared/ThemeProvider.tsx`   | Dark/Light mode context with localStorage                                |
-| `components/feature/ArticleCard.tsx`    | Article cards (default, featured, horizontal)                            |
-| `components/feature/AudioPlayer.tsx`    | Custom buffered audio player with manual download                        |
-| `components/feature/MagazineCard.tsx`   | Magazine cover card with stronger visual separation + date/page meta row |
-| `components/feature/MagazineReader.tsx` | Full-screen reader with fixed top/bottom bars and real PDF download flow |
-| `components/feature/RadioCard.tsx`      | Radio list card for public pages                                         |
+| File                                      | Purpose                                                                  |
+| ----------------------------------------- | ------------------------------------------------------------------------ |
+| `components/ui/Logo.tsx`                  | Logo with dark/light variants                                            |
+| `components/ui/UploadStatus.tsx`          | Unified upload progress/success/error indicator for admin file inputs    |
+| `components/shared/Header.tsx`            | Sticky header, navigation, theme toggle, mobile menu                     |
+| `components/shared/Footer.tsx`            | Footer with links, social, copyright                                     |
+| `components/shared/ThemeProvider.tsx`     | Dark/Light mode context with localStorage                                |
+| `components/shared/PostsPageSkeleton.tsx` | Shared posts route skeleton blocks (page + cards-only)                   |
+| `components/feature/ArticleCard.tsx`      | Article cards (default, featured, horizontal)                            |
+| `components/feature/AudioPlayer.tsx`      | Custom buffered audio player with manual download                        |
+| `components/feature/MagazineCard.tsx`     | Magazine cover card with stronger visual separation + date/page meta row |
+| `components/feature/MagazineReader.tsx`   | Full-screen reader with fixed top/bottom bars and real PDF download flow |
+| `components/feature/RadioCard.tsx`        | Radio list card for public pages                                         |
 
 ### PWA Files
 
@@ -286,6 +287,7 @@ dot-mag/
 | 2026-04-03 | Home config persistent DB storage                        | Replaced file-based home hero persistence (`data/home-hero.json`) with database-backed `HomeHeroConfigStore` storage so admin homepage changes survive image rebuilds/deploys, added startup-safe table provisioning via SQL guard, and included one-time legacy file migration fallback on first read.                                                                                                                                                                                                                                                                                                                                                |
 | 2026-04-03 | Home CTA and featured restore hardening                  | Fixed hero CTA target resolution for article/radio/magazine by matching both ID and slug values, switched homepage server-side collections to internal API base URL (`INTERNAL_API_BASE_URL`) to avoid production self-fetch failures, hardened home-config DB normalization for JSON/string payload variants so selected featured articles load reliably, and stabilized RTL paragraph sentence-ending punctuation rendering in hero simple text.                                                                                                                                                                                                     |
 | 2026-04-03 | Radio navigation latency hardening + global fetch policy | Replaced radio server fetches with shared internal helper (`lib/internalApi.ts`) using `INTERNAL_API_BASE_URL` + timeout, removed duplicate heavy metadata/page loads on radio detail via cached page-data loader, added route-level loading states for `/radio`, `/archive`, and `/posts` to prevent dead-click perception, introduced summary query modes for `/api/radios`, `/api/articles`, `/api/magazines` to reduce list payload size, unified API Prisma usage on shared `lib/prisma` singleton, and wired `INTERNAL_API_BASE_URL` into docker-compose runtime env.                                                                            |
+| 2026-04-03 | Scroll landing + posts skeleton + motion parity pass     | Fixed incomplete top-landing on detail navigations with explicit scroll reset and fixed-header offset handling, replaced `/posts` spinner fallbacks with shared skeleton UI, and unified capped card/tile entrance animation delays across home/posts/radio/archive and related-content grids while keeping narrative detail boxes static.                                                                                                                                                                                                                                                                                                             |
 | 2026-04-01 | Archive/detail reader split + UI unification             | Converted `/archive/[slug]` into magazine detail page, moved full reader to `/archive/[slug]/read`, unified archive/about title sections with posts style, removed archive helper texts, upgraded magazine cards (shadow/border + date/pages row), pinned reader bars to viewport edges, and switched PDF action to real file download flow                                                                                                                                                                                                                                                                                                            |
 | 2026-04-01 | MagazineReader type-check hotfix                         | Fixed `useEffect` dependency array in `MagazineReader` to remove pre-declaration references (`nextPage`/`prevPage`) that broke production TypeScript build during deploy                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 

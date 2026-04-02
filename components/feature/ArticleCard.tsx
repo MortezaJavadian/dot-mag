@@ -34,7 +34,11 @@ export function ArticleCard({
 
   if (variant === "featured") {
     return (
-      <Link href={`/posts/${article.slug}`} className="group block">
+      <Link
+        href={`/posts/${article.slug}`}
+        scroll={true}
+        className="group block"
+      >
         <article className="relative min-h-[380px] md:min-h-[500px] rounded-2xl overflow-hidden bg-gradient-to-br from-forest to-deep-black">
           {/* Image */}
           {imageSrc && (
@@ -78,7 +82,11 @@ export function ArticleCard({
 
   if (variant === "horizontal") {
     return (
-      <Link href={`/posts/${article.slug}`} className="group block">
+      <Link
+        href={`/posts/${article.slug}`}
+        scroll={true}
+        className="group block"
+      >
         <article className="flex gap-4 md:gap-6 items-start">
           {/* Image */}
           <div className="relative w-28 h-28 md:w-40 md:h-40 flex-shrink-0 rounded-xl overflow-hidden bg-cream">
@@ -127,7 +135,7 @@ export function ArticleCard({
 
   // Default vertical card
   return (
-    <Link href={`/posts/${article.slug}`} className="group block">
+    <Link href={`/posts/${article.slug}`} scroll={true} className="group block">
       <article className="card-hover bg-card-bg rounded-2xl overflow-hidden border border-card-border">
         {/* Image */}
         <div className="relative aspect-square bg-gradient-to-br from-cream to-khaki/20 overflow-hidden">

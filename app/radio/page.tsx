@@ -41,7 +41,7 @@ export default async function RadioPage() {
                 <div
                   key={radio.id}
                   className="animate-slide-up"
-                  style={{ animationDelay: `${index * 100}ms` }}
+                  style={{ animationDelay: `${Math.min(index * 60, 420)}ms` }}
                 >
                   <RadioCard radio={radio} />
                 </div>

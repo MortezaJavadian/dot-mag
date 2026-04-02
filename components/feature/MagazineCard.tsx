@@ -19,7 +19,11 @@ export function MagazineCard({ magazine }: MagazineCardProps) {
   const coverSrc = getUploadUrl(magazine.cover);
 
   return (
-    <Link href={`/archive/${magazine.slug}`} className="group block">
+    <Link
+      href={`/archive/${magazine.slug}`}
+      scroll={true}
+      className="group block"
+    >
       <article className="card-hover rounded-2xl border border-card-border bg-card-bg p-3 md:p-4 shadow-[0_10px_28px_rgba(0,0,0,0.08)]">
         {/* Cover */}
         <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gradient-to-br from-cream to-khaki/30 mb-4 border border-card-border/80 shadow-[0_10px_24px_rgba(0,0,0,0.14)]">

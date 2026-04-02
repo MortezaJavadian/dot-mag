@@ -1,6 +1,10 @@
 "use client";
 
 import { ArticleCard } from "@/components/feature/ArticleCard";
+import {
+  PostsCardsSkeleton,
+  PostsPageSkeleton,
+} from "@/components/shared/PostsPageSkeleton";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -114,12 +118,7 @@ function PostsContent() {
       <section className="section-spacing-sm">
         <div className="container">
           {loading ? (
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-foreground-secondary">در حال بارگذاری...</p>
-              </div>
-            </div>
+            <PostsCardsSkeleton />
           ) : filteredArticles.length > 0 ? (
             <>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
@@ -127,7 +126,7 @@ function PostsContent() {
                   <div
                     key={article.id}
                     className="animate-slide-up"
-                    style={{ animationDelay: `${index * 100}ms` }}
+                    style={{ animationDelay: `${Math.min(index * 60, 420)}ms` }}
                   >
                     <ArticleCard article={article} />
                   </div>
@@ -169,16 +168,7 @@ function PostsContent() {
 
 export default function PostsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-foreground-secondary">در حال بارگذاری...</p>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<PostsPageSkeleton />}>
       <PostsContent />
     </Suspense>
   );

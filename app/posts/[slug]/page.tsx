@@ -225,8 +225,14 @@ export default async function ArticlePage({ params }: PageProps) {
               نوشته‌های مرتبط
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {relatedArticles.map((related) => (
-                <ArticleCard key={related.id} article={related} />
+              {relatedArticles.map((related, index) => (
+                <div
+                  key={related.id}
+                  className="animate-slide-up"
+                  style={{ animationDelay: `${Math.min(index * 60, 420)}ms` }}
+                >
+                  <ArticleCard article={related} />
+                </div>
               ))}
             </div>
           </div>

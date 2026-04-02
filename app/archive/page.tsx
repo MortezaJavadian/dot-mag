@@ -26,8 +26,14 @@ export default async function ArchivePage() {
       <section className="section-spacing-sm bg-background">
         <div className="container">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {magazines.map((magazine) => (
-              <MagazineCard key={magazine.id} magazine={magazine} />
+            {magazines.map((magazine, index) => (
+              <div
+                key={magazine.id}
+                className="animate-slide-up"
+                style={{ animationDelay: `${Math.min(index * 60, 420)}ms` }}
+              >
+                <MagazineCard magazine={magazine} />
+              </div>
             ))}
           </div>
 

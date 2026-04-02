@@ -26,7 +26,7 @@ export function RadioCard({ radio }: RadioCardProps) {
   const coverSrc = getUploadUrl(radio.cover);
 
   return (
-    <Link href={`/radio/${radio.slug}`} className="group block">
+    <Link href={`/radio/${radio.slug}`} scroll={true} className="group block">
       <article className="card-hover bg-card-bg rounded-2xl overflow-hidden border border-card-border">
         <div className="relative aspect-[4/3] bg-gradient-to-br from-cream to-khaki/20 overflow-hidden">
           {coverSrc ? (
