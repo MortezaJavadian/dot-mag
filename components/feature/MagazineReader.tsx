@@ -417,7 +417,10 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         {maxPage > 0 ? (
           <div className="w-full h-full flex items-center justify-center">
             {isSpreadView ? (
-              <div className="grid grid-cols-2 gap-1.5 md:gap-2 w-full max-w-6xl h-full max-h-full">
+              <div
+                className="grid grid-cols-2 gap-[0.45rem] md:gap-[0.6rem] w-full max-w-6xl h-full max-h-full"
+                style={{ direction: "ltr" }}
+              >
                 <div className="h-full min-h-0 flex items-center justify-end">
                   {spreadLeftPage?.imageUrl ? (
                     <img

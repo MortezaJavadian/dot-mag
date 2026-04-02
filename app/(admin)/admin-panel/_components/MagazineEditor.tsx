@@ -696,13 +696,12 @@ export default function MagazineEditor({
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="relative w-20 h-28 shrink-0 overflow-hidden rounded border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
                       {imageSrc ? (
-                        <Image
+                        <img
                           src={imageSrc}
                           alt={`Page ${page.number}`}
-                          fill
-                          sizes="80px"
-                          quality={40}
-                          className="object-cover"
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
                         />
                       ) : null}
                     </div>
