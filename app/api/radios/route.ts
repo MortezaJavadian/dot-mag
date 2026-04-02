@@ -6,6 +6,27 @@ import { revalidateTag } from "next/cache";
 const RADIO_TAG = "radios";
 const RADIO_CACHE_PROFILE = "default";
 
+type RadioQueryMode = "summary" | "full";
+
+function resolveQueryMode(value: string | null): RadioQueryMode {
+  if (value?.trim().toLowerCase() === "summary") {
+    return "summary";
+  }
+
+  return "full";
+}
+
+function resolveTakeValue(value: string | null): number | undefined {
+  if (!value) return undefined;
+
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return undefined;
+  }
+
+  return Math.min(parsed, 50);
+}
+
 function generateSlug(title: string): string {
   return title
     .toLowerCase()
@@ -47,12 +68,41 @@ function resolveDisplayDate(displayDate?: string, sortDate?: string): string {
   return new Date().toISOString().split("T")[0];
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const radios = await prisma.radio.findMany({
-      include: { segments: { orderBy: { number: "asc" } } },
-      orderBy: { sortDate: "desc" },
-    });
+    const { searchParams } = new URL(request.url);
+    const mode = resolveQueryMode(searchParams.get("mode"));
+    const slug = searchParams.get("slug")?.trim() || undefined;
+    const take = resolveTakeValue(searchParams.get("limit"));
+
+    const where = slug ? { slug } : undefined;
+
+    const radios =
+      mode === "summary"
+        ? await prisma.radio.findMany({
+            where,
+            take,
+            orderBy: { sortDate: "desc" },
+            select: {
+              id: true,
+              slug: true,
+              title: true,
+              intro: true,
+              cover: true,
+              publishedAt: true,
+              durationSec: true,
+              segments: {
+                orderBy: { number: "asc" },
+                select: { id: true },
+              },
+            },
+          })
+        : await prisma.radio.findMany({
+            where,
+            take,
+            include: { segments: { orderBy: { number: "asc" } } },
+            orderBy: { sortDate: "desc" },
+          });
 
     return NextResponse.json(radios);
   } catch (error) {

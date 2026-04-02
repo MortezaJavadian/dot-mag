@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArticleCard } from "@/components/feature/ArticleCard";
 import { RadioCard } from "@/components/feature/RadioCard";
+import { fetchInternalArray } from "@/lib/internalApi";
 import { toSafeArticleHtml } from "@/lib/articleContent";
 import { getHomeHeroCtaLabel, readHomeHeroConfig } from "@/lib/homeHero";
 import { getUploadUrl } from "@/lib/uploads";
@@ -118,37 +119,27 @@ function stabilizeRtlSentenceEnding(html: string): string {
   return html.replace(/([.!?؟])(?=\s*<\/p>)/g, "$1\u200f");
 }
 
-const INTERNAL_API_BASE_URL =
-  process.env.INTERNAL_API_BASE_URL?.trim() || "http://127.0.0.1:3000";
-
-async function fetchHomeCollection<T>(
-  path: string,
-  tags: string[] = [],
-): Promise<T[]> {
-  try {
-    const res = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
-      next: tags.length ? { revalidate: 60, tags } : { revalidate: 60 },
-    });
-
-    if (!res.ok) return [];
-
-    const data = await res.json();
-    return Array.isArray(data) ? (data as T[]) : [];
-  } catch {
-    return [];
-  }
-}
-
 async function getArticles(): Promise<HomeArticle[]> {
-  return fetchHomeCollection<HomeArticle>("/api/articles");
+  return fetchInternalArray<HomeArticle>("/api/articles?mode=summary", {
+    revalidate: 60,
+    timeoutMs: 5000,
+  });
 }
 
 async function getMagazines(): Promise<HomeMagazine[]> {
-  return fetchHomeCollection<HomeMagazine>("/api/magazines", ["magazines"]);
+  return fetchInternalArray<HomeMagazine>("/api/magazines?mode=summary", {
+    revalidate: 60,
+    tags: ["magazines"],
+    timeoutMs: 5000,
+  });
 }
 
 async function getRadios(): Promise<HomeRadio[]> {
-  return fetchHomeCollection<HomeRadio>("/api/radios", ["radios"]);
+  return fetchInternalArray<HomeRadio>("/api/radios?mode=summary", {
+    revalidate: 60,
+    tags: ["radios"],
+    timeoutMs: 5000,
+  });
 }
 
 export default async function HomePage() {

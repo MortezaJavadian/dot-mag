@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { getAdminUser } from "@/lib/auth";
 
-const prisma = new PrismaClient();
+type ArticleQueryMode = "summary" | "full";
+
+function resolveQueryMode(value: string | null): ArticleQueryMode {
+  if (value?.trim().toLowerCase() === "summary") {
+    return "summary";
+  }
+
+  return "full";
+}
 
 function resolveSortDate(value?: string): Date {
   if (!value) return new Date();
@@ -36,12 +44,38 @@ function resolveDisplayDate(displayDate?: string, sortDate?: string): string {
   return new Date().toISOString().split("T")[0];
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const articles = await prisma.article.findMany({
-      orderBy: [{ sortDate: "desc" }, { createdAt: "desc" }],
-      include: { tags: true },
-    });
+    const { searchParams } = new URL(request.url);
+    const mode = resolveQueryMode(searchParams.get("mode"));
+
+    const articles =
+      mode === "summary"
+        ? await prisma.article.findMany({
+            orderBy: [{ sortDate: "desc" }, { createdAt: "desc" }],
+            select: {
+              id: true,
+              slug: true,
+              title: true,
+              excerpt: true,
+              category: true,
+              image: true,
+              publishedAt: true,
+              featured: true,
+              tags: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+          })
+        : await prisma.article.findMany({
+            orderBy: [{ sortDate: "desc" }, { createdAt: "desc" }],
+            include: { tags: true },
+          });
+
     return NextResponse.json(articles);
   } catch (error) {
     console.error("GET /api/articles error:", error);

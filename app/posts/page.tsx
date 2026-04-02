@@ -35,7 +35,7 @@ function PostsContent() {
       setLoading(true);
       try {
         const [articlesRes, tagsRes] = await Promise.all([
-          fetch("/api/articles"),
+          fetch("/api/articles?mode=summary"),
           fetch("/api/tags"),
         ]);
         const articlesData = await articlesRes.json();

@@ -1,8 +1,10 @@
 import { Metadata } from "next";
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AudioPlayer } from "@/components/feature/AudioPlayer";
 import { RadioCard } from "@/components/feature/RadioCard";
+import { fetchInternalArray } from "@/lib/internalApi";
 import { getUploadUrl } from "@/lib/uploads";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +22,17 @@ type RadioSegmentItem = {
   durationSec: number | null;
 };
 
+type RadioSummaryItem = {
+  id: string;
+  slug: string;
+  title: string;
+  intro: string;
+  publishedAt: string;
+  cover: string | null;
+  durationSec: number | null;
+  segments: { id: string }[];
+};
+
 type RadioDetailItem = {
   id: string;
   slug: string;
@@ -32,21 +45,6 @@ type RadioDetailItem = {
   durationSec: number | null;
   segments: RadioSegmentItem[];
 };
-
-async function getRadios(): Promise<RadioDetailItem[]> {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/radios`,
-      {
-        next: { revalidate: 60, tags: ["radios"] },
-      },
-    );
-
-    return await res.json();
-  } catch {
-    return [];
-  }
-}
 
 function decodeSlug(value: string): string {
   try {
@@ -63,15 +61,66 @@ function normalizeSlug(value: string): string {
     .toLowerCase();
 }
 
+const getRadiosSummary = cache(async (): Promise<RadioSummaryItem[]> => {
+  return fetchInternalArray<RadioSummaryItem>("/api/radios?mode=summary", {
+    revalidate: 60,
+    tags: ["radios"],
+    timeoutMs: 5000,
+  });
+});
+
+const getRadioDetailBySlug = cache(
+  async (slug: string): Promise<RadioDetailItem | null> => {
+    const radios = await fetchInternalArray<RadioDetailItem>(
+      `/api/radios?slug=${encodeURIComponent(slug)}`,
+      {
+        revalidate: 60,
+        tags: ["radios"],
+        timeoutMs: 5000,
+      },
+    );
+
+    return radios[0] || null;
+  },
+);
+
+const getRadioPageData = cache(
+  async (
+    rawSlug: string,
+  ): Promise<{
+    radio: RadioDetailItem | null;
+    related: RadioSummaryItem[];
+  }> => {
+    const slug = decodeSlug(rawSlug);
+    const normalizedSlug = normalizeSlug(slug);
+    const summary = await getRadiosSummary();
+
+    const matchedSummary = summary.find(
+      (item) => normalizeSlug(item.slug) === normalizedSlug,
+    );
+
+    if (!matchedSummary) {
+      return { radio: null, related: [] };
+    }
+
+    const detail = await getRadioDetailBySlug(matchedSummary.slug);
+
+    const related = summary
+      .filter((item) => item.id !== matchedSummary.id)
+      .slice(0, 3);
+
+    return {
+      radio: detail,
+      related,
+    };
+  },
+);
+
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug: rawSlug } = await params;
-  const slug = decodeSlug(rawSlug);
-  const radios = await getRadios();
-  const radio = radios.find(
-    (item) => normalizeSlug(item.slug) === normalizeSlug(slug),
-  );
+  const { radio } = await getRadioPageData(rawSlug);
 
   if (!radio) {
     return {
@@ -93,13 +142,7 @@ export async function generateMetadata({
 
 export default async function RadioDetailPage({ params }: PageProps) {
   const { slug: rawSlug } = await params;
-  const slug = decodeSlug(rawSlug);
-
-  const radios = await getRadios();
-
-  const radio = radios.find(
-    (item) => normalizeSlug(item.slug) === normalizeSlug(slug),
-  );
+  const { radio, related } = await getRadioPageData(rawSlug);
 
   if (!radio) {
     notFound();
@@ -108,10 +151,6 @@ export default async function RadioDetailPage({ params }: PageProps) {
   const sortedSegments = [...(radio.segments || [])].sort(
     (a, b) => a.number - b.number,
   );
-
-  const relatedRadios = radios
-    .filter((item) => item.id !== radio.id)
-    .slice(0, 3);
 
   const mainAudioUrl = getUploadUrl(radio.audioUrl);
 
@@ -211,14 +250,14 @@ export default async function RadioDetailPage({ params }: PageProps) {
         </section>
       </article>
 
-      {relatedRadios.length > 0 && (
+      {related.length > 0 && (
         <section className="py-12 md:py-16 bg-background-secondary">
           <div className="container">
             <h2 className="text-2xl md:text-3xl font-bold mb-8">
               رادیوهای دیگر
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {relatedRadios.map((item) => (
+              {related.map((item) => (
                 <RadioCard key={item.id} radio={item} />
               ))}
             </div>

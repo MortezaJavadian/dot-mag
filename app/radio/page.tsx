@@ -1,4 +1,5 @@
 import { RadioCard } from "@/components/feature/RadioCard";
+import { fetchInternalArray } from "@/lib/internalApi";
 
 type RadioListItem = {
   id: string;
@@ -12,18 +13,11 @@ type RadioListItem = {
 };
 
 async function getRadios(): Promise<RadioListItem[]> {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/api/radios`,
-      {
-        next: { revalidate: 60, tags: ["radios"] },
-      },
-    );
-
-    return await res.json();
-  } catch {
-    return [];
-  }
+  return fetchInternalArray<RadioListItem>("/api/radios?mode=summary", {
+    revalidate: 60,
+    tags: ["radios"],
+    timeoutMs: 5000,
+  });
 }
 
 export default async function RadioPage() {
