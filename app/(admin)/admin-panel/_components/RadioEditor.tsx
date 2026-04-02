@@ -174,7 +174,7 @@ export default function RadioEditor({
 
     try {
       const result = await uploadAssetWithProgress(file, {
-        retries: 1,
+        retries: 4,
         onProgress: (percent) =>
           setCoverUploadStatus({
             phase: "uploading",
@@ -204,7 +204,7 @@ export default function RadioEditor({
 
     try {
       const result = await uploadAssetWithProgress(file, {
-        retries: 1,
+        retries: 4,
         onProgress: (percent) =>
           setAudioUploadStatus({
             phase: "uploading",
@@ -290,7 +290,7 @@ export default function RadioEditor({
 
     try {
       const uploadResult = await uploadAssetWithProgress(newSegmentFile, {
-        retries: 1,
+        retries: 4,
         onProgress: (percent) =>
           setSegmentUploadStatus({
             phase: "uploading",
@@ -394,7 +394,7 @@ export default function RadioEditor({
 
     try {
       const uploadResult = await uploadAssetWithProgress(file, {
-        retries: 1,
+        retries: 4,
         onProgress: (percent) =>
           setSegmentReplaceUploadStatus(segmentId, {
             phase: "uploading",

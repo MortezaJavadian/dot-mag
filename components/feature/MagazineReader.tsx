@@ -67,6 +67,18 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   const maxPage = pages.length;
   const spreadCount = Math.ceil(maxPage / 2);
 
+  const handleBack = useCallback(async () => {
+    if (document.fullscreenElement) {
+      try {
+        await document.exitFullscreen();
+      } catch {
+        // Ignore fullscreen exit errors and continue navigation.
+      }
+    }
+
+    router.push(`/archive/${magazine.slug}`);
+  }, [magazine.slug, router]);
+
   useEffect(() => {
     const updateWidth = () => setViewportWidth(window.innerWidth);
     updateWidth();
@@ -84,25 +96,6 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       document.removeEventListener("fullscreenchange", syncFullscreenState);
     };
   }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-        nextPage();
-      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-        prevPage();
-      } else if (e.key === "Escape") {
-        if (isFullscreen) {
-          exitFullscreen();
-        } else {
-          router.push(`/archive/${magazine.slug}`);
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentPage, isFullscreen, isSpreadView, maxPage, magazine.slug, router]);
 
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout>;
@@ -139,7 +132,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     }
   }, [currentPage]);
 
-  const toggleFullscreen = async () => {
+  const toggleFullscreen = useCallback(async () => {
     if (!document.fullscreenElement) {
       await document.documentElement.requestFullscreen();
       setIsFullscreen(true);
@@ -147,14 +140,33 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       await document.exitFullscreen();
       setIsFullscreen(false);
     }
-  };
+  }, []);
 
-  const exitFullscreen = async () => {
+  const exitFullscreen = useCallback(async () => {
     if (document.fullscreenElement) {
       await document.exitFullscreen();
       setIsFullscreen(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        nextPage();
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        prevPage();
+      } else if (e.key === "Escape") {
+        if (isFullscreen) {
+          void exitFullscreen();
+        } else {
+          void handleBack();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [exitFullscreen, handleBack, isFullscreen, nextPage, prevPage]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setShowControls(true);
@@ -216,27 +228,23 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     }
   }, [downloadFileName, isDownloading, pdfDownloadUrl]);
 
-  const leftIndex = isSpreadView ? currentPage * 2 : currentPage;
-  const rightIndex = isSpreadView ? leftIndex + 1 : -1;
-  const leftPage = pages[leftIndex];
-  const rightPage = rightIndex >= 0 ? pages[rightIndex] : null;
-
-  const isLastOddSpread =
-    isSpreadView && maxPage % 2 === 1 && currentPage === spreadCount - 1;
-  const spreadLeftPage = isLastOddSpread ? null : leftPage;
-  const spreadRightPage = isSpreadView
-    ? isLastOddSpread
-      ? leftPage
-      : rightPage
-    : null;
+  const singlePage = pages[currentPage] ?? null;
+  const spreadRightIndex = isSpreadView ? currentPage * 2 : -1;
+  const spreadLeftIndex = isSpreadView ? spreadRightIndex + 1 : -1;
+  const spreadRightPage =
+    spreadRightIndex >= 0 ? pages[spreadRightIndex] : null;
+  const spreadLeftPage =
+    spreadLeftIndex >= 0 && spreadLeftIndex < maxPage
+      ? pages[spreadLeftIndex]
+      : null;
 
   const displayPageNum = Math.min(
     maxPage,
     Math.max(
       0,
       isSpreadView
-        ? (spreadRightPage?.number ?? spreadLeftPage?.number ?? 0)
-        : (leftPage?.number ?? currentPage + 1),
+        ? (spreadLeftPage?.number ?? spreadRightPage?.number ?? 0)
+        : (singlePage?.number ?? currentPage + 1),
     ),
   );
   const progressPercent =
@@ -257,6 +265,10 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
           <div className="container py-3 md:py-4 flex items-center justify-between gap-3">
             <Link
               href={`/archive/${magazine.slug}`}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleBack();
+              }}
               className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
             >
               <svg
@@ -270,7 +282,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <path d="m15 18-6-6 6-6" />
+                <path d="m9 18 6-6-6-6" />
               </svg>
               <span className="hidden md:inline">بازگشت</span>
             </Link>
@@ -279,10 +291,10 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
               <h1 className="text-white font-bold text-sm md:text-base truncate">
                 {magazine.title}
               </h1>
-              <p className="text-white/60 text-xs md:text-sm truncate">
+              <p className="text-white/78 text-xs md:text-sm truncate">
                 {magazine.subtitle}
               </p>
-              <p className="text-white/60 text-[11px] md:text-xs">
+              <p className="text-white/74 text-[11px] md:text-xs">
                 {magazine.publishedAt}
               </p>
             </div>
@@ -405,7 +417,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         {maxPage > 0 ? (
           <div className="w-full h-full flex items-center justify-center">
             {isSpreadView ? (
-              <div className="grid grid-cols-2 gap-1 md:gap-1.5 w-full max-w-6xl h-full max-h-full">
+              <div className="grid grid-cols-2 gap-1.5 md:gap-2 w-full max-w-6xl h-full max-h-full">
                 <div className="h-full min-h-0 flex items-center justify-end">
                   {spreadLeftPage?.imageUrl ? (
                     <img
@@ -427,10 +439,10 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
               </div>
             ) : (
               <div className="w-full max-w-4xl h-full max-h-full flex items-center justify-center">
-                {leftPage?.imageUrl ? (
+                {singlePage?.imageUrl ? (
                   <img
-                    src={leftPage.imageUrl}
-                    alt={`Page ${leftPage.number}`}
+                    src={singlePage.imageUrl}
+                    alt={`Page ${singlePage.number}`}
                     className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
                   />
                 ) : null}

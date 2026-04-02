@@ -119,7 +119,7 @@ export default function ArticleEditor({
 
     try {
       const result = await uploadAssetWithProgress(file, {
-        retries: 1,
+        retries: 4,
         onProgress: (percent) =>
           setImageUploadStatus({
             phase: "uploading",
@@ -146,12 +146,12 @@ export default function ArticleEditor({
     setFormData((prev) => {
       if (checked) {
         return { ...prev, tagIds: [...prev.tagIds, tagId] };
-      } else {
-        return {
-          ...prev,
-          tagIds: prev.tagIds.filter((id: string) => id !== tagId),
-        };
       }
+
+      return {
+        ...prev,
+        tagIds: prev.tagIds.filter((id: string) => id !== tagId),
+      };
     });
   };
 

@@ -30,9 +30,10 @@ type CreateMagazineInput = {
   publishedAt: string;
   sortDate?: string;
   pageCount: number;
+  pages?: MagazinePageInput[];
 };
 
-type UpdateMagazineInput = Partial<CreateMagazineInput>;
+type UpdateMagazineInput = Partial<Omit<CreateMagazineInput, "pages">>;
 type MagazinePageInput = {
   number: number;
   image: string;
@@ -119,13 +120,36 @@ export async function createMagazine(data: CreateMagazineInput) {
 
   try {
     const slug = generateSlug(data.title);
+    const normalizedPages = (data.pages || [])
+      .filter((page) => page.image && page.image.trim())
+      .sort((a, b) => a.number - b.number)
+      .map((page, index) => ({
+        number: index + 1,
+        image: page.image,
+        title: `Page ${index + 1}`,
+        type: "article",
+      }));
+    const resolvedPageCount =
+      normalizedPages.length > 0 ? normalizedPages.length : data.pageCount;
 
     const magazine = await prisma.magazine.create({
       data: {
-        ...data,
+        title: data.title,
+        subtitle: data.subtitle,
+        description: data.description,
+        cover: data.cover,
+        pdfUrl: data.pdfUrl,
+        pageCount: resolvedPageCount,
         slug,
         publishedAt: resolveDisplayDate(data.publishedAt, data.sortDate),
         sortDate: resolveSortDate(data.sortDate),
+        ...(normalizedPages.length > 0
+          ? {
+              pages: {
+                create: normalizedPages,
+              },
+            }
+          : {}),
       },
       include: { pages: { orderBy: { number: "asc" } } },
     });

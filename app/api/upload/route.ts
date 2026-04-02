@@ -172,6 +172,7 @@ export async function POST(request: NextRequest) {
       url,
       originalFileName,
       storedFileName: filename,
+      size: bytes.byteLength,
     });
   } catch (error) {
     console.error("Upload error:", error);

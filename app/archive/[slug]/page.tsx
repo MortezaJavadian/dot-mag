@@ -59,7 +59,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
               </p>
             </div>
 
-            <div className="mt-3 md:mt-0 md:col-start-2 md:row-span-3 md:w-full md:shrink-0">
+            <div className="mt-3 md:mt-0 md:col-start-2 md:row-span-3 md:w-full lg:w-[85%] md:shrink-0 md:justify-self-end">
               <div className="image-frame-shell">
                 {coverSrc ? (
                   <div className="image-frame-inner">
