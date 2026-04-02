@@ -103,8 +103,8 @@ export default async function ArticlePage({ params }: PageProps) {
   const articleImage = getUploadUrl(article.image);
   const articleTagIds = new Set((article.tags || []).map((tag) => tag.id));
   const hasTags = articleTagIds.size > 0;
+  const plainExcerpt = toPlainText(article.excerpt);
   const safeContentHtml = toSafeArticleHtml(article.content);
-  const safeExcerptHtml = toSafeArticleHtml(article.excerpt);
 
   const relatedArticles = articles
     .filter((a) => {
@@ -131,10 +131,11 @@ export default async function ArticlePage({ params }: PageProps) {
                   {article.title}
                 </h1>
 
-                <div
-                  className="prose article-excerpt-prose dark:prose-invert max-w-none mb-6"
-                  dangerouslySetInnerHTML={{ __html: safeExcerptHtml }}
-                />
+                {plainExcerpt ? (
+                  <p className="text-xl md:text-2xl leading-relaxed text-foreground mb-2 md:mb-3">
+                    {plainExcerpt}
+                  </p>
+                ) : null}
 
                 <div className="flex flex-wrap items-center gap-2 text-foreground-secondary text-sm">
                   <svg

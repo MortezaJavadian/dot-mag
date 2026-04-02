@@ -64,7 +64,7 @@ type FooterTag = {
 async function getFooterTags(): Promise<FooterTag[]> {
   try {
     return await prisma.tag.findMany({
-      orderBy: { name: "asc" },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });
   } catch (error) {
     console.error("Failed to fetch footer tags:", error);

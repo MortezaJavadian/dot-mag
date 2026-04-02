@@ -158,22 +158,6 @@ function PostsContent() {
                 <h3 className="text-xl font-bold mb-3">
                   هنوز نوشته‌ای برای این برچسب نیست
                 </h3>
-                <p className="text-foreground-secondary mb-6">
-                  به زودی نوشته‌های بیشتری اضافه خواهد شد.
-                </p>
-                {tags.length > 0 && (
-                  <div className="flex gap-2 justify-center flex-wrap">
-                    {tags.map((tag) => (
-                      <button
-                        key={tag.id}
-                        onClick={() => setSelectedTab(tag.id)}
-                        className="px-4 py-2 bg-primary text-white text-sm rounded-full hover:bg-primary/90 transition-colors"
-                      >
-                        #{tag.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           )}

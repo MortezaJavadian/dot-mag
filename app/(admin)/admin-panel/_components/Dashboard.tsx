@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import { getArticles, deleteArticle } from "@/app/actions/articleActions";
 import { getMagazines, deleteMagazine } from "@/app/actions/magazineActions";
 import { getRadios, deleteRadio } from "@/app/actions/radioActions";
-import { getTags, createTag, deleteTag } from "@/app/actions/tagActions";
+import {
+  getTags,
+  createTag,
+  deleteTag,
+  reorderTag,
+} from "@/app/actions/tagActions";
 import ArticleEditor from "./ArticleEditor";
 import ArticlesTabs from "./ArticlesTabs";
 import MagazineEditor from "./MagazineEditor";
@@ -57,6 +62,7 @@ type TagItem = {
   id: string;
   name: string;
   slug: string;
+  sortOrder?: number;
   _count?: { articles?: number };
 };
 
@@ -134,6 +140,20 @@ export default function Dashboard() {
       }
     } catch (error) {
       alert("خطا در حذف برچسب");
+      console.error(error);
+    }
+  };
+
+  const handleMoveTag = async (tagId: string, direction: "up" | "down") => {
+    try {
+      const result = await reorderTag(tagId, direction);
+      if (result.success) {
+        await loadData();
+      } else {
+        alert(result.error);
+      }
+    } catch (error) {
+      alert("خطا در جابه‌جایی ترتیب برچسب");
       console.error(error);
     }
   };
@@ -411,7 +431,7 @@ export default function Dashboard() {
             </p>
           ) : (
             <div className="space-y-2">
-              {tags.map((tag) => (
+              {tags.map((tag, index) => (
                 <div
                   key={tag.id}
                   className="p-4 border rounded-lg dark:border-slate-700 flex justify-between items-center"
@@ -422,12 +442,28 @@ export default function Dashboard() {
                       {tag._count?.articles || 0} نوشته
                     </p>
                   </div>
-                  <Button
-                    onClick={() => handleDeleteTag(tag.id)}
-                    className="text-sm bg-red-500 hover:bg-red-600"
-                  >
-                    حذف
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleMoveTag(tag.id, "up")}
+                      disabled={index === 0}
+                      className="text-sm bg-slate-600 hover:bg-slate-700"
+                    >
+                      بالا
+                    </Button>
+                    <Button
+                      onClick={() => handleMoveTag(tag.id, "down")}
+                      disabled={index === tags.length - 1}
+                      className="text-sm bg-slate-600 hover:bg-slate-700"
+                    >
+                      پایین
+                    </Button>
+                    <Button
+                      onClick={() => handleDeleteTag(tag.id)}
+                      className="text-sm bg-red-500 hover:bg-red-600"
+                    >
+                      حذف
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

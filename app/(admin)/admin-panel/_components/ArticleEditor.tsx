@@ -40,6 +40,16 @@ interface ArticleEditorProps {
   onCancel: () => void;
 }
 
+function stripHtml(input?: string): string {
+  if (!input) return "";
+
+  return input
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function toDateInputValue(value?: string | Date | null): string {
   if (!value) return new Date().toISOString().split("T")[0];
 
@@ -58,7 +68,7 @@ export default function ArticleEditor({
 }: ArticleEditorProps) {
   const [formData, setFormData] = useState({
     title: article?.title || "",
-    excerpt: article?.excerpt || "",
+    excerpt: stripHtml(article?.excerpt),
     content: article?.content || "",
     category: article?.category || "",
     tagIds: article?.tags?.map((t) => t.id) || [],
@@ -193,12 +203,13 @@ export default function ArticleEditor({
 
         <div>
           <label className="block text-sm font-medium mb-1">خلاصه</label>
-          <RichTextEditor
+          <input
+            type="text"
             value={formData.excerpt}
-            onChange={(nextExcerpt) =>
-              setFormData({ ...formData, excerpt: nextExcerpt })
+            onChange={(e) =>
+              setFormData({ ...formData, excerpt: e.target.value })
             }
-            minHeightClass="min-h-[120px]"
+            className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 

@@ -42,8 +42,8 @@ export default async function MagazineDetailPage({ params }: PageProps) {
     <article>
       <header className="pt-8 pb-12 md:pt-12 md:pb-16">
         <div className="container max-w-6xl">
-          <div className="md:flex md:items-start md:gap-8 lg:gap-10">
-            <div className="md:flex-1">
+          <div className="flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_44%] lg:grid-cols-[minmax(0,1fr)_40%] md:items-start md:gap-8 lg:gap-10">
+            <div className="md:col-start-1">
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-black leading-tight mb-4">
                 {magazine.title}
               </h1>
@@ -51,7 +51,31 @@ export default async function MagazineDetailPage({ params }: PageProps) {
               <p className="text-xl md:text-2xl font-semibold text-foreground mb-5">
                 {magazine.subtitle}
               </p>
+            </div>
 
+            <div className="mt-3 md:mt-0 md:col-start-2 md:row-span-3 md:w-full md:shrink-0">
+              <div className="rounded-2xl overflow-hidden border border-card-border bg-card-bg p-2.5 md:p-3 shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
+                {coverSrc ? (
+                  <img
+                    src={coverSrc}
+                    alt={magazine.title}
+                    className="w-full h-auto max-h-[70vh] object-contain mx-auto"
+                  />
+                ) : (
+                  <div className="aspect-[3/4] rounded-xl bg-background-secondary flex flex-col items-center justify-center text-center p-6">
+                    <span className="text-primary text-5xl font-black mb-3">
+                      .
+                    </span>
+                    <p className="text-lg font-bold mb-1">{magazine.title}</p>
+                    <p className="text-sm text-foreground-secondary">
+                      تصویر جلد در دسترس نیست
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 md:mt-0 md:col-start-1">
               <p className="text-base md:text-lg leading-8 text-foreground-secondary mb-8">
                 {magazine.description || "برای این شماره توضیحی ثبت نشده است."}
               </p>
@@ -77,28 +101,6 @@ export default async function MagazineDetailPage({ params }: PageProps) {
                   >
                     دانلود PDF
                   </a>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-8 md:mt-0 md:w-[44%] lg:w-[40%] md:shrink-0">
-              <div className="rounded-2xl overflow-hidden border border-card-border bg-card-bg p-2.5 md:p-3 shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
-                {coverSrc ? (
-                  <img
-                    src={coverSrc}
-                    alt={magazine.title}
-                    className="w-full h-auto max-h-[70vh] object-contain mx-auto"
-                  />
-                ) : (
-                  <div className="aspect-[3/4] rounded-xl bg-background-secondary flex flex-col items-center justify-center text-center p-6">
-                    <span className="text-primary text-5xl font-black mb-3">
-                      .
-                    </span>
-                    <p className="text-lg font-bold mb-1">{magazine.title}</p>
-                    <p className="text-sm text-foreground-secondary">
-                      تصویر جلد در دسترس نیست
-                    </p>
-                  </div>
                 )}
               </div>
             </div>

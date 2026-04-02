@@ -288,19 +288,6 @@ a {
   margin-bottom: 0.52em;
 }
 
-.prose.article-excerpt-prose {
-  text-align: right;
-  text-justify: auto;
-  hyphens: none;
-  word-spacing: -0.02em;
-  line-height: 1.62;
-  font-size: 1.05rem;
-}
-
-.prose.article-excerpt-prose p {
-  margin-bottom: 0.42em;
-}
-
 .prose img {
   border-radius: 0.5rem;
   margin-block: 2em;

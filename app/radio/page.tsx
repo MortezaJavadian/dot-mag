@@ -36,19 +36,6 @@ export default async function RadioPage() {
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
             رادیو دات
           </h1>
-          <p className="text-foreground-secondary text-base md:text-lg max-w-2xl">
-            اپیزود کامل هر برنامه را گوش کن و بخش‌های برگزیده را جداگانه پخش یا
-            دانلود کن.
-          </p>
-        </div>
-      </section>
-
-      <section className="py-6 border-b border-card-border sticky top-16 md:top-20 bg-background/95 backdrop-blur-md z-30">
-        <div className="container">
-          <p className="text-foreground-secondary text-sm">
-            رادیوها بدون برچسب نمایش داده می‌شوند و بر اساس تاریخ انتشار مرتب
-            هستند.
-          </p>
         </div>
       </section>
 
@@ -88,9 +75,6 @@ export default async function RadioPage() {
                   </svg>
                 </div>
                 <h3 className="text-xl font-bold mb-3">رادیویی منتشر نشده</h3>
-                <p className="text-foreground-secondary">
-                  به زودی اپیزودهای جدید رادیو دات اینجا منتشر می‌شوند.
-                </p>
               </div>
             </div>
           )}
