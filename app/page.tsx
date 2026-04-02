@@ -156,7 +156,9 @@ export default async function HomePage() {
   ]);
 
   const featuredArticles = articles.filter((article) => article.featured);
-  const latestArticles = articles.slice(0, 6);
+  const selectedHomeFeaturedArticles = homeHeroConfig.featuredArticleIds
+    .map((articleId) => articles.find((article) => article.id === articleId))
+    .filter((article): article is HomeArticle => Boolean(article));
   const latestRadios = radios.slice(0, 3);
   const heroBadge = homeHeroConfig.badgeText.trim();
   const safeHeroHtml = applySecondLineMode(
@@ -204,7 +206,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="order-2 lg:order-2 animate-slide-up text-right">
+            <div className="order-2 lg:order-2 animate-slide-up text-right lg:justify-self-end lg:w-full lg:max-w-none lg:pr-[2.25rem]">
               {heroBadge && (
                 <span className="inline-block px-4 py-2 bg-primary/10 text-primary text-sm font-medium rounded-full mb-6">
                   {heroBadge}
@@ -212,7 +214,7 @@ export default async function HomePage() {
               )}
 
               <div
-                className="max-w-2xl [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4 [&_.hero-line-two-strong]:block [&_.hero-line-two-strong]:font-black [&_.hero-line-two-normal]:block [&_.hero-line-two-normal]:text-lg md:[&_.hero-line-two-normal]:text-xl [&_.hero-line-two-normal]:font-normal [&_.hero-line-two-normal]:leading-relaxed"
+                className="max-w-2xl lg:ml-auto [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4 [&_.hero-line-two-strong]:block [&_.hero-line-two-strong]:font-black [&_.hero-line-two-normal]:block [&_.hero-line-two-normal]:text-lg md:[&_.hero-line-two-normal]:text-xl [&_.hero-line-two-normal]:font-normal [&_.hero-line-two-normal]:leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: safeHeroHtml }}
               />
 
@@ -222,31 +224,25 @@ export default async function HomePage() {
                     href={heroCta.href}
                     className="inline-flex items-center gap-3 px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-all hover:scale-105"
                   >
-                    {heroCta.label}
-                    <span aria-hidden className="text-xl leading-none">
-                      {">"}
-                    </span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="rotate-180 shrink-0"
+                    >
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
+                    <span>{heroCta.label}</span>
                   </Link>
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Editorial Section */}
-      <section className="section-spacing bg-background-secondary">
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center">
-            <span className="inline-block w-12 h-1 bg-primary rounded-full mb-6" />
-            <h2 className="text-2xl md:text-3xl font-bold mb-6">سخن سردبیر</h2>
-            <p className="text-lg md:text-xl text-foreground-secondary leading-relaxed">
-              در دنیایی که همه چیز با سرعت در حال تغییر است، ما به دنبال لحظه‌ای
-              مکث هستیم. لحظه‌ای برای دیدن زیبایی در جزئیات، برای شنیدن
-              داستان‌های الهام‌بخش، و برای کشف ایده‌های نو. مجله دات، دعوتی است
-              به این سفر.
-            </p>
-            <p className="mt-6 text-khaki font-medium">— تیم مجله دات</p>
           </div>
         </div>
       </section>
@@ -278,26 +274,29 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Latest Articles */}
-      <section className="section-spacing bg-background-secondary">
-        <div className="container">
-          <div className="flex items-center justify-between mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold">آخرین نوشته‌ها</h2>
-            <Link
-              href="/posts"
-              className="text-primary font-medium hover:underline"
-            >
-              مشاهده همه ←
-            </Link>
-          </div>
+      {selectedHomeFeaturedArticles.length > 0 && (
+        <section className="section-spacing bg-background-secondary">
+          <div className="container">
+            <div className="flex items-center justify-between mb-10">
+              <h2 className="text-2xl md:text-3xl font-bold">
+                نوشته‌های برگزیده
+              </h2>
+              <Link
+                href="/posts"
+                className="text-primary font-medium hover:underline"
+              >
+                مشاهده همه ←
+              </Link>
+            </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {latestArticles.map((article) => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {selectedHomeFeaturedArticles.map((article) => (
+                <ArticleCard key={article.id} article={article} />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {latestRadios.length > 0 && (
         <section className="section-spacing">

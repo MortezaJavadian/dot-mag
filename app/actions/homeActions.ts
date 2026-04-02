@@ -14,6 +14,7 @@ export type UpdateHomeHeroInput = {
   badgeText?: string;
   heroHtml?: string;
   secondLineAsTitle?: boolean;
+  featuredArticleIds?: string[];
   image?: string | null;
   ctaMode?: HomeHeroCtaMode;
   ctaTargetId?: string | null;
@@ -38,6 +39,15 @@ function normalizeInput(
       : (typeof input.ctaTargetId === "string" && input.ctaTargetId.trim()) ||
         null;
 
+  const featuredArticleIds = Array.isArray(input.featuredArticleIds)
+    ? input.featuredArticleIds
+        .filter((value): value is string => typeof value === "string")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .filter((value, index, values) => values.indexOf(value) === index)
+        .slice(0, 3)
+    : fallback.featuredArticleIds;
+
   return {
     badgeText:
       typeof input.badgeText === "string"
@@ -51,6 +61,7 @@ function normalizeInput(
       typeof input.secondLineAsTitle === "boolean"
         ? input.secondLineAsTitle
         : fallback.secondLineAsTitle,
+    featuredArticleIds,
     image:
       typeof input.image === "string" && input.image.trim()
         ? input.image.trim()

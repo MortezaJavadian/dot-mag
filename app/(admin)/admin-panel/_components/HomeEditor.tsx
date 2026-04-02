@@ -30,6 +30,7 @@ type HomeFormState = {
   badgeText: string;
   heroHtml: string;
   secondLineAsTitle: boolean;
+  featuredArticleIds: string[];
   image: string | null;
   ctaMode: HomeHeroCtaMode;
   ctaTargetId: string | null;
@@ -40,10 +41,25 @@ function toInitialForm(config: HomeHeroConfig): HomeFormState {
     badgeText: config.badgeText || "",
     heroHtml: config.heroHtml || "",
     secondLineAsTitle: config.secondLineAsTitle,
+    featuredArticleIds: config.featuredArticleIds || [],
     image: config.image || null,
     ctaMode: config.ctaMode || "none",
     ctaTargetId: config.ctaTargetId || null,
   };
+}
+
+function moveItemInArray(
+  items: string[],
+  index: number,
+  direction: "up" | "down",
+): string[] {
+  const targetIndex = direction === "up" ? index - 1 : index + 1;
+  if (targetIndex < 0 || targetIndex >= items.length) return items;
+
+  const next = [...items];
+  const [moved] = next.splice(index, 1);
+  next.splice(targetIndex, 0, moved);
+  return next;
 }
 
 export default function HomeEditor({
@@ -60,6 +76,7 @@ export default function HomeEditor({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [uploadStatus, setUploadStatus] = useState(createIdleUploadTaskState);
+  const [nextFeaturedArticleId, setNextFeaturedArticleId] = useState("");
 
   useEffect(() => {
     setFormData(toInitialForm(config));
@@ -73,6 +90,69 @@ export default function HomeEditor({
     if (formData.ctaMode === "magazine") return magazineOptions;
     return [];
   }, [articleOptions, formData.ctaMode, magazineOptions, radioOptions]);
+
+  const selectedFeaturedArticles = useMemo(
+    () =>
+      formData.featuredArticleIds
+        .map((id) => articleOptions.find((article) => article.id === id))
+        .filter((article): article is HeroTargetOption => Boolean(article)),
+    [articleOptions, formData.featuredArticleIds],
+  );
+
+  const availableFeaturedArticles = useMemo(
+    () =>
+      articleOptions.filter(
+        (article) => !formData.featuredArticleIds.includes(article.id),
+      ),
+    [articleOptions, formData.featuredArticleIds],
+  );
+
+  useEffect(() => {
+    if (
+      nextFeaturedArticleId &&
+      availableFeaturedArticles.some(
+        (article) => article.id === nextFeaturedArticleId,
+      )
+    ) {
+      return;
+    }
+
+    setNextFeaturedArticleId(availableFeaturedArticles[0]?.id || "");
+  }, [availableFeaturedArticles, nextFeaturedArticleId]);
+
+  const addFeaturedArticle = () => {
+    if (!nextFeaturedArticleId) return;
+
+    setFormData((prev) => {
+      if (prev.featuredArticleIds.includes(nextFeaturedArticleId)) return prev;
+      if (prev.featuredArticleIds.length >= 3) return prev;
+
+      return {
+        ...prev,
+        featuredArticleIds: [...prev.featuredArticleIds, nextFeaturedArticleId],
+      };
+    });
+  };
+
+  const removeFeaturedArticle = (articleId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      featuredArticleIds: prev.featuredArticleIds.filter(
+        (id) => id !== articleId,
+      ),
+    }));
+  };
+
+  const moveFeaturedArticle = (index: number, direction: "up" | "down") => {
+    setFormData((prev) => ({
+      ...prev,
+      featuredArticleIds: moveItemInArray(
+        prev.featuredArticleIds,
+        index,
+        direction,
+      ),
+    }));
+  };
 
   const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -116,6 +196,7 @@ export default function HomeEditor({
         badgeText: formData.badgeText,
         heroHtml: formData.heroHtml,
         secondLineAsTitle: formData.secondLineAsTitle,
+        featuredArticleIds: formData.featuredArticleIds,
         image: formData.image,
         ctaMode: formData.ctaMode,
         ctaTargetId: formData.ctaMode === "none" ? null : formData.ctaTargetId,
@@ -200,6 +281,93 @@ export default function HomeEditor({
             خط اول همیشه به صورت تیتر درشت نمایش داده می شود. می توانید خط دوم
             را هم درشت نگه دارید یا آن را مثل متن عادی نمایش دهید.
           </p>
+        </div>
+      </div>
+
+      <div className="space-y-3 rounded-xl border border-slate-300 dark:border-slate-700 p-4">
+        <div>
+          <label className="block text-sm font-medium">
+            نوشته های برگزیده خانه
+          </label>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            حداکثر 3 نوشته انتخاب کنید و ترتیب نمایش آنها را مشخص کنید.
+          </p>
+        </div>
+
+        {selectedFeaturedArticles.length ? (
+          <div className="space-y-2">
+            {selectedFeaturedArticles.map((article, index) => (
+              <div
+                key={article.id}
+                className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2"
+              >
+                <span className="text-sm truncate">
+                  {index + 1}. {article.title}
+                </span>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => moveFeaturedArticle(index, "up")}
+                    disabled={index === 0}
+                    className="px-2 py-1 text-xs rounded bg-slate-200 hover:bg-slate-300 disabled:opacity-40 dark:bg-slate-700 dark:hover:bg-slate-600"
+                  >
+                    بالا
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveFeaturedArticle(index, "down")}
+                    disabled={index === selectedFeaturedArticles.length - 1}
+                    className="px-2 py-1 text-xs rounded bg-slate-200 hover:bg-slate-300 disabled:opacity-40 dark:bg-slate-700 dark:hover:bg-slate-600"
+                  >
+                    پایین
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeFeaturedArticle(article.id)}
+                    className="px-2 py-1 text-xs rounded bg-red-500 text-white hover:bg-red-600"
+                  >
+                    حذف
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            هنوز نوشته ای برای بخش برگزیده انتخاب نشده است.
+          </p>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <select
+            value={nextFeaturedArticleId}
+            onChange={(event) => setNextFeaturedArticleId(event.target.value)}
+            disabled={
+              formData.featuredArticleIds.length >= 3 ||
+              availableFeaturedArticles.length === 0
+            }
+            className="flex-1 px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            {availableFeaturedArticles.length === 0 ? (
+              <option value="">نوشته جدیدی برای افزودن وجود ندارد</option>
+            ) : (
+              availableFeaturedArticles.map((article) => (
+                <option key={article.id} value={article.id}>
+                  {article.title}
+                </option>
+              ))
+            )}
+          </select>
+          <Button
+            type="button"
+            onClick={addFeaturedArticle}
+            disabled={
+              !nextFeaturedArticleId || formData.featuredArticleIds.length >= 3
+            }
+            className="sm:w-auto"
+          >
+            افزودن
+          </Button>
         </div>
       </div>
 
