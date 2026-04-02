@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { getArticles, deleteArticle } from "@/app/actions/articleActions";
 import { getMagazines, deleteMagazine } from "@/app/actions/magazineActions";
 import { getRadios, deleteRadio } from "@/app/actions/radioActions";
+import { getHomeHeroContent } from "@/app/actions/homeActions";
 import {
   getTags,
   createTag,
@@ -12,9 +13,11 @@ import {
 } from "@/app/actions/tagActions";
 import ArticleEditor from "./ArticleEditor";
 import ArticlesTabs from "./ArticlesTabs";
+import HomeEditor from "./HomeEditor";
 import MagazineEditor from "./MagazineEditor";
 import RadioEditor from "./RadioEditor";
 import Button from "@/components/ui/Button";
+import type { HomeHeroConfig } from "@/lib/homeHero";
 
 type ArticleItem = {
   id: string;
@@ -68,12 +71,13 @@ type TagItem = {
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<
-    "articles" | "magazines" | "radios" | "tags"
-  >("articles");
+    "home" | "articles" | "magazines" | "radios" | "tags"
+  >("home");
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [magazines, setMagazines] = useState<MagazineItem[]>([]);
   const [radios, setRadios] = useState<RadioItem[]>([]);
   const [tags, setTags] = useState<TagItem[]>([]);
+  const [homeConfig, setHomeConfig] = useState<HomeHeroConfig | null>(null);
   const [editingArticle, setEditingArticle] = useState<
     ArticleItem | { id: null } | null
   >(null);
@@ -93,17 +97,20 @@ export default function Dashboard() {
 
   const loadData = async () => {
     setLoading(true);
-    const [articlesRes, magazinesRes, radiosRes, tagsRes] = await Promise.all([
-      getArticles(),
-      getMagazines(),
-      getRadios(),
-      getTags(),
-    ]);
+    const [articlesRes, magazinesRes, radiosRes, tagsRes, homeRes] =
+      await Promise.all([
+        getArticles(),
+        getMagazines(),
+        getRadios(),
+        getTags(),
+        getHomeHeroContent(),
+      ]);
 
     if (articlesRes.success) setArticles(articlesRes.data || []);
     if (magazinesRes.success) setMagazines(magazinesRes.data || []);
     if (radiosRes.success) setRadios(radiosRes.data || []);
     if (tagsRes.success) setTags(tagsRes.data || []);
+    if (homeRes.success && homeRes.data) setHomeConfig(homeRes.data);
     setLoading(false);
   };
 
@@ -201,6 +208,16 @@ export default function Dashboard() {
     <div className="space-y-6 text-slate-900 dark:text-slate-100">
       <div className="flex gap-2 border-b">
         <button
+          onClick={() => setActiveTab("home")}
+          className={`px-4 py-2 font-medium ${
+            activeTab === "home"
+              ? "border-b-2 border-primary text-primary"
+              : "text-slate-600 dark:text-slate-400"
+          }`}
+        >
+          خانه
+        </button>
+        <button
           onClick={() => setActiveTab("articles")}
           className={`px-4 py-2 font-medium ${
             activeTab === "articles"
@@ -209,6 +226,16 @@ export default function Dashboard() {
           }`}
         >
           نوشته‌ها ({articles.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("radios")}
+          className={`px-4 py-2 font-medium ${
+            activeTab === "radios"
+              ? "border-b-2 border-primary text-primary"
+              : "text-slate-600 dark:text-slate-400"
+          }`}
+        >
+          رادیودات ({radios.length})
         </button>
         <button
           onClick={() => setActiveTab("magazines")}
@@ -230,17 +257,36 @@ export default function Dashboard() {
         >
           برچسب‌ها ({tags.length})
         </button>
-        <button
-          onClick={() => setActiveTab("radios")}
-          className={`px-4 py-2 font-medium ${
-            activeTab === "radios"
-              ? "border-b-2 border-primary text-primary"
-              : "text-slate-600 dark:text-slate-400"
-          }`}
-        >
-          رادیو دات ({radios.length})
-        </button>
       </div>
+
+      {activeTab === "home" && (
+        <div className="space-y-4">
+          {loading ? (
+            <p>در حال بارگذاری...</p>
+          ) : !homeConfig ? (
+            <p className="text-slate-600 dark:text-slate-400">
+              بارگذاری تنظیمات صفحه خانه انجام نشد.
+            </p>
+          ) : (
+            <HomeEditor
+              config={homeConfig}
+              articleOptions={articles.map((article) => ({
+                id: article.id,
+                title: article.title,
+              }))}
+              radioOptions={radios.map((radio) => ({
+                id: radio.id,
+                title: radio.title,
+              }))}
+              magazineOptions={magazines.map((magazine) => ({
+                id: magazine.id,
+                title: magazine.title,
+              }))}
+              onSave={loadData}
+            />
+          )}
+        </div>
+      )}
 
       {activeTab === "articles" && (
         <div className="space-y-4">
@@ -338,7 +384,7 @@ export default function Dashboard() {
       {activeTab === "radios" && (
         <div className="space-y-4">
           <Button onClick={() => setEditingRadio({ id: null })}>
-            ایجاد رادیو دات
+            ایجاد رادیودات
           </Button>
 
           {loading ? (

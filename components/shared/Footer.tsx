@@ -50,7 +50,7 @@ function MaskIcon({ src, label }: { src: string; label: string }) {
 const pageLinks = [
   { label: "خانه", href: "/" },
   { label: "نوشته‌ها", href: "/posts" },
-  { label: "رادیو دات", href: "/radio" },
+  { label: "رادیودات", href: "/radio" },
   { label: "آرشیو مجله", href: "/archive" },
   { label: "درباره ما", href: "/about" },
 ];

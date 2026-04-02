@@ -15,7 +15,11 @@ type MarkState = {
   italic: boolean;
   underline: boolean;
   strikeThrough: boolean;
+  primaryColor: boolean;
 };
+
+const PRIMARY_COLOR_HEX = "#d73b3a";
+const PRIMARY_COLOR_RGB = "rgb(215, 59, 58)";
 
 const FONT_SIZE_OPTIONS = [
   { label: "Small", value: "2" },
@@ -109,6 +113,22 @@ function isBoldWeight(fontWeight: string): boolean {
   return Number.isFinite(numericValue) && numericValue >= 600;
 }
 
+function normalizeColorToken(token?: string): string {
+  return (token || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function isPrimaryColorToken(token?: string): boolean {
+  const normalized = normalizeColorToken(token);
+  if (!normalized) return false;
+
+  return (
+    normalized === PRIMARY_COLOR_HEX ||
+    normalized === PRIMARY_COLOR_RGB ||
+    normalized === "rgba(215, 59, 58, 1)" ||
+    normalized === "215,59,58"
+  );
+}
+
 function getActiveMarks(editorEl: HTMLDivElement): MarkState | null {
   const selection = window.getSelection();
   if (!selection || selection.rangeCount === 0) return null;
@@ -127,6 +147,7 @@ function getActiveMarks(editorEl: HTMLDivElement): MarkState | null {
       italic: false,
       underline: false,
       strikeThrough: false,
+      primaryColor: false,
     };
   }
 
@@ -135,6 +156,7 @@ function getActiveMarks(editorEl: HTMLDivElement): MarkState | null {
     italic: false,
     underline: false,
     strikeThrough: false,
+    primaryColor: false,
   };
 
   let current: HTMLElement | null = startElement;
@@ -179,6 +201,10 @@ function getActiveMarks(editorEl: HTMLDivElement): MarkState | null {
       marks.strikeThrough = true;
     }
 
+    if (isPrimaryColorToken(current.style.color)) {
+      marks.primaryColor = true;
+    }
+
     current = current.parentElement;
   }
 
@@ -205,13 +231,20 @@ function getActiveMarks(editorEl: HTMLDivElement): MarkState | null {
     marks.strikeThrough = true;
   }
 
+  if (isPrimaryColorToken(computed.color)) {
+    marks.primaryColor = true;
+  }
+
   try {
+    const commandColor = String(document.queryCommandValue("foreColor") || "");
+
     marks = {
       bold: marks.bold || document.queryCommandState("bold"),
       italic: marks.italic || document.queryCommandState("italic"),
       underline: marks.underline || document.queryCommandState("underline"),
       strikeThrough:
         marks.strikeThrough || document.queryCommandState("strikeThrough"),
+      primaryColor: marks.primaryColor || isPrimaryColorToken(commandColor),
     };
   } catch {
     // Keep DOM-based detection result when queryCommandState is unavailable.
@@ -257,6 +290,7 @@ export default function RichTextEditor({
     italic: false,
     underline: false,
     strikeThrough: false,
+    primaryColor: false,
   });
 
   const normalizedValue = useMemo(() => {
@@ -308,6 +342,18 @@ export default function RichTextEditor({
     if (disabled) return;
 
     editorRef.current?.focus();
+    if (command === "foreColor") {
+      document.execCommand("styleWithCSS", false, "true");
+      document.execCommand(
+        "foreColor",
+        false,
+        commandValue || PRIMARY_COLOR_HEX,
+      );
+      emitChange();
+      syncToolbarStateFromSelection();
+      return;
+    }
+
     if (command === "fontSize") {
       document.execCommand("styleWithCSS", false, "false");
       document.execCommand(command, false, commandValue);
@@ -373,6 +419,16 @@ export default function RichTextEditor({
           title="Strikethrough"
         >
           S
+        </button>
+        <button
+          type="button"
+          onClick={() => runCommand("foreColor", PRIMARY_COLOR_HEX)}
+          disabled={disabled}
+          className={`${getToolbarButtonClass(activeMarks.primaryColor)} font-bold text-primary`}
+          aria-label="Primary color"
+          title="Primary color"
+        >
+          A
         </button>
         <select
           className="px-2 py-1 rounded border border-slate-300 dark:border-slate-600 text-sm bg-white dark:bg-slate-800"

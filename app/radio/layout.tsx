@@ -1,8 +1,8 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "رادیو دات",
-  description: "پادکست‌ها و بخش‌های برگزیده رادیو دات",
+  title: "رادیودات",
+  description: "پادکست‌ها و بخش‌های برگزیده رادیودات",
 };
 
 export default function RadioLayout({

@@ -34,7 +34,7 @@ export default async function RadioPage() {
       <section className="pt-12 pb-8 md:pt-16 md:pb-12 bg-background-secondary">
         <div className="container">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
-            رادیو دات
+            رادیودات
           </h1>
         </div>
       </section>

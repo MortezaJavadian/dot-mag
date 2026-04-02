@@ -123,6 +123,11 @@ export function toSafeArticleHtml(content: string): string {
           /^(xx-small|x-small|small|medium|large|x-large|xx-large|xxx-large|smaller|larger)$/i,
           /^-webkit-(xx-small|x-small|small|medium|large|x-large|xx-large|xxx-large)$/i,
         ],
+        color: [
+          /^#d73b3a$/i,
+          /^rgb\(\s*215\s*,\s*59\s*,\s*58\s*\)$/i,
+          /^rgba\(\s*215\s*,\s*59\s*,\s*58\s*,\s*1\s*\)$/i,
+        ],
         "font-style": [/^italic$/],
         "font-weight": [/^(bold|[1-9]00)$/],
         "text-decoration": [

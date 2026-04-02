@@ -122,7 +122,7 @@ export default async function RadioDetailPage({ params }: PageProps) {
           <div className="container max-w-4xl space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full">
-                رادیو دات
+                رادیودات
               </span>
               <Link
                 href="/radio"

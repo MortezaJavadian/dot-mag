@@ -524,7 +524,7 @@ export default function RadioEditor({
   return (
     <div className="space-y-6 max-w-4xl text-slate-900 dark:text-slate-100">
       <h2 className="text-2xl font-bold">
-        {isExistingRadio ? "ویرایش رادیو دات" : "ایجاد رادیو دات"}
+        {isExistingRadio ? "ویرایش رادیودات" : "ایجاد رادیودات"}
       </h2>
 
       {error && (

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ArticleCard } from "@/components/feature/ArticleCard";
 import { RadioCard } from "@/components/feature/RadioCard";
+import { toSafeArticleHtml } from "@/lib/articleContent";
+import { getHomeHeroCtaLabel, readHomeHeroConfig } from "@/lib/homeHero";
 import { getUploadUrl } from "@/lib/uploads";
 
 type HomeArticle = {
@@ -33,6 +35,50 @@ type HomeRadio = {
   durationSec: number | null;
   segments: { id: string }[];
 };
+
+function resolveHeroCta(
+  ctaMode: "none" | "article" | "radio" | "magazine",
+  ctaTargetId: string | null,
+  articles: HomeArticle[],
+  magazines: HomeMagazine[],
+  radios: HomeRadio[],
+) {
+  if (ctaMode === "none") return null;
+
+  if (ctaMode === "article") {
+    const target =
+      articles.find((item) => item.id === ctaTargetId) || articles[0];
+    if (!target) return null;
+
+    return {
+      href: `/posts/${target.slug}`,
+      label: getHomeHeroCtaLabel("article"),
+    };
+  }
+
+  if (ctaMode === "radio") {
+    const target = radios.find((item) => item.id === ctaTargetId) || radios[0];
+    if (!target) return null;
+
+    return {
+      href: `/radio/${target.slug}`,
+      label: getHomeHeroCtaLabel("radio"),
+    };
+  }
+
+  if (ctaMode === "magazine") {
+    const target =
+      magazines.find((item) => item.id === ctaTargetId) || magazines[0];
+    if (!target) return null;
+
+    return {
+      href: `/archive/${target.slug}`,
+      label: getHomeHeroCtaLabel("magazine"),
+    };
+  }
+
+  return null;
+}
 
 async function getArticles(): Promise<HomeArticle[]> {
   try {
@@ -77,17 +123,26 @@ async function getRadios(): Promise<HomeRadio[]> {
 }
 
 export default async function HomePage() {
-  const [articles, magazines, radios] = await Promise.all([
+  const [articles, magazines, radios, homeHeroConfig] = await Promise.all([
     getArticles(),
     getMagazines(),
     getRadios(),
+    readHomeHeroConfig(),
   ]);
 
   const featuredArticles = articles.filter((article) => article.featured);
   const latestArticles = articles.slice(0, 6);
   const latestRadios = radios.slice(0, 3);
-  const latestMagazine = magazines[0];
-  const latestMagazineCover = getUploadUrl(latestMagazine?.cover);
+  const heroBadge = homeHeroConfig.badgeText.trim();
+  const safeHeroHtml = toSafeArticleHtml(homeHeroConfig.heroHtml);
+  const heroImage = getUploadUrl(homeHeroConfig.image || "");
+  const heroCta = resolveHeroCta(
+    homeHeroConfig.ctaMode,
+    homeHeroConfig.ctaTargetId,
+    articles,
+    magazines,
+    radios,
+  );
 
   return (
     <>
@@ -100,105 +155,52 @@ export default async function HomePage() {
         </div>
 
         <div className="container relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Text Content */}
-            <div className="animate-slide-up">
-              <span className="inline-block px-4 py-2 bg-primary/10 text-primary text-sm font-medium rounded-full mb-6">
-                شماره جدید منتشر شد
-              </span>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6">
-                داستان‌هایی که
-                <br />
-                <span className="text-primary">الهام‌بخش</span> هستند
-              </h1>
-              <p className="text-lg md:text-xl text-foreground-secondary max-w-lg mb-8 leading-relaxed">
-                مجله دات، پلتفرمی برای روایت داستان‌های الهام‌بخش از دنیای
-                طراحی، تکنولوژی و سبک زندگی مدرن.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Link
-                  href="/archive"
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-all hover:scale-105"
-                >
-                  مشاهده مجله
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="rotate-180"
-                  >
-                    <path d="m9 18 6-6-6-6" />
-                  </svg>
-                </Link>
-                <Link
-                  href="/posts"
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-foreground/5 text-foreground font-bold rounded-full hover:bg-foreground/10 transition-all"
-                >
-                  نوشته‌ها
-                </Link>
-                <Link
-                  href="/radio"
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-forest text-white font-bold rounded-full hover:bg-forest/90 transition-all"
-                >
-                  رادیو دات
-                </Link>
-              </div>
-            </div>
-
-            {/* Latest Magazine Preview */}
-            <div className="hidden lg:block animate-fade-in delay-300">
-              <div className="relative">
-                <div className="absolute -inset-4 bg-gradient-to-br from-primary/20 to-forest/20 rounded-3xl blur-2xl" />
-                <div className="relative bg-card-bg rounded-2xl p-8 border border-card-border shadow-2xl">
-                  <div className="aspect-[3/4] bg-cream rounded-xl mb-6 flex items-center justify-center text-foreground-secondary overflow-hidden">
-                    {latestMagazineCover ? (
+          <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:items-center lg:gap-12">
+            <div className="order-1 lg:order-1 animate-fade-in">
+              <div className="mx-auto my-3 lg:my-6 w-full max-w-sm sm:max-w-md lg:max-w-none lg:w-[80%]">
+                <div className="image-frame-shell">
+                  <div className="image-frame-inner">
+                    {heroImage ? (
                       <img
-                        src={latestMagazineCover}
-                        alt="جلد مجله"
-                        className="w-full h-full object-cover"
+                        src={heroImage}
+                        alt="تصویر هدر خانه"
+                        className="image-frame-media object-cover"
                       />
                     ) : (
-                      <div className="text-center">
-                        <div className="w-24 h-32 mx-auto bg-khaki/20 rounded-lg mb-4 flex items-center justify-center">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="48"
-                            height="48"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            className="text-khaki"
-                          >
-                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-                          </svg>
-                        </div>
-                        <p className="text-sm">
-                          جلد مجله {latestMagazine?.title}
-                        </p>
+                      <div className="min-h-[280px] sm:min-h-[340px] lg:min-h-[460px] flex items-center justify-center bg-cream text-foreground-secondary px-6 text-center">
+                        تصویر هدر از پنل ادمین قابل تنظیم است
                       </div>
                     )}
                   </div>
-                  <h3 className="text-xl font-bold mb-2">
-                    {latestMagazine?.title}
-                  </h3>
-                  <p className="text-foreground-secondary text-sm mb-4">
-                    {latestMagazine?.subtitle}
-                  </p>
-                  <Link
-                    href={`/archive/${latestMagazine?.slug}`}
-                    className="text-primary font-medium hover:underline"
-                  >
-                    مطالعه مجله ←
-                  </Link>
                 </div>
               </div>
+            </div>
+
+            <div className="order-2 lg:order-2 animate-slide-up text-right">
+              {heroBadge && (
+                <span className="inline-block px-4 py-2 bg-primary/10 text-primary text-sm font-medium rounded-full mb-6">
+                  {heroBadge}
+                </span>
+              )}
+
+              <div
+                className="max-w-2xl [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4"
+                dangerouslySetInnerHTML={{ __html: safeHeroHtml }}
+              />
+
+              {heroCta && (
+                <div className="mt-8">
+                  <Link
+                    href={heroCta.href}
+                    className="inline-flex items-center gap-3 px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-all hover:scale-105"
+                  >
+                    {heroCta.label}
+                    <span aria-hidden className="text-xl leading-none">
+                      {">"}
+                    </span>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -273,9 +275,7 @@ export default async function HomePage() {
         <section className="section-spacing">
           <div className="container">
             <div className="flex items-center justify-between mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold">
-                آخرین رادیو دات
-              </h2>
+              <h2 className="text-2xl md:text-3xl font-bold">آخرین رادیودات</h2>
               <Link
                 href="/radio"
                 className="text-primary font-medium hover:underline"
