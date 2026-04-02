@@ -127,12 +127,12 @@ export default async function ArticlePage({ params }: PageProps) {
           <div className="container article-page-container max-w-6xl">
             <div className="md:flex md:items-start md:gap-8 lg:gap-10">
               <div className="md:flex-1">
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-black leading-tight mb-6">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-black leading-tight mb-4">
                   {article.title}
                 </h1>
 
                 {plainExcerpt ? (
-                  <p className="text-xl md:text-2xl leading-relaxed text-foreground mb-2 md:mb-3">
+                  <p className="text-xl md:text-2xl font-semibold text-foreground mb-5">
                     {plainExcerpt}
                   </p>
                 ) : null}

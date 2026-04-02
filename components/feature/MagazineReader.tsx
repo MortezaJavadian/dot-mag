@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getUploadOriginalFileName, getUploadUrl } from "@/lib/uploads";
@@ -28,6 +28,11 @@ interface MagazineReaderProps {
   magazine: Magazine;
 }
 
+const CONTROLS_HIDE_DELAY_MS = 1_800;
+const SWIPE_THRESHOLD = 50;
+const TRACKPAD_SWIPE_THRESHOLD = 36;
+const TRACKPAD_NAV_COOLDOWN_MS = 420;
+
 export function MagazineReader({ magazine }: MagazineReaderProps) {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(0);
@@ -37,6 +42,12 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   const [downloadError, setDownloadError] = useState("");
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
+  const readerRootRef = useRef<HTMLDivElement | null>(null);
+  const controlsHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const suppressTapToggleRef = useRef(false);
+  const lastTrackpadNavAtRef = useRef(0);
 
   const pages = useMemo(() => {
     return [...(magazine.pages || [])]
@@ -66,6 +77,20 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   const isSpreadView = viewportWidth >= 1024;
   const maxPage = pages.length;
   const spreadCount = Math.ceil(maxPage / 2);
+
+  const clearControlsHideTimeout = useCallback(() => {
+    if (controlsHideTimeoutRef.current) {
+      clearTimeout(controlsHideTimeoutRef.current);
+      controlsHideTimeoutRef.current = null;
+    }
+  }, []);
+
+  const armControlsAutoHide = useCallback(() => {
+    clearControlsHideTimeout();
+    controlsHideTimeoutRef.current = setTimeout(() => {
+      setShowControls(false);
+    }, CONTROLS_HIDE_DELAY_MS);
+  }, [clearControlsHideTimeout]);
 
   const handleBack = useCallback(async () => {
     if (document.fullscreenElement) {
@@ -98,20 +123,19 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   }, []);
 
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-
     const handleMouseMove = () => {
       setShowControls(true);
-      clearTimeout(timeout);
-      timeout = setTimeout(() => setShowControls(false), 3000);
+      armControlsAutoHide();
     };
 
     window.addEventListener("mousemove", handleMouseMove);
+    armControlsAutoHide();
+
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
-      clearTimeout(timeout);
+      clearControlsHideTimeout();
     };
-  }, []);
+  }, [armControlsAutoHide, clearControlsHideTimeout]);
 
   const nextPage = useCallback(() => {
     if (isSpreadView) {
@@ -168,8 +192,146 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [exitFullscreen, handleBack, isFullscreen, nextPage, prevPage]);
 
+  const hasHorizontalPanRoom = useCallback(
+    (target: EventTarget | null, deltaX: number): boolean => {
+      if (!(target instanceof Element)) {
+        return false;
+      }
+
+      let node: Element | null = target;
+      while (node) {
+        if (node instanceof HTMLElement) {
+          const maxScrollLeft = node.scrollWidth - node.clientWidth;
+          if (maxScrollLeft > 1) {
+            if (deltaX > 0 && node.scrollLeft < maxScrollLeft - 1) {
+              return true;
+            }
+            if (deltaX < 0 && node.scrollLeft > 1) {
+              return true;
+            }
+          }
+        }
+        node = node.parentElement;
+      }
+
+      const doc = document.documentElement;
+      const maxWindowScrollX = doc.scrollWidth - window.innerWidth;
+      if (maxWindowScrollX > 1) {
+        if (deltaX > 0 && window.scrollX < maxWindowScrollX - 1) {
+          return true;
+        }
+        if (deltaX < 0 && window.scrollX > 1) {
+          return true;
+        }
+      }
+
+      return false;
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const root = readerRootRef.current;
+    if (!root || viewportWidth < 1024) {
+      return;
+    }
+
+    const handleTrackpadSwipe = (event: WheelEvent) => {
+      if (event.ctrlKey || event.metaKey) {
+        return;
+      }
+
+      const horizontalDelta = Math.abs(event.deltaX);
+      const verticalDelta = Math.abs(event.deltaY);
+
+      if (
+        horizontalDelta < TRACKPAD_SWIPE_THRESHOLD ||
+        horizontalDelta <= verticalDelta
+      ) {
+        return;
+      }
+
+      if (hasHorizontalPanRoom(event.target, event.deltaX)) {
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastTrackpadNavAtRef.current < TRACKPAD_NAV_COOLDOWN_MS) {
+        return;
+      }
+
+      if (event.deltaX > 0) {
+        if (currentPage <= 0) {
+          return;
+        }
+
+        event.preventDefault();
+        prevPage();
+      } else {
+        const hasNextPage = isSpreadView
+          ? currentPage < spreadCount - 1
+          : currentPage < maxPage - 1;
+
+        if (!hasNextPage) {
+          return;
+        }
+
+        event.preventDefault();
+        nextPage();
+      }
+
+      lastTrackpadNavAtRef.current = now;
+      setShowControls(true);
+      armControlsAutoHide();
+    };
+
+    root.addEventListener("wheel", handleTrackpadSwipe, { passive: false });
+
+    return () => {
+      root.removeEventListener("wheel", handleTrackpadSwipe);
+    };
+  }, [
+    armControlsAutoHide,
+    currentPage,
+    hasHorizontalPanRoom,
+    isSpreadView,
+    maxPage,
+    nextPage,
+    prevPage,
+    spreadCount,
+    viewportWidth,
+  ]);
+
+  const toggleControlsVisibility = useCallback(() => {
+    setShowControls((prev) => {
+      const next = !prev;
+      if (next) {
+        armControlsAutoHide();
+      } else {
+        clearControlsHideTimeout();
+      }
+
+      return next;
+    });
+  }, [armControlsAutoHide, clearControlsHideTimeout]);
+
+  const handleSurfaceTap = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (suppressTapToggleRef.current) {
+        return;
+      }
+
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("button, a, input, textarea, select, label")) {
+        return;
+      }
+
+      toggleControlsVisibility();
+    },
+    [toggleControlsVisibility],
+  );
+
   const handleTouchStart = (e: React.TouchEvent) => {
-    setShowControls(true);
     setTouchStart(e.touches[0].clientX);
   };
 
@@ -179,12 +341,20 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     const touchEnd = e.changedTouches[0].clientX;
     const diff = touchStart - touchEnd;
 
-    if (Math.abs(diff) > 50) {
+    if (Math.abs(diff) > SWIPE_THRESHOLD) {
+      suppressTapToggleRef.current = true;
+      window.setTimeout(() => {
+        suppressTapToggleRef.current = false;
+      }, 250);
+
       if (diff > 0) {
         prevPage();
       } else {
         nextPage();
       }
+
+      setShowControls(true);
+      armControlsAutoHide();
     }
 
     setTouchStart(null);
@@ -249,12 +419,18 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   );
   const progressPercent =
     maxPage === 0 ? 0 : Math.min(100, (displayPageNum / maxPage) * 100);
+  const canGoPrev = currentPage > 0;
+  const canGoNext = isSpreadView
+    ? currentPage < spreadCount - 1
+    : currentPage < maxPage - 1;
 
   return (
     <div
+      ref={readerRootRef}
       className="fixed inset-0 z-[70] overflow-hidden bg-deep-black"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onClick={handleSurfaceTap}
     >
       <header
         className={`absolute inset-x-0 top-0 z-20 transition-all duration-300 ${
@@ -366,10 +542,11 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
           <>
             <button
               onClick={prevPage}
-              disabled={currentPage <= 0}
-              className={`absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center ${
-                showControls ? "opacity-100" : "opacity-0"
-              }`}
+              disabled={!canGoPrev}
+              className={`absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 rounded-full transition-all flex items-center justify-center ${
+                showControls ? "pointer-events-auto" : "pointer-events-none"
+              } ${canGoPrev ? "bg-white/10 hover:bg-white/20" : "bg-white/10 cursor-not-allowed"}`}
+              style={{ opacity: showControls ? (canGoPrev ? 1 : 0.3) : 0 }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -388,14 +565,11 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
             <button
               onClick={nextPage}
-              disabled={
-                isSpreadView
-                  ? currentPage >= spreadCount - 1
-                  : currentPage >= maxPage - 1
-              }
-              className={`absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center ${
-                showControls ? "opacity-100" : "opacity-0"
-              }`}
+              disabled={!canGoNext}
+              className={`absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 rounded-full transition-all flex items-center justify-center ${
+                showControls ? "pointer-events-auto" : "pointer-events-none"
+              } ${canGoNext ? "bg-white/10 hover:bg-white/20" : "bg-white/10 cursor-not-allowed"}`}
+              style={{ opacity: showControls ? (canGoNext ? 1 : 0.3) : 0 }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

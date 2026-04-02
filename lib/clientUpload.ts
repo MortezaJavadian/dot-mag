@@ -38,12 +38,39 @@ const DEFAULT_OFFLINE_WAIT_MS = 20_000;
 const DEFAULT_CHUNK_SIZE_BYTES = 512 * 1024;
 const DEFAULT_CHUNKING_THRESHOLD_BYTES = 1 * 1024 * 1024;
 
+const MIME_BY_EXTENSION: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+  pdf: "application/pdf",
+  mp3: "audio/mpeg",
+  mpeg: "audio/mpeg",
+  mp4: "audio/mp4",
+  m4a: "audio/mp4",
+  aac: "audio/aac",
+  wav: "audio/wav",
+  ogg: "audio/ogg",
+  webm: "audio/webm",
+};
+
 export function createIdleUploadTaskState(): UploadTaskState {
   return {
     phase: "idle",
     progress: 0,
     error: "",
   };
+}
+
+function resolveUploadMimeType(file: File): string {
+  const rawType = (file.type || "").trim().toLowerCase();
+  if (rawType && rawType !== "application/octet-stream") {
+    return rawType;
+  }
+
+  const ext = file.name.split(".").pop()?.trim().toLowerCase() || "";
+  return MIME_BY_EXTENSION[ext] || "application/octet-stream";
 }
 
 function uploadAssetOnce(
@@ -154,7 +181,7 @@ function uploadChunkRequest({
     payload.append("totalChunks", String(totalChunks));
     payload.append("uploadId", uploadId);
     payload.append("originalFileName", file.name || "file");
-    payload.append("fileType", file.type || "application/octet-stream");
+    payload.append("fileType", resolveUploadMimeType(file));
     payload.append("totalSize", String(file.size));
 
     xhr.open("POST", "/api/upload", true);

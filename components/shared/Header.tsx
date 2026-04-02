@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { useThemeContext } from "@/components/shared/ThemeProvider";
 
@@ -14,9 +15,18 @@ const navLinks = [
 ];
 
 export function Header() {
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { theme, toggleTheme } = useThemeContext();
+
+  const isLinkActive = (href: string) => {
+    if (href === "/") {
+      return pathname === "/";
+    }
+
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -46,8 +56,10 @@ export function Header() {
 
   return (
     <header
-      className={`fixed top-0 right-0 left-0 z-50 transition-all duration-300 ${
-        isScrolled || isMenuOpen ? "bg-background shadow-sm" : "bg-transparent"
+      className={`fixed top-0 right-0 left-0 z-50 transition-all duration-300 bg-background/95 backdrop-blur-md border-b border-card-border/70 ${
+        isScrolled || isMenuOpen
+          ? "shadow-[0_14px_34px_rgba(0,0,0,0.18)]"
+          : "shadow-[0_10px_26px_rgba(0,0,0,0.14)]"
       }`}
     >
       <div className="container">
@@ -61,7 +73,11 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-foreground/80 hover:text-primary transition-colors font-medium"
+                className={`transition-all duration-200 ${
+                  isLinkActive(link.href)
+                    ? "text-primary font-black text-[1.03rem] px-3 py-1.5 rounded-full bg-primary/12 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]"
+                    : "text-foreground/80 hover:text-primary font-medium"
+                }`}
               >
                 {link.label}
               </Link>
@@ -178,7 +194,11 @@ export function Header() {
                 <Link
                   href={link.href}
                   onClick={() => setIsMenuOpen(false)}
-                  className="text-2xl font-bold text-foreground hover:text-primary transition-colors block py-2"
+                  className={`block py-2 transition-all ${
+                    isLinkActive(link.href)
+                      ? "text-primary text-[2.05rem] font-black"
+                      : "text-foreground hover:text-primary text-2xl font-bold"
+                  }`}
                 >
                   {link.label}
                 </Link>

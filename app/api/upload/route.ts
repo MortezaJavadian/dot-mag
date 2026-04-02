@@ -45,6 +45,23 @@ const ALLOWED_TYPES = [
   "audio/webm",
 ];
 
+const TYPE_BY_EXTENSION: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+  pdf: "application/pdf",
+  mp3: "audio/mpeg",
+  mpeg: "audio/mpeg",
+  mp4: "audio/mp4",
+  m4a: "audio/mp4",
+  aac: "audio/aac",
+  wav: "audio/wav",
+  ogg: "audio/ogg",
+  webm: "audio/webm",
+};
+
 function getExtension(fileName: string, mimeType?: string): string {
   const extFromName = fileName.split(".").pop()?.trim().toLowerCase();
   if (extFromName && /^[a-z0-9]{1,10}$/.test(extFromName)) {
@@ -120,6 +137,19 @@ function assertAllowedTypeAndSize(type: string, size: number): string | null {
   }
 
   return null;
+}
+
+function resolveAllowedMimeType(
+  rawType: string | null | undefined,
+  fileName: string,
+): string {
+  const normalizedType = (rawType || "").trim().toLowerCase();
+  if (ALLOWED_TYPES.includes(normalizedType)) {
+    return normalizedType;
+  }
+
+  const ext = fileName.split(".").pop()?.trim().toLowerCase() || "";
+  return TYPE_BY_EXTENSION[ext] || normalizedType || "application/octet-stream";
 }
 
 function toStringValue(value: FormDataEntryValue | null): string | null {
@@ -211,7 +241,10 @@ export async function POST(request: NextRequest) {
       const chunkIndex = Number.parseInt(chunkIndexRaw, 10);
       const totalChunks = Number.parseInt(totalChunksRaw, 10);
       const totalSize = Number.parseInt(totalSizeRaw, 10);
-      const declaredType = fileTypeRaw.trim().toLowerCase();
+      const declaredType = resolveAllowedMimeType(
+        fileTypeRaw,
+        originalFileNameRaw,
+      );
       const safeUploadId = uploadIdRaw.trim();
 
       if (
@@ -338,7 +371,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const typeError = assertAllowedTypeAndSize(file.type, file.size);
+    const resolvedType = resolveAllowedMimeType(file.type, file.name || "file");
+    const typeError = assertAllowedTypeAndSize(resolvedType, file.size);
     if (typeError) {
       return NextResponse.json(
         { success: false, error: typeError },
@@ -346,7 +380,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ext = getExtension(file.name, file.type);
+    const ext = getExtension(file.name, resolvedType);
     const originalFileName = normalizeOriginalFileName(file.name, ext);
 
     const bytes = await file.arrayBuffer();
