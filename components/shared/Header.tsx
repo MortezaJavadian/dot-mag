@@ -182,29 +182,36 @@ export function Header() {
             : "opacity-0 pointer-events-none"
         }`}
       >
-        <div className="absolute inset-0 bg-background" />
-        <nav className="container relative z-10 py-8">
-          <ul className="space-y-6">
-            {navLinks.map((link, index) => (
-              <li
-                key={link.href}
-                className={`animate-slide-in-right`}
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <Link
-                  href={link.href}
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`block py-2 transition-all ${
-                    isLinkActive(link.href)
-                      ? "text-primary text-[2.05rem] font-black"
-                      : "text-foreground hover:text-primary text-2xl font-bold"
-                  }`}
+        <button
+          type="button"
+          aria-label="Close menu"
+          className="absolute inset-0 z-[5] bg-deep-black/38 backdrop-blur-[2px]"
+          onClick={() => setIsMenuOpen(false)}
+        />
+        <nav className="container relative z-10 py-6">
+          <div className="rounded-[1.35rem] border border-card-border/70 bg-background/92 p-5 shadow-[0_24px_56px_rgba(0,0,0,0.28)] backdrop-blur-md">
+            <ul className="space-y-5">
+              {navLinks.map((link, index) => (
+                <li
+                  key={link.href}
+                  className={`animate-slide-in-right`}
+                  style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+                  <Link
+                    href={link.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`block py-2 transition-all ${
+                      isLinkActive(link.href)
+                        ? "text-primary text-[2.05rem] font-black"
+                        : "text-foreground hover:text-primary text-2xl font-bold"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </nav>
       </div>
     </header>
