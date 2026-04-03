@@ -518,6 +518,45 @@ a {
   overflow: hidden;
 }
 
+.audio-seek {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.audio-seek::-webkit-slider-runnable-track {
+  height: 0.75rem;
+  background: transparent;
+}
+
+.audio-seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 9999px;
+  border: 2px solid var(--background);
+  background: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  margin-top: -0.1rem;
+}
+
+.audio-seek::-moz-range-track {
+  height: 0.75rem;
+  background: transparent;
+  border: none;
+}
+
+.audio-seek::-moz-range-thumb {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 9999px;
+  border: 2px solid var(--background);
+  background: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
 /* Footer Separation Buffer */
 .footer-buffer {
   margin-bottom: 2rem;

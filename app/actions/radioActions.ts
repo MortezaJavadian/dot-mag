@@ -23,9 +23,14 @@ function revalidateRadiosCache() {
 
 type CreateRadioInput = {
   title: string;
+  summary?: string | null;
   intro: string;
   cover?: string | null;
   audioUrl: string;
+  audioUrlLow?: string | null;
+  audioUrlMedium?: string | null;
+  audioUrlHigh?: string | null;
+  playerAudioQuality?: string;
   publishedAt: string;
   sortDate?: string;
   durationSec?: number | null;
@@ -35,6 +40,7 @@ type UpdateRadioInput = Partial<CreateRadioInput>;
 
 type CreateRadioSegmentInput = {
   title: string;
+  summary?: string | null;
   audioUrl: string;
   durationSec?: number | null;
 };
@@ -76,6 +82,27 @@ function resolveDisplayDate(displayDate?: string, sortDate?: string): string {
   }
 
   return new Date().toISOString().split("T")[0];
+}
+
+function normalizeOptionalText(value?: string | null): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized ? normalized : null;
+}
+
+function normalizePlayerAudioQuality(
+  value?: string,
+): "low" | "medium" | "high" {
+  const normalized = value?.trim().toLowerCase();
+  if (
+    normalized === "low" ||
+    normalized === "medium" ||
+    normalized === "high"
+  ) {
+    return normalized;
+  }
+
+  return "high";
 }
 
 async function requireAdmin() {
@@ -123,11 +150,23 @@ export async function createRadio(data: CreateRadioInput) {
 
   try {
     const slug = generateSlug(data.title);
+    const summary = normalizeOptionalText(data.summary);
+    const audioUrlLow = normalizeOptionalText(data.audioUrlLow);
+    const audioUrlMedium = normalizeOptionalText(data.audioUrlMedium);
+    const audioUrlHigh = normalizeOptionalText(data.audioUrlHigh);
+    const playerAudioQuality = normalizePlayerAudioQuality(
+      data.playerAudioQuality,
+    );
 
     const radio = await prisma.radio.create({
       data: {
         ...data,
         slug,
+        summary,
+        audioUrlLow,
+        audioUrlMedium,
+        audioUrlHigh,
+        playerAudioQuality,
         publishedAt: resolveDisplayDate(data.publishedAt, data.sortDate),
         sortDate: resolveSortDate(data.sortDate),
       },
@@ -160,6 +199,28 @@ export async function updateRadio(id: string, data: UpdateRadioInput) {
 
     if (typeof data.sortDate === "string") {
       updateData.sortDate = resolveSortDate(data.sortDate);
+    }
+
+    if (data.summary !== undefined) {
+      updateData.summary = normalizeOptionalText(data.summary);
+    }
+
+    if (data.audioUrlLow !== undefined) {
+      updateData.audioUrlLow = normalizeOptionalText(data.audioUrlLow);
+    }
+
+    if (data.audioUrlMedium !== undefined) {
+      updateData.audioUrlMedium = normalizeOptionalText(data.audioUrlMedium);
+    }
+
+    if (data.audioUrlHigh !== undefined) {
+      updateData.audioUrlHigh = normalizeOptionalText(data.audioUrlHigh);
+    }
+
+    if (data.playerAudioQuality !== undefined) {
+      updateData.playerAudioQuality = normalizePlayerAudioQuality(
+        data.playerAudioQuality,
+      );
     }
 
     if (typeof data.publishedAt === "string") {
@@ -220,6 +281,7 @@ export async function addRadioSegment(
           radioId,
           number: segmentCount + 1,
           title: segment.title,
+          summary: normalizeOptionalText(segment.summary),
           audioUrl: segment.audioUrl,
           durationSec: segment.durationSec ?? null,
         },

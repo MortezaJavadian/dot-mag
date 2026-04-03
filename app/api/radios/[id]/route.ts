@@ -48,6 +48,27 @@ function resolveDisplayDate(displayDate?: string, sortDate?: string): string {
   return new Date().toISOString().split("T")[0];
 }
 
+function normalizeOptionalText(value?: string | null): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized ? normalized : null;
+}
+
+function normalizePlayerAudioQuality(
+  value?: string,
+): "low" | "medium" | "high" {
+  const normalized = value?.trim().toLowerCase();
+  if (
+    normalized === "low" ||
+    normalized === "medium" ||
+    normalized === "high"
+  ) {
+    return normalized;
+  }
+
+  return "high";
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -96,6 +117,28 @@ export async function PUT(
 
     if (typeof data.sortDate === "string") {
       updateData.sortDate = resolveSortDate(data.sortDate);
+    }
+
+    if (data.summary !== undefined) {
+      updateData.summary = normalizeOptionalText(data.summary);
+    }
+
+    if (data.audioUrlLow !== undefined) {
+      updateData.audioUrlLow = normalizeOptionalText(data.audioUrlLow);
+    }
+
+    if (data.audioUrlMedium !== undefined) {
+      updateData.audioUrlMedium = normalizeOptionalText(data.audioUrlMedium);
+    }
+
+    if (data.audioUrlHigh !== undefined) {
+      updateData.audioUrlHigh = normalizeOptionalText(data.audioUrlHigh);
+    }
+
+    if (data.playerAudioQuality !== undefined) {
+      updateData.playerAudioQuality = normalizePlayerAudioQuality(
+        data.playerAudioQuality,
+      );
     }
 
     if (typeof data.publishedAt === "string") {

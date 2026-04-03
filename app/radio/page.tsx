@@ -5,11 +5,11 @@ type RadioListItem = {
   id: string;
   slug: string;
   title: string;
+  summary?: string | null;
   intro: string;
   cover: string | null;
   publishedAt: string;
   durationSec: number | null;
-  segments: { id: string }[];
 };
 
 async function getRadios(): Promise<RadioListItem[]> {

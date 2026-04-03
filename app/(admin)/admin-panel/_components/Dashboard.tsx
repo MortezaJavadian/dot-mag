@@ -45,15 +45,21 @@ type RadioSegmentItem = {
   id: string;
   number: number;
   title: string;
+  summary?: string | null;
   audioUrl: string;
   durationSec?: number | null;
 };
 
 type RadioItem = {
   id: string;
+  summary?: string | null;
   intro?: string;
   cover?: string | null;
   audioUrl?: string | null;
+  audioUrlLow?: string | null;
+  audioUrlMedium?: string | null;
+  audioUrlHigh?: string | null;
+  playerAudioQuality?: string | null;
   durationSec?: number | null;
   title: string;
   publishedAt: string;

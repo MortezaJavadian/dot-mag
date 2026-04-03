@@ -79,9 +79,14 @@ model Radio {
   id          String         @id @default(cuid())
   slug        String         @unique
   title       String
+  summary     String?        @db.Text
   intro       String         @db.Text
   cover       String?        @db.Text
   audioUrl    String         @db.Text
+  audioUrlLow String?        @db.Text
+  audioUrlMedium String?     @db.Text
+  audioUrlHigh String?       @db.Text
+  playerAudioQuality String  @default("high")
   publishedAt String
   sortDate    DateTime       @default(now())
   durationSec Int?
@@ -96,6 +101,7 @@ model RadioSegment {
   radioId     String
   number      Int
   title       String
+  summary     String?  @db.Text
   audioUrl    String   @db.Text
   durationSec Int?
   createdAt   DateTime @default(now())

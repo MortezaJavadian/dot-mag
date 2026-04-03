@@ -18,11 +18,15 @@ import {
   type UploadTaskState,
 } from "@/lib/clientUpload";
 import { getUploadUrl } from "@/lib/uploads";
+import RichTextEditor from "./RichTextEditor";
+
+type PlayerAudioQuality = "low" | "medium" | "high";
 
 type RadioSegmentSource = {
   id: string;
   number: number;
   title: string;
+  summary?: string | null;
   audioUrl: string;
   durationSec?: number | null;
 };
@@ -30,9 +34,14 @@ type RadioSegmentSource = {
 type RadioSource = {
   id?: string | null;
   title?: string;
+  summary?: string | null;
   intro?: string;
   cover?: string | null;
   audioUrl?: string | null;
+  audioUrlLow?: string | null;
+  audioUrlMedium?: string | null;
+  audioUrlHigh?: string | null;
+  playerAudioQuality?: string | null;
   publishedAt?: string;
   sortDate?: string | Date;
   durationSec?: number | null;
@@ -49,9 +58,28 @@ type ManagedSegment = {
   id: string;
   number: number;
   title: string;
+  summary: string;
   audioUrl: string;
   durationSec: number | null;
 };
+
+const QUALITY_LABELS: Record<PlayerAudioQuality, string> = {
+  low: "کیفیت پایین",
+  medium: "کیفیت متوسط",
+  high: "کیفیت بالا",
+};
+
+const QUALITY_HELP_TEXT: Record<PlayerAudioQuality, string> = {
+  low: "برای اینترنت ضعیف",
+  medium: "متعادل",
+  high: "برای بهترین کیفیت",
+};
+
+const QUALITY_FIELD_BY_KEY = {
+  low: "audioUrlLow",
+  medium: "audioUrlMedium",
+  high: "audioUrlHigh",
+} as const;
 
 const IDLE_UPLOAD_STATUS: UploadTaskState = {
   phase: "idle",
@@ -68,6 +96,7 @@ function normalizeSegments(
       id: segment.id,
       number: segment.number,
       title: segment.title,
+      summary: segment.summary || "",
       audioUrl: segment.audioUrl,
       durationSec:
         typeof segment.durationSec === "number" ? segment.durationSec : null,
@@ -113,16 +142,110 @@ function toDateInputValue(value?: string | Date | null): string {
   return parsed.toISOString().split("T")[0];
 }
 
+function normalizePlayerAudioQuality(
+  value?: string | null,
+): PlayerAudioQuality {
+  const normalized = value?.trim().toLowerCase();
+
+  if (
+    normalized === "low" ||
+    normalized === "medium" ||
+    normalized === "high"
+  ) {
+    return normalized;
+  }
+
+  return "high";
+}
+
+function resolveSelectedAudioUrl(
+  quality: PlayerAudioQuality,
+  audioUrlLow: string,
+  audioUrlMedium: string,
+  audioUrlHigh: string,
+): string {
+  const selected =
+    quality === "low"
+      ? audioUrlLow
+      : quality === "medium"
+        ? audioUrlMedium
+        : audioUrlHigh;
+
+  return selected || audioUrlHigh || audioUrlMedium || audioUrlLow || "";
+}
+
+async function extractDurationFromAudioFile(
+  file: File,
+): Promise<number | null> {
+  return new Promise((resolve) => {
+    const previewUrl = URL.createObjectURL(file);
+    const audio = document.createElement("audio");
+    let settled = false;
+    let timeoutId: number | null = null;
+
+    const finalize = (durationSec: number | null) => {
+      if (settled) return;
+      settled = true;
+
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+
+      audio.removeAttribute("src");
+      audio.load();
+      URL.revokeObjectURL(previewUrl);
+      resolve(durationSec);
+    };
+
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => {
+      const nextDuration =
+        Number.isFinite(audio.duration) && audio.duration > 0
+          ? Math.floor(audio.duration)
+          : null;
+      finalize(nextDuration);
+    };
+
+    audio.onerror = () => {
+      finalize(null);
+    };
+
+    timeoutId = window.setTimeout(() => {
+      finalize(null);
+    }, 7000);
+
+    audio.src = previewUrl;
+  });
+}
+
+function buildQualityStatusState(): Record<
+  PlayerAudioQuality,
+  UploadTaskState
+> {
+  return {
+    low: createIdleUploadTaskState(),
+    medium: createIdleUploadTaskState(),
+    high: createIdleUploadTaskState(),
+  };
+}
+
 export default function RadioEditor({
   radio,
   onSave,
   onCancel,
 }: RadioEditorProps) {
+  const initialHighAudioUrl =
+    getUploadUrl(radio?.audioUrlHigh) || getUploadUrl(radio?.audioUrl) || "";
+
   const [formData, setFormData] = useState({
     title: radio?.title || "",
+    summary: radio?.summary || "",
     intro: radio?.intro || "",
     cover: getUploadUrl(radio?.cover) || "",
-    audioUrl: getUploadUrl(radio?.audioUrl) || "",
+    audioUrlLow: getUploadUrl(radio?.audioUrlLow) || "",
+    audioUrlMedium: getUploadUrl(radio?.audioUrlMedium) || "",
+    audioUrlHigh: initialHighAudioUrl,
+    playerAudioQuality: normalizePlayerAudioQuality(radio?.playerAudioQuality),
     publishedAt: radio?.publishedAt || toDateInputValue(radio?.sortDate),
     sortDate: toDateInputValue(radio?.sortDate),
     durationSec:
@@ -133,16 +256,16 @@ export default function RadioEditor({
     normalizeSegments(radio?.segments),
   );
   const [newSegmentTitle, setNewSegmentTitle] = useState("");
-  const [newSegmentDuration, setNewSegmentDuration] = useState("");
+  const [newSegmentSummary, setNewSegmentSummary] = useState("");
   const [newSegmentFile, setNewSegmentFile] = useState<File | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [coverUploadStatus, setCoverUploadStatus] = useState(
     createIdleUploadTaskState,
   );
-  const [audioUploadStatus, setAudioUploadStatus] = useState(
-    createIdleUploadTaskState,
-  );
+  const [qualityUploadStatuses, setQualityUploadStatuses] = useState<
+    Record<PlayerAudioQuality, UploadTaskState>
+  >(buildQualityStatusState);
   const [segmentUploadStatus, setSegmentUploadStatus] = useState(
     createIdleUploadTaskState,
   );
@@ -154,6 +277,23 @@ export default function RadioEditor({
   const isExistingRadio = Boolean(radio?.id);
   const radioId = typeof radio.id === "string" ? radio.id : null;
   const sortedSegments = useMemo(() => normalizeSegments(segments), [segments]);
+
+  const selectedQualitySource =
+    formData.playerAudioQuality === "low"
+      ? formData.audioUrlLow
+      : formData.playerAudioQuality === "medium"
+        ? formData.audioUrlMedium
+        : formData.audioUrlHigh;
+
+  const setQualityUploadStatus = (
+    quality: PlayerAudioQuality,
+    status: UploadTaskState,
+  ) => {
+    setQualityUploadStatuses((prev) => ({
+      ...prev,
+      [quality]: status,
+    }));
+  };
 
   const setSegmentReplaceUploadStatus = (
     segmentId: string,
@@ -195,31 +335,68 @@ export default function RadioEditor({
     }
   };
 
-  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleQualityAudioUpload = async (
+    quality: PlayerAudioQuality,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setAudioUploadStatus({ phase: "uploading", progress: 0, error: "" });
+    setQualityUploadStatus(quality, {
+      phase: "uploading",
+      progress: 0,
+      error: "",
+    });
     setError("");
 
     try {
-      const result = await uploadAssetWithProgress(file, {
-        retries: 4,
-        onProgress: (percent) =>
-          setAudioUploadStatus({
-            phase: "uploading",
-            progress: percent,
-            error: "",
-          }),
+      const [uploadResult, extractedDuration] = await Promise.all([
+        uploadAssetWithProgress(file, {
+          retries: 4,
+          onProgress: (percent) =>
+            setQualityUploadStatus(quality, {
+              phase: "uploading",
+              progress: percent,
+              error: "",
+            }),
+        }),
+        extractDurationFromAudioFile(file),
+      ]);
+
+      const uploadedUrl = uploadResult.url;
+      setFormData((prev) => {
+        const field = QUALITY_FIELD_BY_KEY[quality];
+        const next = {
+          ...prev,
+          [field]: uploadedUrl,
+        };
+
+        const activeQualityField =
+          QUALITY_FIELD_BY_KEY[next.playerAudioQuality];
+        if (!next[activeQualityField]) {
+          next.playerAudioQuality = quality;
+        }
+
+        if (typeof extractedDuration === "number" && extractedDuration > 0) {
+          next.durationSec = String(extractedDuration);
+        }
+
+        return next;
       });
 
-      const uploadedUrl = result.url;
-      setFormData((prev) => ({ ...prev, audioUrl: uploadedUrl }));
-      setAudioUploadStatus({ phase: "success", progress: 100, error: "" });
+      setQualityUploadStatus(quality, {
+        phase: "success",
+        progress: 100,
+        error: "",
+      });
     } catch (uploadError: unknown) {
       const message = getErrorMessage(uploadError, "خطا در آپلود فایل صوتی");
       setError(message);
-      setAudioUploadStatus({ phase: "error", progress: 0, error: message });
+      setQualityUploadStatus(quality, {
+        phase: "error",
+        progress: 0,
+        error: message,
+      });
     } finally {
       e.target.value = "";
     }
@@ -232,17 +409,35 @@ export default function RadioEditor({
 
     try {
       const durationSec = parseDurationSeconds(formData.durationSec);
-      if (!formData.audioUrl) {
-        setError("فایل صوتی اصلی را آپلود کنید");
+      if (!selectedQualitySource) {
+        setError("برای کیفیت انتخابی پلیر، فایل صوتی آپلود نشده است");
+        setLoading(false);
+        return;
+      }
+
+      const primaryAudioUrl = resolveSelectedAudioUrl(
+        formData.playerAudioQuality,
+        formData.audioUrlLow,
+        formData.audioUrlMedium,
+        formData.audioUrlHigh,
+      );
+
+      if (!primaryAudioUrl) {
+        setError("حداقل یک فایل صوتی برای اپیزود کامل آپلود کنید");
         setLoading(false);
         return;
       }
 
       const payload = {
         title: formData.title,
+        summary: formData.summary || null,
         intro: formData.intro,
         cover: formData.cover || null,
-        audioUrl: formData.audioUrl,
+        audioUrl: primaryAudioUrl,
+        audioUrlLow: formData.audioUrlLow || null,
+        audioUrlMedium: formData.audioUrlMedium || null,
+        audioUrlHigh: formData.audioUrlHigh || null,
+        playerAudioQuality: formData.playerAudioQuality,
         publishedAt: formData.publishedAt,
         sortDate: formData.sortDate,
         durationSec,
@@ -289,23 +484,24 @@ export default function RadioEditor({
     setError("");
 
     try {
-      const uploadResult = await uploadAssetWithProgress(newSegmentFile, {
-        retries: 4,
-        onProgress: (percent) =>
-          setSegmentUploadStatus({
-            phase: "uploading",
-            progress: percent,
-            error: "",
-          }),
-      });
-
-      const uploadedUrl = uploadResult.url;
-      const durationSec = parseDurationSeconds(newSegmentDuration);
+      const [uploadResult, extractedDuration] = await Promise.all([
+        uploadAssetWithProgress(newSegmentFile, {
+          retries: 4,
+          onProgress: (percent) =>
+            setSegmentUploadStatus({
+              phase: "uploading",
+              progress: percent,
+              error: "",
+            }),
+        }),
+        extractDurationFromAudioFile(newSegmentFile),
+      ]);
 
       const result = await addRadioSegment(radioId, {
         title: newSegmentTitle.trim(),
-        audioUrl: uploadedUrl,
-        durationSec,
+        summary: newSegmentSummary.trim() || null,
+        audioUrl: uploadResult.url,
+        durationSec: extractedDuration,
       });
 
       if (!result.success || !result.data) {
@@ -315,7 +511,7 @@ export default function RadioEditor({
       const createdSegment = result.data;
       setSegments((prev) => normalizeSegments([...prev, createdSegment]));
       setNewSegmentTitle("");
-      setNewSegmentDuration("");
+      setNewSegmentSummary("");
       setNewSegmentFile(null);
       setSegmentUploadStatus({ phase: "success", progress: 100, error: "" });
     } catch (segmentError: unknown) {
@@ -325,14 +521,12 @@ export default function RadioEditor({
       );
       setError(message);
       setSegmentUploadStatus({ phase: "error", progress: 0, error: message });
-    } finally {
-      // keep latest status visible for user feedback
     }
   };
 
   const handleSegmentFieldChange = (
     segmentId: string,
-    field: "title" | "durationSec",
+    field: "title" | "summary" | "durationSec",
     value: string,
   ) => {
     setSegments((prev) =>
@@ -348,7 +542,7 @@ export default function RadioEditor({
 
         return {
           ...segment,
-          title: value,
+          [field]: value,
         };
       }),
     );
@@ -364,6 +558,7 @@ export default function RadioEditor({
     try {
       const result = await updateRadioSegment(segmentId, {
         title: segment.title,
+        summary: segment.summary.trim() || null,
         durationSec: segment.durationSec,
       });
 
@@ -393,20 +588,22 @@ export default function RadioEditor({
     setError("");
 
     try {
-      const uploadResult = await uploadAssetWithProgress(file, {
-        retries: 4,
-        onProgress: (percent) =>
-          setSegmentReplaceUploadStatus(segmentId, {
-            phase: "uploading",
-            progress: percent,
-            error: "",
-          }),
-      });
-
-      const uploadedUrl = uploadResult.url;
+      const [uploadResult, extractedDuration] = await Promise.all([
+        uploadAssetWithProgress(file, {
+          retries: 4,
+          onProgress: (percent) =>
+            setSegmentReplaceUploadStatus(segmentId, {
+              phase: "uploading",
+              progress: percent,
+              error: "",
+            }),
+        }),
+        extractDurationFromAudioFile(file),
+      ]);
 
       const result = await updateRadioSegment(segmentId, {
-        audioUrl: uploadedUrl,
+        audioUrl: uploadResult.url,
+        durationSec: extractedDuration,
       });
 
       if (!result.success) {
@@ -418,11 +615,16 @@ export default function RadioEditor({
           segment.id === segmentId
             ? {
                 ...segment,
-                audioUrl: uploadedUrl,
+                audioUrl: uploadResult.url,
+                durationSec:
+                  typeof extractedDuration === "number"
+                    ? extractedDuration
+                    : segment.durationSec,
               }
             : segment,
         ),
       );
+
       setSegmentReplaceUploadStatus(segmentId, {
         phase: "success",
         progress: 100,
@@ -519,8 +721,6 @@ export default function RadioEditor({
     }
   };
 
-  const mainAudioUrl = getUploadUrl(formData.audioUrl) || "";
-
   return (
     <div className="space-y-6 max-w-4xl text-slate-900 dark:text-slate-100">
       <h2 className="text-2xl font-bold">
@@ -548,14 +748,27 @@ export default function RadioEditor({
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">توضیح معرفی</label>
-          <textarea
-            value={formData.intro}
+          <label className="block text-sm font-medium mb-1">خلاصه</label>
+          <input
+            type="text"
+            value={formData.summary}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, intro: e.target.value }))
+              setFormData((prev) => ({ ...prev, summary: e.target.value }))
             }
-            rows={4}
+            placeholder="یک خلاصه کوتاه برای کارت و هدر"
             className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">متن معرفی</label>
+          <RichTextEditor
+            value={formData.intro}
+            onChange={(nextIntro) =>
+              setFormData((prev) => ({ ...prev, intro: nextIntro }))
+            }
+            placeholder="متن معرفی رادیودات را وارد کنید..."
+            minHeightClass="min-h-[220px]"
           />
         </div>
 
@@ -624,7 +837,7 @@ export default function RadioEditor({
 
             <div>
               <label className="block text-sm font-medium mb-1">
-                مدت کل (ثانیه - اختیاری)
+                مدت کل (ثانیه - خودکار و قابل اصلاح)
               </label>
               <input
                 type="number"
@@ -636,39 +849,106 @@ export default function RadioEditor({
                     durationSec: e.target.value,
                   }))
                 }
+                placeholder="بعد از آپلود خودکار پر می‌شود"
                 className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
               />
             </div>
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            فایل صوتی اصلی
-          </label>
-          <input
-            type="file"
-            accept="audio/mpeg,audio/mp3,audio/mp4,audio/aac,audio/wav,audio/ogg,audio/webm"
-            onChange={handleAudioUpload}
-            disabled={audioUploadStatus.phase === "uploading"}
-            className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
-          />
-          <UploadStatus
-            status={audioUploadStatus}
-            uploadingLabel="در حال آپلود فایل صوتی..."
-            successLabel="فایل صوتی با موفقیت آپلود شد"
-            errorLabel="آپلود فایل صوتی انجام نشد"
-          />
-          {mainAudioUrl && (
-            <div className="mt-3">
-              <audio
-                controls
-                preload="metadata"
-                src={mainAudioUrl}
-                className="w-full"
-              />
-            </div>
-          )}
+        <div className="rounded-xl border border-slate-300 dark:border-slate-700 p-4 md:p-5 space-y-4">
+          <div>
+            <h3 className="text-base md:text-lg font-semibold">
+              فایل اپیزود کامل
+            </h3>
+            <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-1">
+              می‌توانید یک، دو یا سه کیفیت آپلود کنید. دانلودهای صفحه رادیودات
+              فقط بر اساس کیفیت‌های آپلود شده نمایش داده می‌شوند.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(["low", "medium", "high"] as PlayerAudioQuality[]).map(
+              (quality) => {
+                const qualityField = QUALITY_FIELD_BY_KEY[quality];
+                const audioUrl = formData[qualityField];
+                const status =
+                  qualityUploadStatuses[quality] || IDLE_UPLOAD_STATUS;
+
+                return (
+                  <div
+                    key={quality}
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-2"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold">
+                        {QUALITY_LABELS[quality]}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {QUALITY_HELP_TEXT[quality]}
+                      </p>
+                    </div>
+
+                    <input
+                      type="file"
+                      accept="audio/mpeg,audio/mp3,audio/mp4,audio/aac,audio/wav,audio/ogg,audio/webm"
+                      onChange={(e) => handleQualityAudioUpload(quality, e)}
+                      disabled={status.phase === "uploading"}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                    />
+
+                    <UploadStatus
+                      status={status}
+                      uploadingLabel="در حال آپلود..."
+                      successLabel="فایل با موفقیت آپلود شد"
+                      errorLabel="آپلود فایل انجام نشد"
+                    />
+
+                    {audioUrl ? (
+                      <audio
+                        controls
+                        preload="metadata"
+                        src={audioUrl}
+                        className="w-full"
+                      />
+                    ) : (
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        هنوز فایلی آپلود نشده است.
+                      </p>
+                    )}
+                  </div>
+                );
+              },
+            )}
+          </div>
+
+          <div className="max-w-xs">
+            <label className="block text-sm font-medium mb-1">
+              کیفیت پخش داخلی سایت
+            </label>
+            <select
+              value={formData.playerAudioQuality}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  playerAudioQuality: normalizePlayerAudioQuality(
+                    e.target.value,
+                  ),
+                }))
+              }
+              className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+            >
+              <option value="low">
+                کیفیت پایین {formData.audioUrlLow ? "" : "(آپلود نشده)"}
+              </option>
+              <option value="medium">
+                کیفیت متوسط {formData.audioUrlMedium ? "" : "(آپلود نشده)"}
+              </option>
+              <option value="high">
+                کیفیت بالا {formData.audioUrlHigh ? "" : "(آپلود نشده)"}
+              </option>
+            </select>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -676,8 +956,8 @@ export default function RadioEditor({
             {loading
               ? "در حال ذخیره..."
               : isExistingRadio
-                ? "بروزرسانی رادیو"
-                : "ایجاد رادیو"}
+                ? "بروزرسانی رادیودات"
+                : "ایجاد رادیودات"}
           </Button>
           <Button
             type="button"
@@ -691,7 +971,7 @@ export default function RadioEditor({
               type="button"
               onClick={async () => {
                 if (
-                  confirm("آیا از حذف کامل این رادیو مطمئن هستید؟") &&
+                  confirm("آیا از حذف کامل این رادیودات مطمئن هستید؟") &&
                   radioId
                 ) {
                   await deleteRadio(radioId);
@@ -700,21 +980,25 @@ export default function RadioEditor({
               }}
               className="bg-red-500 hover:bg-red-600"
             >
-              حذف رادیو
+              حذف رادیودات
             </Button>
           )}
         </div>
       </form>
 
       {isExistingRadio && (
-        <section className="space-y-4 pt-6 border-t">
+        <section className="space-y-4 pt-6 border-t border-slate-300 dark:border-slate-700">
           <h3 className="text-lg font-semibold">
             بخش‌های برگزیده ({sortedSegments.length})
           </h3>
 
           <div className="p-4 border rounded-lg dark:border-slate-700 space-y-3">
             <h4 className="font-medium">افزودن بخش جدید</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                عنوان بخش
+              </label>
               <input
                 type="text"
                 value={newSegmentTitle}
@@ -722,14 +1006,24 @@ export default function RadioEditor({
                 placeholder="عنوان بخش"
                 className="w-full px-3 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
               />
-              <input
-                type="number"
-                min={1}
-                value={newSegmentDuration}
-                onChange={(e) => setNewSegmentDuration(e.target.value)}
-                placeholder="مدت (ثانیه)"
-                className="w-full px-3 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                خلاصه بخش
+              </label>
+              <RichTextEditor
+                value={newSegmentSummary}
+                onChange={setNewSegmentSummary}
+                placeholder="خلاصه بخش برگزیده را بنویسید..."
+                minHeightClass="min-h-[140px]"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                فایل صوتی بخش
+              </label>
               <input
                 type="file"
                 accept="audio/mpeg,audio/mp3,audio/mp4,audio/aac,audio/wav,audio/ogg,audio/webm"
@@ -737,6 +1031,7 @@ export default function RadioEditor({
                 className="w-full px-3 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
               />
             </div>
+
             <Button
               type="button"
               onClick={handleAddSegment}
@@ -746,6 +1041,7 @@ export default function RadioEditor({
                 ? "در حال افزودن..."
                 : "افزودن بخش برگزیده"}
             </Button>
+
             <UploadStatus
               status={segmentUploadStatus}
               uploadingLabel="در حال آپلود فایل بخش برگزیده..."
@@ -781,7 +1077,10 @@ export default function RadioEditor({
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        عنوان
+                      </label>
                       <input
                         type="text"
                         value={segment.title}
@@ -794,6 +1093,30 @@ export default function RadioEditor({
                         }
                         className="w-full px-3 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        خلاصه
+                      </label>
+                      <RichTextEditor
+                        value={segment.summary}
+                        onChange={(nextSummary) =>
+                          handleSegmentFieldChange(
+                            segment.id,
+                            "summary",
+                            nextSummary,
+                          )
+                        }
+                        placeholder="خلاصه بخش برگزیده..."
+                        minHeightClass="min-h-[120px]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        مدت (ثانیه - خودکار و قابل اصلاح)
+                      </label>
                       <input
                         type="number"
                         min={1}
@@ -805,7 +1128,6 @@ export default function RadioEditor({
                             e.target.value,
                           )
                         }
-                        placeholder="مدت (ثانیه)"
                         className="w-full px-3 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
                       />
                     </div>

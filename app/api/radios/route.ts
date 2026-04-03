@@ -68,6 +68,27 @@ function resolveDisplayDate(displayDate?: string, sortDate?: string): string {
   return new Date().toISOString().split("T")[0];
 }
 
+function normalizeOptionalText(value?: string | null): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized ? normalized : null;
+}
+
+function normalizePlayerAudioQuality(
+  value?: string,
+): "low" | "medium" | "high" {
+  const normalized = value?.trim().toLowerCase();
+  if (
+    normalized === "low" ||
+    normalized === "medium" ||
+    normalized === "high"
+  ) {
+    return normalized;
+  }
+
+  return "high";
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -87,14 +108,11 @@ export async function GET(request: NextRequest) {
               id: true,
               slug: true,
               title: true,
+              summary: true,
               intro: true,
               cover: true,
               publishedAt: true,
               durationSec: true,
-              segments: {
-                orderBy: { number: "asc" },
-                select: { id: true },
-              },
             },
           })
         : await prisma.radio.findMany({
@@ -123,11 +141,23 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     const slug = generateSlug(data.title);
+    const summary = normalizeOptionalText(data.summary);
+    const audioUrlLow = normalizeOptionalText(data.audioUrlLow);
+    const audioUrlMedium = normalizeOptionalText(data.audioUrlMedium);
+    const audioUrlHigh = normalizeOptionalText(data.audioUrlHigh);
+    const playerAudioQuality = normalizePlayerAudioQuality(
+      data.playerAudioQuality,
+    );
 
     const radio = await prisma.radio.create({
       data: {
         ...data,
         slug,
+        summary,
+        audioUrlLow,
+        audioUrlMedium,
+        audioUrlHigh,
+        playerAudioQuality,
         publishedAt: resolveDisplayDate(data.publishedAt, data.sortDate),
         sortDate: resolveSortDate(data.sortDate),
       },
