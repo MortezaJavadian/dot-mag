@@ -707,8 +707,12 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       const imageStatus = imageStatusByUrl[imageUrl] ?? "loading";
       const frameSizeClassName =
         variant === "single"
-          ? "w-full max-w-[42rem]"
-          : "w-full max-w-[30rem] md:max-w-[32rem] lg:max-w-[28rem]";
+          ? isFullscreen
+            ? "w-full max-w-[48rem] lg:max-w-[56rem]"
+            : "w-full max-w-[42rem]"
+          : isFullscreen
+            ? "w-full max-w-[33rem] lg:max-w-[38rem]"
+            : "w-full max-w-[30rem] md:max-w-[32rem] lg:max-w-[28rem]";
       const frameKey = `${variant}-${page.id ?? page.number}-${navigationTick}`;
 
       if (imageStatus === "loaded") {
@@ -767,7 +771,13 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         </div>
       );
     },
-    [imageStatusByUrl, navigationTick, pageTransitionClass, setImageStatus],
+    [
+      imageStatusByUrl,
+      isFullscreen,
+      navigationTick,
+      pageTransitionClass,
+      setImageStatus,
+    ],
   );
 
   return (
@@ -889,7 +899,13 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         </div>
       </header>
 
-      <main className="relative h-full w-full flex items-center justify-center px-2 md:px-4 pt-14 md:pt-16 pb-14 md:pb-16 lg:pt-28 lg:pb-28">
+      <main
+        className={`relative h-full w-full flex items-center justify-center px-2 md:px-4 ${
+          isFullscreen
+            ? "pt-10 md:pt-12 lg:pt-14 pb-10 md:pb-12 lg:pb-14"
+            : "pt-14 md:pt-16 pb-14 md:pb-16 lg:pt-28 lg:pb-28"
+        }`}
+      >
         {maxPage > 0 && (
           <>
             <button
@@ -944,14 +960,20 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
           <div className="w-full h-full flex items-center justify-center">
             {isSpreadView ? (
               currentPage === 0 ? (
-                <div className="w-full max-w-6xl h-full max-h-full flex items-center justify-center">
+                <div
+                  className={`w-full h-full max-h-full flex items-center justify-center ${
+                    isFullscreen ? "max-w-[min(96vw,96rem)]" : "max-w-6xl"
+                  }`}
+                >
                   <div className="h-full min-h-0 w-1/2 px-[0.225rem] md:px-[0.3rem] flex items-center justify-center">
                     {renderPageFrame(spreadRightPage, "spread")}
                   </div>
                 </div>
               ) : (
                 <div
-                  className="grid grid-cols-2 gap-[0.45rem] md:gap-[0.6rem] w-full max-w-6xl h-full max-h-full"
+                  className={`grid grid-cols-2 gap-[0.45rem] md:gap-[0.6rem] w-full h-full max-h-full ${
+                    isFullscreen ? "max-w-[min(96vw,96rem)]" : "max-w-6xl"
+                  }`}
                   style={{ direction: "ltr" }}
                 >
                   <div className="h-full min-h-0 flex items-center justify-end">
@@ -963,7 +985,11 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                 </div>
               )
             ) : (
-              <div className="w-full max-w-4xl h-full max-h-full flex items-center justify-center">
+              <div
+                className={`w-full h-full max-h-full flex items-center justify-center ${
+                  isFullscreen ? "max-w-[min(96vw,72rem)]" : "max-w-4xl"
+                }`}
+              >
                 {renderPageFrame(singlePage, "single")}
               </div>
             )}
