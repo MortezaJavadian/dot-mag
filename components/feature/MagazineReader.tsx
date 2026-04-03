@@ -32,7 +32,8 @@ const CONTROLS_HIDE_DELAY_MS = 1_800;
 const SWIPE_THRESHOLD = 50;
 const TRACKPAD_SWIPE_THRESHOLD = 36;
 const TRACKPAD_NAV_COOLDOWN_MS = 420;
-const TOUCH_CLICK_SUPPRESS_WINDOW_MS = 900;
+const TOUCH_CLICK_SUPPRESS_WINDOW_MS = 220;
+const SWIPE_TAP_SUPPRESS_MS = 250;
 
 export function MagazineReader({ magazine }: MagazineReaderProps) {
   const router = useRouter();
@@ -48,7 +49,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     null,
   );
   const suppressTapToggleRef = useRef(false);
-  const lastTouchToggleAtRef = useRef(0);
+  const lastTouchInteractionAtRef = useRef(0);
   const lastTrackpadNavAtRef = useRef(0);
 
   const pages = useMemo(() => {
@@ -321,7 +322,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   const handleSurfaceTap = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (
-        Date.now() - lastTouchToggleAtRef.current <
+        Date.now() - lastTouchInteractionAtRef.current <
         TOUCH_CLICK_SUPPRESS_WINDOW_MS
       ) {
         return;
@@ -350,16 +351,19 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
     const touchEnd = e.changedTouches[0].clientX;
     const diff = touchStart - touchEnd;
+    const touchEndAt = Date.now();
     const target = e.target as HTMLElement | null;
     const touchedInteractiveElement = Boolean(
       target?.closest("button, a, input, textarea, select, label"),
     );
 
+    lastTouchInteractionAtRef.current = touchEndAt;
+
     if (Math.abs(diff) > SWIPE_THRESHOLD) {
       suppressTapToggleRef.current = true;
       window.setTimeout(() => {
         suppressTapToggleRef.current = false;
-      }, 250);
+      }, SWIPE_TAP_SUPPRESS_MS);
 
       if (diff > 0) {
         prevPage();
@@ -370,7 +374,6 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       setShowControls(true);
       armControlsAutoHide();
     } else if (!touchedInteractiveElement) {
-      lastTouchToggleAtRef.current = Date.now();
       toggleControlsVisibility();
     }
 
