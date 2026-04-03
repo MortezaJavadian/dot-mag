@@ -708,7 +708,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       const frameSizeClassName =
         variant === "single"
           ? "w-full max-w-[42rem]"
-          : "w-full max-w-[30rem] md:max-w-[32rem]";
+          : "w-full max-w-[30rem] md:max-w-[32rem] lg:max-w-[28rem]";
       const frameKey = `${variant}-${page.id ?? page.number}-${navigationTick}`;
 
       if (imageStatus === "loaded") {
