@@ -16,7 +16,7 @@ export default function MagazineReadLoading() {
         </div>
       </header>
 
-      <main className="relative h-full w-full flex items-center justify-center px-2 md:px-4 pt-14 md:pt-16 pb-14 md:pb-16">
+      <main className="relative h-full w-full flex items-center justify-center px-2 md:px-4 pt-14 md:pt-16 pb-14 md:pb-16 lg:pt-20 lg:pb-20">
         <div className="w-full h-full flex items-center justify-center">
           <div className="reader-page-skeleton rounded-xl md:rounded-2xl aspect-[3/4] w-[min(92vw,28rem)] md:w-[min(78vw,34rem)] lg:hidden">
             <div className="absolute left-4 right-4 top-4 h-2 rounded-full bg-white/22" />
