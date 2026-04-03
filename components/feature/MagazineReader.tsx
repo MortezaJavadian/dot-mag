@@ -32,6 +32,7 @@ const CONTROLS_HIDE_DELAY_MS = 1_800;
 const SWIPE_THRESHOLD = 50;
 const TRACKPAD_SWIPE_THRESHOLD = 36;
 const TRACKPAD_NAV_COOLDOWN_MS = 420;
+const TOUCH_CLICK_SUPPRESS_WINDOW_MS = 900;
 
 export function MagazineReader({ magazine }: MagazineReaderProps) {
   const router = useRouter();
@@ -47,7 +48,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     null,
   );
   const suppressTapToggleRef = useRef(false);
-  const skipNextClickToggleRef = useRef(false);
+  const lastTouchToggleAtRef = useRef(0);
   const lastTrackpadNavAtRef = useRef(0);
 
   const pages = useMemo(() => {
@@ -77,7 +78,8 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   }, [magazine.slug, magazine.title, pdfDownloadUrl]);
   const isSpreadView = viewportWidth >= 1024;
   const maxPage = pages.length;
-  const spreadCount = Math.ceil(maxPage / 2);
+  const spreadCount =
+    maxPage === 0 ? 0 : 1 + Math.ceil(Math.max(0, maxPage - 1) / 2);
 
   const clearControlsHideTimeout = useCallback(() => {
     if (controlsHideTimeoutRef.current) {
@@ -140,7 +142,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
   const nextPage = useCallback(() => {
     if (isSpreadView) {
-      if (currentPage < Math.ceil(maxPage / 2) - 1) {
+      if (currentPage < spreadCount - 1) {
         setCurrentPage((prev) => prev + 1);
       }
       return;
@@ -149,7 +151,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     if (currentPage < maxPage - 1) {
       setCurrentPage((prev) => prev + 1);
     }
-  }, [currentPage, maxPage, isSpreadView]);
+  }, [currentPage, isSpreadView, maxPage, spreadCount]);
 
   const prevPage = useCallback(() => {
     if (currentPage > 0) {
@@ -318,8 +320,10 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
   const handleSurfaceTap = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (skipNextClickToggleRef.current) {
-        skipNextClickToggleRef.current = false;
+      if (
+        Date.now() - lastTouchToggleAtRef.current <
+        TOUCH_CLICK_SUPPRESS_WINDOW_MS
+      ) {
         return;
       }
 
@@ -366,10 +370,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       setShowControls(true);
       armControlsAutoHide();
     } else if (!touchedInteractiveElement) {
-      skipNextClickToggleRef.current = true;
-      window.setTimeout(() => {
-        skipNextClickToggleRef.current = false;
-      }, 300);
+      lastTouchToggleAtRef.current = Date.now();
       toggleControlsVisibility();
     }
 
@@ -415,8 +416,13 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   }, [downloadFileName, isDownloading, pdfDownloadUrl]);
 
   const singlePage = pages[currentPage] ?? null;
-  const spreadRightIndex = isSpreadView ? currentPage * 2 : -1;
-  const spreadLeftIndex = isSpreadView ? spreadRightIndex + 1 : -1;
+  const spreadRightIndex = isSpreadView
+    ? currentPage === 0
+      ? 0
+      : currentPage * 2 - 1
+    : -1;
+  const spreadLeftIndex =
+    isSpreadView && currentPage > 0 ? spreadRightIndex + 1 : -1;
   const spreadRightPage =
     spreadRightIndex >= 0 ? pages[spreadRightIndex] : null;
   const spreadLeftPage =
@@ -443,10 +449,14 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   return (
     <div
       ref={readerRootRef}
-      className="fixed inset-0 z-[70] overflow-hidden bg-deep-black"
+      className="fixed inset-0 z-[70] overflow-hidden bg-deep-black select-none"
+      style={{ userSelect: "none", WebkitUserSelect: "none" }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onClick={handleSurfaceTap}
+      onDoubleClick={(e) => e.preventDefault()}
+      onSelectStart={(e) => e.preventDefault()}
+      onDragStart={(e) => e.preventDefault()}
     >
       <header
         className={`absolute inset-x-0 top-0 z-20 transition-all duration-300 ${
@@ -609,35 +619,53 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         {maxPage > 0 ? (
           <div className="w-full h-full flex items-center justify-center">
             {isSpreadView ? (
-              <div
-                className="grid grid-cols-2 gap-[0.45rem] md:gap-[0.6rem] w-full max-w-6xl h-full max-h-full"
-                style={{ direction: "ltr" }}
-              >
-                <div className="h-full min-h-0 flex items-center justify-end">
-                  {spreadLeftPage?.imageUrl ? (
-                    <img
-                      src={spreadLeftPage.imageUrl}
-                      alt={`Page ${spreadLeftPage.number}`}
-                      className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
-                    />
-                  ) : null}
+              currentPage === 0 ? (
+                <div className="w-full max-w-6xl h-full max-h-full flex items-center justify-center">
+                  <div className="h-full min-h-0 w-1/2 px-[0.225rem] md:px-[0.3rem] flex items-center justify-center">
+                    {spreadRightPage?.imageUrl ? (
+                      <img
+                        src={spreadRightPage.imageUrl}
+                        alt={`Page ${spreadRightPage.number}`}
+                        draggable={false}
+                        className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
+                      />
+                    ) : null}
+                  </div>
                 </div>
-                <div className="h-full min-h-0 flex items-center justify-start">
-                  {spreadRightPage?.imageUrl ? (
-                    <img
-                      src={spreadRightPage.imageUrl}
-                      alt={`Page ${spreadRightPage.number}`}
-                      className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
-                    />
-                  ) : null}
+              ) : (
+                <div
+                  className="grid grid-cols-2 gap-[0.45rem] md:gap-[0.6rem] w-full max-w-6xl h-full max-h-full"
+                  style={{ direction: "ltr" }}
+                >
+                  <div className="h-full min-h-0 flex items-center justify-end">
+                    {spreadLeftPage?.imageUrl ? (
+                      <img
+                        src={spreadLeftPage.imageUrl}
+                        alt={`Page ${spreadLeftPage.number}`}
+                        draggable={false}
+                        className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="h-full min-h-0 flex items-center justify-start">
+                    {spreadRightPage?.imageUrl ? (
+                      <img
+                        src={spreadRightPage.imageUrl}
+                        alt={`Page ${spreadRightPage.number}`}
+                        draggable={false}
+                        className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
+                      />
+                    ) : null}
+                  </div>
                 </div>
-              </div>
+              )
             ) : (
               <div className="w-full max-w-4xl h-full max-h-full flex items-center justify-center">
                 {singlePage?.imageUrl ? (
                   <img
                     src={singlePage.imageUrl}
                     alt={`Page ${singlePage.number}`}
+                    draggable={false}
                     className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
                   />
                 ) : null}
