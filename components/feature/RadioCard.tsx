@@ -67,11 +67,9 @@ export function RadioCard({ radio }: RadioCardProps) {
             {hasSummary ? summaryText : "\u00a0"}
           </p>
 
-          <div className="grid grid-cols-2 items-center text-xs text-foreground-secondary">
-            <span className="text-left">{radio.publishedAt}</span>
-            <span className="text-right">
-              {formatDuration(radio.durationSec)}
-            </span>
+          <div className="flex items-center justify-between text-xs text-foreground-secondary">
+            <span>{radio.publishedAt}</span>
+            <span>{formatDuration(radio.durationSec)}</span>
           </div>
         </div>
       </article>
