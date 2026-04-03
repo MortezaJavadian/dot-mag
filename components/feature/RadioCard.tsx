@@ -68,8 +68,8 @@ export function RadioCard({ radio }: RadioCardProps) {
           </p>
 
           <div className="flex items-center justify-between text-xs text-foreground-secondary">
-            <span>{radio.publishedAt}</span>
             <span>{formatDuration(radio.durationSec)}</span>
+            <span>{radio.publishedAt}</span>
           </div>
         </div>
       </article>
