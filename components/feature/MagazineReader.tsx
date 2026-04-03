@@ -30,9 +30,12 @@ interface MagazineReaderProps {
 
 const CONTROLS_HIDE_DELAY_MS = 1_800;
 const SWIPE_THRESHOLD = 50;
+const MOBILE_SWIPE_THRESHOLD = 84;
+const HORIZONTAL_SWIPE_DOMINANCE_RATIO = 1.15;
+const TAP_MOVEMENT_TOLERANCE = 24;
 const TRACKPAD_SWIPE_THRESHOLD = 36;
 const TRACKPAD_NAV_COOLDOWN_MS = 420;
-const TOUCH_CLICK_SUPPRESS_WINDOW_MS = 220;
+const TOUCH_CLICK_SUPPRESS_WINDOW_MS = 700;
 const SWIPE_TAP_SUPPRESS_MS = 250;
 
 export function MagazineReader({ magazine }: MagazineReaderProps) {
@@ -42,14 +45,21 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   const [showControls, setShowControls] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState("");
-  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchStart, setTouchStart] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
   const readerRootRef = useRef<HTMLDivElement | null>(null);
   const controlsHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
   const suppressTapToggleRef = useRef(false);
-  const lastTouchInteractionAtRef = useRef(0);
+  const suppressNextSurfaceClickRef = useRef(false);
+  const suppressNextSurfaceClickTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const isMultiTouchGestureRef = useRef(false);
   const lastTrackpadNavAtRef = useRef(0);
 
   const pages = useMemo(() => {
@@ -96,6 +106,22 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     }, CONTROLS_HIDE_DELAY_MS);
   }, [clearControlsHideTimeout]);
 
+  const clearSyntheticClickSuppression = useCallback(() => {
+    if (suppressNextSurfaceClickTimeoutRef.current) {
+      clearTimeout(suppressNextSurfaceClickTimeoutRef.current);
+      suppressNextSurfaceClickTimeoutRef.current = null;
+    }
+  }, []);
+
+  const armSyntheticClickSuppression = useCallback(() => {
+    suppressNextSurfaceClickRef.current = true;
+    clearSyntheticClickSuppression();
+    suppressNextSurfaceClickTimeoutRef.current = setTimeout(() => {
+      suppressNextSurfaceClickRef.current = false;
+      suppressNextSurfaceClickTimeoutRef.current = null;
+    }, TOUCH_CLICK_SUPPRESS_WINDOW_MS);
+  }, [clearSyntheticClickSuppression]);
+
   const handleBack = useCallback(async () => {
     if (document.fullscreenElement) {
       try {
@@ -138,8 +164,13 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       clearControlsHideTimeout();
+      clearSyntheticClickSuppression();
     };
-  }, [armControlsAutoHide, clearControlsHideTimeout]);
+  }, [
+    armControlsAutoHide,
+    clearControlsHideTimeout,
+    clearSyntheticClickSuppression,
+  ]);
 
   const nextPage = useCallback(() => {
     if (isSpreadView) {
@@ -236,7 +267,11 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
   useEffect(() => {
     const root = readerRootRef.current;
-    if (!root || viewportWidth < 1024) {
+    if (
+      !root ||
+      viewportWidth < 1024 ||
+      !window.matchMedia("(pointer: fine)").matches
+    ) {
       return;
     }
 
@@ -321,10 +356,8 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
   const handleSurfaceTap = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (
-        Date.now() - lastTouchInteractionAtRef.current <
-        TOUCH_CLICK_SUPPRESS_WINDOW_MS
-      ) {
+      if (suppressNextSurfaceClickRef.current) {
+        suppressNextSurfaceClickRef.current = false;
         return;
       }
 
@@ -343,29 +376,60 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   );
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientX);
+    if (e.touches.length !== 1) {
+      isMultiTouchGestureRef.current = true;
+      setTouchStart(null);
+      return;
+    }
+
+    const firstTouch = e.touches[0];
+    setTouchStart({ x: firstTouch.clientX, y: firstTouch.clientY });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length > 1) {
+      isMultiTouchGestureRef.current = true;
+      setTouchStart(null);
+    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    armSyntheticClickSuppression();
+
+    if (isMultiTouchGestureRef.current) {
+      if (e.touches.length === 0) {
+        isMultiTouchGestureRef.current = false;
+      }
+      setTouchStart(null);
+      return;
+    }
+
     if (touchStart === null) return;
 
-    const touchEnd = e.changedTouches[0].clientX;
-    const diff = touchStart - touchEnd;
-    const touchEndAt = Date.now();
+    const changedTouch = e.changedTouches[0];
+    const diffX = touchStart.x - changedTouch.clientX;
+    const diffY = touchStart.y - changedTouch.clientY;
+    const absDiffX = Math.abs(diffX);
+    const absDiffY = Math.abs(diffY);
+    const swipeThreshold =
+      viewportWidth < 1024 ? MOBILE_SWIPE_THRESHOLD : SWIPE_THRESHOLD;
+    const isHorizontalSwipe =
+      absDiffX > swipeThreshold &&
+      absDiffX > absDiffY * HORIZONTAL_SWIPE_DOMINANCE_RATIO;
+    const isTapLikeMovement =
+      absDiffX <= TAP_MOVEMENT_TOLERANCE && absDiffY <= TAP_MOVEMENT_TOLERANCE;
     const target = e.target as HTMLElement | null;
     const touchedInteractiveElement = Boolean(
       target?.closest("button, a, input, textarea, select, label"),
     );
 
-    lastTouchInteractionAtRef.current = touchEndAt;
-
-    if (Math.abs(diff) > SWIPE_THRESHOLD) {
+    if (isHorizontalSwipe) {
       suppressTapToggleRef.current = true;
       window.setTimeout(() => {
         suppressTapToggleRef.current = false;
       }, SWIPE_TAP_SUPPRESS_MS);
 
-      if (diff > 0) {
+      if (diffX > 0) {
         prevPage();
       } else {
         nextPage();
@@ -373,7 +437,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
       setShowControls(true);
       armControlsAutoHide();
-    } else if (!touchedInteractiveElement) {
+    } else if (!touchedInteractiveElement && isTapLikeMovement) {
       toggleControlsVisibility();
     }
 
@@ -455,6 +519,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       className="fixed inset-0 z-[70] overflow-hidden bg-deep-black select-none"
       style={{ userSelect: "none", WebkitUserSelect: "none" }}
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onClick={handleSurfaceTap}
       onDoubleClick={(e) => e.preventDefault()}
