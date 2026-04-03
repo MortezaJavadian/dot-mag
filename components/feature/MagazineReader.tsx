@@ -455,7 +455,6 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       onTouchEnd={handleTouchEnd}
       onClick={handleSurfaceTap}
       onDoubleClick={(e) => e.preventDefault()}
-      onSelectStart={(e) => e.preventDefault()}
       onDragStart={(e) => e.preventDefault()}
     >
       <header
