@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
@@ -26,6 +26,20 @@ export function Header() {
     }
 
     return pathname === href || pathname.startsWith(`${href}/`);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMenuOpen(false);
+  };
+
+  const handleMobileMenuOutsideClick = (event: MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    closeMobileMenu();
+  };
+
+  const handleMobileMenuPanelClick = (event: MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
   };
 
   useEffect(() => {
@@ -133,7 +147,7 @@ export function Header() {
 
             {/* Mobile Menu Button */}
             <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              onClick={() => setIsMenuOpen((previous) => !previous)}
               className="p-2.5 rounded-full bg-foreground/5 hover:bg-foreground/10 transition-colors md:hidden"
               aria-label="منو"
             >
@@ -181,15 +195,21 @@ export function Header() {
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
         }`}
+        onClick={handleMobileMenuOutsideClick}
       >
-        <button
-          type="button"
-          aria-label="Close menu"
-          className="absolute inset-0 z-[5] bg-deep-black/38 backdrop-blur-[2px]"
-          onClick={() => setIsMenuOpen(false)}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 z-[5] bg-deep-black/56 backdrop-blur-[4px]"
         />
         <nav className="container relative z-10 py-6">
-          <div className="rounded-[1.35rem] border border-card-border/70 bg-background/92 p-5 shadow-[0_24px_56px_rgba(0,0,0,0.28)] backdrop-blur-md">
+          <div
+            className="rounded-[1.35rem] border p-5 shadow-[0_28px_64px_rgba(0,0,0,0.34)] backdrop-blur-md"
+            style={{
+              backgroundColor: "var(--mobile-menu-surface)",
+              borderColor: "var(--mobile-menu-surface-border)",
+            }}
+            onClick={handleMobileMenuPanelClick}
+          >
             <ul className="space-y-5">
               {navLinks.map((link, index) => (
                 <li
@@ -199,7 +219,7 @@ export function Header() {
                 >
                   <Link
                     href={link.href}
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMobileMenu}
                     className={`block py-2 transition-all ${
                       isLinkActive(link.href)
                         ? "text-primary text-[2.05rem] font-black"
