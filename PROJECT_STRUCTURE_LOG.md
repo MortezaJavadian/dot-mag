@@ -27,6 +27,7 @@ dot-mag/
 │   │   └── [slug]/
 │   │       ├── page.tsx        # Magazine detail page (cover + description + CTA)
 │   │       ├── read/page.tsx   # Full-screen magazine reader page
+│   │       ├── read/loading.tsx # Reader route instant loading shell
 │   │       └── _components/
 │   │           └── MagazineReaderClient.tsx
 │   ├── posts/
@@ -117,6 +118,7 @@ dot-mag/
 | `app/archive/page.tsx`                         | Magazine archive - fetches from API                                           |
 | `app/archive/[slug]/page.tsx`                  | Magazine detail page (desktop two-column, CTA to reader)                      |
 | `app/archive/[slug]/read/page.tsx`             | Full-screen magazine reader page                                              |
+| `app/archive/[slug]/read/loading.tsx`          | Reader route-level loading shell with glass page placeholders                 |
 | `app/radio/layout.tsx`                         | Radio route metadata                                                          |
 | `app/radio/loading.tsx`                        | Route loading state for instant feedback while radio route resolves           |
 | `app/radio/page.tsx`                           | Radio listing page                                                            |
@@ -173,19 +175,19 @@ dot-mag/
 
 ### Components
 
-| File                                      | Purpose                                                                  |
-| ----------------------------------------- | ------------------------------------------------------------------------ |
-| `components/ui/Logo.tsx`                  | Logo with dark/light variants                                            |
-| `components/ui/UploadStatus.tsx`          | Unified upload progress/success/error indicator for admin file inputs    |
-| `components/shared/Header.tsx`            | Sticky header, navigation, theme toggle, mobile menu                     |
-| `components/shared/Footer.tsx`            | Footer with links, social, copyright                                     |
-| `components/shared/ThemeProvider.tsx`     | Dark/Light mode context with localStorage                                |
-| `components/shared/PostsPageSkeleton.tsx` | Shared posts route skeleton blocks (page + cards-only)                   |
-| `components/feature/ArticleCard.tsx`      | Article cards (default, featured, horizontal)                            |
-| `components/feature/AudioPlayer.tsx`      | Custom buffered audio player with manual download                        |
-| `components/feature/MagazineCard.tsx`     | Magazine cover card with stronger visual separation + date/page meta row |
-| `components/feature/MagazineReader.tsx`   | Full-screen reader with fixed top/bottom bars and real PDF download flow |
-| `components/feature/RadioCard.tsx`        | Radio list card for public pages                                         |
+| File                                      | Purpose                                                                                                               |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `components/ui/Logo.tsx`                  | Logo with dark/light variants                                                                                         |
+| `components/ui/UploadStatus.tsx`          | Unified upload progress/success/error indicator for admin file inputs                                                 |
+| `components/shared/Header.tsx`            | Sticky header, navigation, theme toggle, mobile menu                                                                  |
+| `components/shared/Footer.tsx`            | Footer with links, social, copyright                                                                                  |
+| `components/shared/ThemeProvider.tsx`     | Dark/Light mode context with localStorage                                                                             |
+| `components/shared/PostsPageSkeleton.tsx` | Shared posts route skeleton blocks (page + cards-only)                                                                |
+| `components/feature/ArticleCard.tsx`      | Article cards (default, featured, horizontal)                                                                         |
+| `components/feature/AudioPlayer.tsx`      | Custom buffered audio player with manual download                                                                     |
+| `components/feature/MagazineCard.tsx`     | Magazine cover card with stronger visual separation + date/page meta row                                              |
+| `components/feature/MagazineReader.tsx`   | Full-screen reader with instant page switching, adjacent prefetch, glass skeleton fallback, and page-turn transitions |
+| `components/feature/RadioCard.tsx`        | Radio list card for public pages                                                                                      |
 
 ### PWA Files
 
@@ -301,6 +303,7 @@ dot-mag/
 | 2026-04-03 | Reader build type-check fix for select handler           | Removed unsupported `onSelectStart` prop from `components/feature/MagazineReader.tsx` root container (while keeping CSS/drag/double-click selection guards) to resolve Next.js production TypeScript build failure during Docker deploy.                                                                                                                                                                                                                                                                                                                                                                                                               |
 | 2026-04-03 | Reader tap-toggle interaction hardening                  | Hardened `components/feature/MagazineReader.tsx` touch/click toggle flow by shortening synthetic-click suppression to 220ms, updating touch interaction timestamp on every touch-end (including interactive targets), and preserving action-only behavior for control buttons so empty-area taps reliably show and hide bars on mobile.                                                                                                                                                                                                                                                                                                                |
 | 2026-04-03 | Reader mobile tap/pinch gesture fix                      | Fixed mobile tap toggle to always hide/show reliably, and disabled two-finger swipe navigation on mobile (now only works on laptop trackpad); multi-touch on phones is reserved for zoom, not page navigation. Pinch/zoom no longer triggers accidental page changes.                                                                                                                                                                                                                                                                                                                                                                                  |
+| 2026-04-03 | Reader instant switch + glass skeleton/turn animation    | Reworked `components/feature/MagazineReader.tsx` navigation into a unified target-page flow used by button/swipe/trackpad/keyboard, added deduplicated current+adjacent image preloading so cached pages render immediately on switch, introduced in-reader glass skeleton/error fallbacks for uncached pages, and added directional page transition animations with reduced-motion fallback; also added `app/archive/[slug]/read/loading.tsx` for immediate route-entry feedback and supporting animation classes in `app/globals.css`.                                                                                                               |
 | 2026-04-01 | Archive/detail reader split + UI unification             | Converted `/archive/[slug]` into magazine detail page, moved full reader to `/archive/[slug]/read`, unified archive/about title sections with posts style, removed archive helper texts, upgraded magazine cards (shadow/border + date/pages row), pinned reader bars to viewport edges, and switched PDF action to real file download flow                                                                                                                                                                                                                                                                                                            |
 | 2026-04-01 | MagazineReader type-check hotfix                         | Fixed `useEffect` dependency array in `MagazineReader` to remove pre-declaration references (`nextPage`/`prevPage`) that broke production TypeScript build during deploy                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 

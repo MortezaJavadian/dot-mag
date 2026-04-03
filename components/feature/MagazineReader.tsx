@@ -38,6 +38,15 @@ const TRACKPAD_NAV_COOLDOWN_MS = 420;
 const TOUCH_CLICK_SUPPRESS_WINDOW_MS = 700;
 const SWIPE_TAP_SUPPRESS_MS = 250;
 
+type PageMoveDirection = "next" | "prev" | "idle";
+type ImageLoadState = "loading" | "loaded" | "error";
+
+function getPageTransitionClass(direction: PageMoveDirection): string {
+  if (direction === "next") return "reader-page-transition-next";
+  if (direction === "prev") return "reader-page-transition-prev";
+  return "reader-page-transition-idle";
+}
+
 export function MagazineReader({ magazine }: MagazineReaderProps) {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(0);
@@ -45,6 +54,11 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   const [showControls, setShowControls] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState("");
+  const [pageDirection, setPageDirection] = useState<PageMoveDirection>("idle");
+  const [navigationTick, setNavigationTick] = useState(0);
+  const [imageStatusByUrl, setImageStatusByUrl] = useState<
+    Record<string, ImageLoadState>
+  >({});
   const [touchStart, setTouchStart] = useState<{
     x: number;
     y: number;
@@ -61,6 +75,8 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   > | null>(null);
   const isMultiTouchGestureRef = useRef(false);
   const lastTrackpadNavAtRef = useRef(0);
+  const isMountedRef = useRef(false);
+  const imagePreloadPromisesRef = useRef<Map<string, Promise<void>>>(new Map());
 
   const pages = useMemo(() => {
     return [...(magazine.pages || [])]
@@ -91,6 +107,159 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   const maxPage = pages.length;
   const spreadCount =
     maxPage === 0 ? 0 : 1 + Math.ceil(Math.max(0, maxPage - 1) / 2);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const setImageStatus = useCallback((url: string, status: ImageLoadState) => {
+    if (!url || !isMountedRef.current) {
+      return;
+    }
+
+    setImageStatusByUrl((prev) => {
+      if (prev[url] === status) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [url]: status,
+      };
+    });
+  }, []);
+
+  const preloadImage = useCallback(
+    (url: string | null | undefined): Promise<void> => {
+      if (!url || typeof window === "undefined") {
+        return Promise.resolve();
+      }
+
+      if (imageStatusByUrl[url] === "loaded") {
+        return Promise.resolve();
+      }
+
+      const pendingPromise = imagePreloadPromisesRef.current.get(url);
+      if (pendingPromise) {
+        return pendingPromise;
+      }
+
+      if (!imageStatusByUrl[url]) {
+        setImageStatus(url, "loading");
+      }
+
+      const preloadPromise = new Promise<void>((resolve, reject) => {
+        const preloadTarget = new Image();
+
+        const clearHandlers = () => {
+          preloadTarget.onload = null;
+          preloadTarget.onerror = null;
+        };
+
+        preloadTarget.onload = () => {
+          clearHandlers();
+          setImageStatus(url, "loaded");
+          resolve();
+        };
+
+        preloadTarget.onerror = () => {
+          clearHandlers();
+          setImageStatus(url, "error");
+          reject(new Error("Failed to preload magazine page image"));
+        };
+
+        preloadTarget.decoding = "async";
+        preloadTarget.src = url;
+
+        if (preloadTarget.complete && preloadTarget.naturalWidth > 0) {
+          clearHandlers();
+          setImageStatus(url, "loaded");
+          resolve();
+        }
+      }).finally(() => {
+        imagePreloadPromisesRef.current.delete(url);
+      });
+
+      imagePreloadPromisesRef.current.set(url, preloadPromise);
+      return preloadPromise;
+    },
+    [imageStatusByUrl, setImageStatus],
+  );
+
+  const getPageUrlsForIndex = useCallback(
+    (index: number): string[] => {
+      if (index < 0) {
+        return [];
+      }
+
+      if (isSpreadView) {
+        if (index === 0) {
+          const coverUrl = pages[0]?.imageUrl;
+          return coverUrl ? [coverUrl] : [];
+        }
+
+        const rightUrl = pages[index * 2 - 1]?.imageUrl ?? null;
+        const leftUrl = pages[index * 2]?.imageUrl ?? null;
+        return [leftUrl, rightUrl].filter((url): url is string => Boolean(url));
+      }
+
+      const singleUrl = pages[index]?.imageUrl;
+      return singleUrl ? [singleUrl] : [];
+    },
+    [isSpreadView, pages],
+  );
+
+  useEffect(() => {
+    if (maxPage === 0) {
+      return;
+    }
+
+    const maxIndex = isSpreadView ? spreadCount - 1 : maxPage - 1;
+    if (maxIndex < 0) {
+      return;
+    }
+
+    const preloadTargets = new Set<string>();
+    const collectTargets = (index: number) => {
+      if (index < 0 || index > maxIndex) {
+        return;
+      }
+
+      getPageUrlsForIndex(index).forEach((url) => preloadTargets.add(url));
+    };
+
+    collectTargets(currentPage);
+    collectTargets(currentPage + 1);
+    collectTargets(currentPage - 1);
+
+    preloadTargets.forEach((url) => {
+      void preloadImage(url);
+    });
+  }, [
+    currentPage,
+    getPageUrlsForIndex,
+    isSpreadView,
+    maxPage,
+    preloadImage,
+    spreadCount,
+  ]);
+
+  useEffect(() => {
+    const maxIndex = isSpreadView ? spreadCount - 1 : maxPage - 1;
+    if (maxIndex < 0) {
+      if (currentPage !== 0) {
+        setCurrentPage(0);
+      }
+      return;
+    }
+
+    if (currentPage > maxIndex) {
+      setCurrentPage(maxIndex);
+    }
+  }, [currentPage, isSpreadView, maxPage, spreadCount]);
 
   const clearControlsHideTimeout = useCallback(() => {
     if (controlsHideTimeoutRef.current) {
@@ -172,24 +341,35 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     clearSyntheticClickSuppression,
   ]);
 
-  const nextPage = useCallback(() => {
-    if (isSpreadView) {
-      if (currentPage < spreadCount - 1) {
-        setCurrentPage((prev) => prev + 1);
-      }
-      return;
-    }
+  const navigateToPage = useCallback(
+    (targetIndex: number, direction: Exclude<PageMoveDirection, "idle">) => {
+      const maxIndex = isSpreadView ? spreadCount - 1 : maxPage - 1;
 
-    if (currentPage < maxPage - 1) {
-      setCurrentPage((prev) => prev + 1);
-    }
-  }, [currentPage, isSpreadView, maxPage, spreadCount]);
+      if (maxIndex < 0) {
+        return;
+      }
+
+      const boundedTarget = Math.min(Math.max(targetIndex, 0), maxIndex);
+      if (boundedTarget === currentPage) {
+        return;
+      }
+
+      setCurrentPage(boundedTarget);
+      setPageDirection(direction);
+      setNavigationTick((prev) => prev + 1);
+      setShowControls(true);
+      armControlsAutoHide();
+    },
+    [armControlsAutoHide, currentPage, isSpreadView, maxPage, spreadCount],
+  );
+
+  const nextPage = useCallback(() => {
+    navigateToPage(currentPage + 1, "next");
+  }, [currentPage, navigateToPage]);
 
   const prevPage = useCallback(() => {
-    if (currentPage > 0) {
-      setCurrentPage((prev) => prev - 1);
-    }
-  }, [currentPage]);
+    navigateToPage(currentPage - 1, "prev");
+  }, [currentPage, navigateToPage]);
 
   const toggleFullscreen = useCallback(async () => {
     if (!document.fullscreenElement) {
@@ -512,6 +692,83 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   const canGoNext = isSpreadView
     ? currentPage < spreadCount - 1
     : currentPage < maxPage - 1;
+  const pageTransitionClass = getPageTransitionClass(pageDirection);
+
+  const renderPageFrame = useCallback(
+    (
+      page: (typeof pages)[number] | null,
+      variant: "single" | "spread",
+    ): React.ReactNode => {
+      if (!page?.imageUrl) {
+        return null;
+      }
+
+      const imageUrl = page.imageUrl;
+      const imageStatus = imageStatusByUrl[imageUrl] ?? "loading";
+      const frameSizeClassName =
+        variant === "single"
+          ? "w-full max-w-[42rem]"
+          : "w-full max-w-[30rem] md:max-w-[32rem]";
+      const frameKey = `${variant}-${page.id ?? page.number}-${navigationTick}`;
+
+      if (imageStatus === "loaded") {
+        return (
+          <div
+            key={`${frameKey}-image`}
+            className={`${pageTransitionClass} ${frameSizeClassName} max-h-full flex items-center justify-center`}
+          >
+            <img
+              src={imageUrl}
+              alt={`Page ${page.number}`}
+              draggable={false}
+              onLoad={() => setImageStatus(imageUrl, "loaded")}
+              onError={() => setImageStatus(imageUrl, "error")}
+              className="reader-page-image max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
+            />
+          </div>
+        );
+      }
+
+      if (imageStatus === "error") {
+        return (
+          <div
+            key={`${frameKey}-error`}
+            className={`${pageTransitionClass} reader-page-fallback ${frameSizeClassName} aspect-[3/4] max-h-full rounded-xl md:rounded-2xl`}
+          >
+            <div className="h-12 w-12 rounded-full border border-white/30 bg-white/10 flex items-center justify-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-white/80"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div
+          key={`${frameKey}-skeleton`}
+          className={`${pageTransitionClass} reader-page-skeleton ${frameSizeClassName} aspect-[3/4] max-h-full rounded-xl md:rounded-2xl`}
+        >
+          <div className="absolute left-4 right-4 top-4 h-2 rounded-full bg-white/22" />
+          <div className="absolute left-6 right-6 bottom-5 h-1.5 rounded-full bg-white/16" />
+        </div>
+      );
+    },
+    [imageStatusByUrl, navigationTick, pageTransitionClass, setImageStatus],
+  );
 
   return (
     <div
@@ -689,14 +946,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
               currentPage === 0 ? (
                 <div className="w-full max-w-6xl h-full max-h-full flex items-center justify-center">
                   <div className="h-full min-h-0 w-1/2 px-[0.225rem] md:px-[0.3rem] flex items-center justify-center">
-                    {spreadRightPage?.imageUrl ? (
-                      <img
-                        src={spreadRightPage.imageUrl}
-                        alt={`Page ${spreadRightPage.number}`}
-                        draggable={false}
-                        className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
-                      />
-                    ) : null}
+                    {renderPageFrame(spreadRightPage, "spread")}
                   </div>
                 </div>
               ) : (
@@ -705,37 +955,16 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                   style={{ direction: "ltr" }}
                 >
                   <div className="h-full min-h-0 flex items-center justify-end">
-                    {spreadLeftPage?.imageUrl ? (
-                      <img
-                        src={spreadLeftPage.imageUrl}
-                        alt={`Page ${spreadLeftPage.number}`}
-                        draggable={false}
-                        className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
-                      />
-                    ) : null}
+                    {renderPageFrame(spreadLeftPage, "spread")}
                   </div>
                   <div className="h-full min-h-0 flex items-center justify-start">
-                    {spreadRightPage?.imageUrl ? (
-                      <img
-                        src={spreadRightPage.imageUrl}
-                        alt={`Page ${spreadRightPage.number}`}
-                        draggable={false}
-                        className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
-                      />
-                    ) : null}
+                    {renderPageFrame(spreadRightPage, "spread")}
                   </div>
                 </div>
               )
             ) : (
               <div className="w-full max-w-4xl h-full max-h-full flex items-center justify-center">
-                {singlePage?.imageUrl ? (
-                  <img
-                    src={singlePage.imageUrl}
-                    alt={`Page ${singlePage.number}`}
-                    draggable={false}
-                    className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl md:rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]"
-                  />
-                ) : null}
+                {renderPageFrame(singlePage, "single")}
               </div>
             )}
           </div>
