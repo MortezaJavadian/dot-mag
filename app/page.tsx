@@ -191,7 +191,7 @@ export default async function HomePage() {
         <div className="container relative z-10">
           <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:items-center lg:gap-5 lg:[direction:ltr]">
             <div className="order-1 lg:order-1 animate-fade-in">
-              <div className="mx-auto my-1 lg:my-2 w-full max-w-sm sm:max-w-md lg:max-w-none lg:w-[80%]">
+              <div className="mx-auto my-[0.375rem] lg:my-2 w-full max-w-sm sm:max-w-md lg:max-w-none lg:w-[80%]">
                 <div className="image-frame-shell">
                   <div className="image-frame-inner">
                     {heroImage ? (
@@ -223,11 +223,11 @@ export default async function HomePage() {
               />
 
               {heroCta && (
-                <div className="mt-8">
+                <div className="mt-8 mb-8 lg:mb-0">
                   <Link
                     href={heroCta.href}
                     scroll={true}
-                    className="inline-flex items-center gap-3 px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-all hover:scale-105"
+                    className="inline-flex flex-row-reverse items-center gap-3 lg:flex-row px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-all hover:scale-105"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"

@@ -264,9 +264,6 @@ export function AudioPlayer({
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-foreground-secondary">
-          پخش با بافر تدریجی برای اینترنت ضعیف
-        </p>
         <Button
           type="button"
           onClick={handleDownload}
