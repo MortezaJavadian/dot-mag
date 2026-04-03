@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import { AudioPlayer } from "@/components/feature/AudioPlayer";
 import { RadioCard } from "@/components/feature/RadioCard";
 import { fetchInternalArray } from "@/lib/internalApi";
@@ -280,11 +279,9 @@ export default async function RadioDetailPage({ params }: PageProps) {
                 <div className="mb-8 md:mb-0 md:w-[44%] lg:w-[40%] md:shrink-0 md:order-2">
                   <div className="image-frame-shell">
                     <div className="image-frame-inner">
-                      <Image
+                      <img
                         src={coverUrl}
                         alt={radio.title}
-                        width={1200}
-                        height={1200}
                         className="image-frame-media"
                       />
                     </div>
