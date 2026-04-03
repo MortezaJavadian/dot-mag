@@ -47,6 +47,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     null,
   );
   const suppressTapToggleRef = useRef(false);
+  const skipNextClickToggleRef = useRef(false);
   const lastTrackpadNavAtRef = useRef(0);
 
   const pages = useMemo(() => {
@@ -317,6 +318,11 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
   const handleSurfaceTap = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      if (skipNextClickToggleRef.current) {
+        skipNextClickToggleRef.current = false;
+        return;
+      }
+
       if (suppressTapToggleRef.current) {
         return;
       }
@@ -340,6 +346,10 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
     const touchEnd = e.changedTouches[0].clientX;
     const diff = touchStart - touchEnd;
+    const target = e.target as HTMLElement | null;
+    const touchedInteractiveElement = Boolean(
+      target?.closest("button, a, input, textarea, select, label"),
+    );
 
     if (Math.abs(diff) > SWIPE_THRESHOLD) {
       suppressTapToggleRef.current = true;
@@ -355,6 +365,12 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
       setShowControls(true);
       armControlsAutoHide();
+    } else if (!touchedInteractiveElement) {
+      skipNextClickToggleRef.current = true;
+      window.setTimeout(() => {
+        skipNextClickToggleRef.current = false;
+      }, 300);
+      toggleControlsVisibility();
     }
 
     setTouchStart(null);
@@ -438,44 +454,46 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         }`}
       >
         <div className="bg-gradient-to-b from-deep-black/95 via-deep-black/75 to-transparent">
-          <div className="container py-3 md:py-4 flex items-center justify-between gap-3">
-            <Link
-              href={`/archive/${magazine.slug}`}
-              onClick={(e) => {
-                e.preventDefault();
-                void handleBack();
-              }}
-              className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          <div className="container py-3 md:py-4 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
+            <div className="min-w-0 justify-self-start">
+              <Link
+                href={`/archive/${magazine.slug}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  void handleBack();
+                }}
+                className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
               >
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-              <span className="hidden md:inline">بازگشت</span>
-            </Link>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+                <span className="hidden md:inline">بازگشت</span>
+              </Link>
+            </div>
 
-            <div className="text-center min-w-0">
-              <h1 className="text-white font-bold text-sm md:text-base truncate">
+            <div className="text-center min-w-0 px-1" dir="rtl">
+              <h1 className="text-white font-bold text-sm md:text-base truncate text-center">
                 {magazine.title}
               </h1>
-              <p className="text-white/78 text-xs md:text-sm truncate">
+              <p className="text-white/78 text-xs md:text-sm truncate text-center">
                 {magazine.subtitle}
               </p>
-              <p className="text-white/74 text-[11px] md:text-xs">
+              <p className="text-white/74 text-[11px] md:text-xs text-center">
                 {magazine.publishedAt}
               </p>
             </div>
 
-            <div className="flex items-center gap-1 md:gap-2">
+            <div className="min-w-0 justify-self-end flex items-center gap-1 md:gap-2">
               {pdfDownloadUrl && (
                 <button
                   onClick={handlePdfDownload}

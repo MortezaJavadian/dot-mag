@@ -205,7 +205,8 @@ export function Header() {
       >
         <div
           aria-hidden="true"
-          className="absolute inset-0 z-[5] bg-deep-black/76"
+          className="absolute inset-0 z-[5]"
+          style={{ backgroundColor: "var(--mobile-menu-backdrop)" }}
         />
         <nav className="container relative z-10 py-6">
           <div

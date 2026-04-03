@@ -17,8 +17,9 @@
   --card-bg: #ffffff;
   --card-border: #e5e5e5;
   --muted: #d9cbb8;
-  --mobile-menu-surface: rgba(245, 245, 245, 0.98);
+  --mobile-menu-surface: #f5f5f5;
   --mobile-menu-surface-border: rgba(0, 0, 0, 0.14);
+  --mobile-menu-backdrop: rgba(11, 11, 11, 0.76);
 }
 
 [data-theme="dark"] {
@@ -29,8 +30,9 @@
   --card-bg: #1a1a1a;
   --card-border: #2a2a2a;
   --muted: #3c5247;
-  --mobile-menu-surface: rgba(0, 0, 0, 0.7);
+  --mobile-menu-surface: #1a1a1a;
   --mobile-menu-surface-border: rgba(255, 255, 255, 0.16);
+  --mobile-menu-backdrop: rgba(18, 24, 32, 0.6);
 }
 
 /* Dark mode logo invert */
