@@ -199,11 +199,11 @@ export function Header() {
       >
         <div
           aria-hidden="true"
-          className="absolute inset-0 z-[5] bg-deep-black/56 backdrop-blur-[4px]"
+          className="absolute inset-0 z-[5] bg-deep-black/70"
         />
         <nav className="container relative z-10 py-6">
           <div
-            className="rounded-[1.35rem] border p-5 shadow-[0_28px_64px_rgba(0,0,0,0.34)] backdrop-blur-md"
+            className="rounded-[1.35rem] border p-5 shadow-[0_28px_64px_rgba(0,0,0,0.38)]"
             style={{
               backgroundColor: "var(--mobile-menu-surface)",
               borderColor: "var(--mobile-menu-surface-border)",
