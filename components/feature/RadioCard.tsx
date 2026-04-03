@@ -25,7 +25,7 @@ function formatDuration(seconds?: number | null) {
 
 export function RadioCard({ radio }: RadioCardProps) {
   const coverSrc = getUploadUrl(radio.cover);
-  const summaryText = toPlainText(radio.summary || radio.intro || "");
+  const summaryText = toPlainText(radio.summary || "");
   const hasSummary = summaryText.length > 0;
 
   return (
@@ -59,7 +59,7 @@ export function RadioCard({ radio }: RadioCardProps) {
         </div>
 
         <div className="p-5 md:p-6">
-          <h3 className="text-lg md:text-xl font-bold group-hover:text-primary transition-colors line-clamp-2">
+          <h3 className="text-lg md:text-xl font-bold mb-2 group-hover:text-primary transition-colors line-clamp-1">
             {radio.title}
           </h3>
 

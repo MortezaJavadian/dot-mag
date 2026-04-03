@@ -218,6 +218,48 @@ async function extractDurationFromAudioFile(
   });
 }
 
+async function extractDurationFromAudioUrl(
+  audioUrl: string,
+): Promise<number | null> {
+  return new Promise((resolve) => {
+    const audio = document.createElement("audio");
+    let settled = false;
+    let timeoutId: number | null = null;
+
+    const finalize = (durationSec: number | null) => {
+      if (settled) return;
+      settled = true;
+
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+
+      audio.removeAttribute("src");
+      audio.load();
+      resolve(durationSec);
+    };
+
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => {
+      const nextDuration =
+        Number.isFinite(audio.duration) && audio.duration > 0
+          ? Math.floor(audio.duration)
+          : null;
+      finalize(nextDuration);
+    };
+
+    audio.onerror = () => {
+      finalize(null);
+    };
+
+    timeoutId = window.setTimeout(() => {
+      finalize(null);
+    }, 7000);
+
+    audio.src = audioUrl;
+  });
+}
+
 function buildQualityStatusState(): Record<
   PlayerAudioQuality,
   UploadTaskState
@@ -272,6 +314,7 @@ export default function RadioEditor({
   const [segmentReplaceUploadStatuses, setSegmentReplaceUploadStatuses] =
     useState<Record<string, UploadTaskState>>({});
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
+  const [syncingMainDuration, setSyncingMainDuration] = useState(false);
   const [error, setError] = useState("");
 
   const isExistingRadio = Boolean(radio?.id);
@@ -461,6 +504,39 @@ export default function RadioEditor({
       setError("خطا در ذخیره رادیو");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSyncMainDurationFromSelectedQuality = async () => {
+    setError("");
+
+    const selectedQualityField =
+      QUALITY_FIELD_BY_KEY[formData.playerAudioQuality];
+    const selectedQualityUrl = getUploadUrl(formData[selectedQualityField]);
+
+    if (!selectedQualityUrl) {
+      setError("برای کیفیت انتخابی پلیر، فایل صوتی آپلود نشده است");
+      return;
+    }
+
+    setSyncingMainDuration(true);
+
+    try {
+      const extractedDuration =
+        await extractDurationFromAudioUrl(selectedQualityUrl);
+      if (typeof extractedDuration === "number" && extractedDuration > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          durationSec: String(extractedDuration),
+        }));
+        return;
+      }
+
+      setError("زمان فایل صوتی انتخاب‌شده قابل استخراج نیست");
+    } catch (durationError: unknown) {
+      setError(getErrorMessage(durationError, "خطا در محاسبه زمان فایل صوتی"));
+    } finally {
+      setSyncingMainDuration(false);
     }
   };
 
@@ -839,19 +915,37 @@ export default function RadioEditor({
               <label className="block text-sm font-medium mb-1">
                 مدت کل (ثانیه - خودکار و قابل اصلاح)
               </label>
-              <input
-                type="number"
-                min={1}
-                value={formData.durationSec}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    durationSec: e.target.value,
-                  }))
-                }
-                placeholder="بعد از آپلود خودکار پر می‌شود"
-                className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  value={formData.durationSec}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      durationSec: e.target.value,
+                    }))
+                  }
+                  placeholder="بعد از آپلود خودکار پر می‌شود"
+                  className="flex-1 px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                />
+
+                <Button
+                  type="button"
+                  onClick={handleSyncMainDurationFromSelectedQuality}
+                  disabled={syncingMainDuration}
+                  className="shrink-0 bg-slate-700 hover:bg-slate-800"
+                >
+                  {syncingMainDuration
+                    ? "در حال محاسبه..."
+                    : "بازگردانی خودکار"}
+                </Button>
+              </div>
+
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                با این دکمه زمان از فایل کیفیت انتخاب‌شده برای پخش داخلی دوباره
+                محاسبه می‌شود.
+              </p>
             </div>
           </div>
         </div>
