@@ -889,7 +889,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         </div>
       </header>
 
-      <main className="relative h-full w-full flex items-center justify-center px-2 md:px-4 pt-14 md:pt-16 pb-14 md:pb-16 lg:pt-20 lg:pb-20">
+      <main className="relative h-full w-full flex items-center justify-center px-2 md:px-4 pt-14 md:pt-16 pb-14 md:pb-16 lg:pt-28 lg:pb-28">
         {maxPage > 0 && (
           <>
             <button
