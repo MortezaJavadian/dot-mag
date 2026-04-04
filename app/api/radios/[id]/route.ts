@@ -54,6 +54,18 @@ function normalizeOptionalText(value?: string | null): string | null {
   return normalized ? normalized : null;
 }
 
+function normalizeOptionalSize(value?: number | null): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+
+  if (value <= 0) {
+    return null;
+  }
+
+  return Math.floor(value);
+}
+
 function normalizePlayerAudioQuality(
   value?: string,
 ): "low" | "medium" | "high" {
@@ -145,6 +157,18 @@ export async function PUT(
 
     if (data.audioUrlHigh !== undefined) {
       updateData.audioUrlHigh = normalizeOptionalText(data.audioUrlHigh);
+    }
+
+    if (data.audioSizeLow !== undefined) {
+      updateData.audioSizeLow = normalizeOptionalSize(data.audioSizeLow);
+    }
+
+    if (data.audioSizeMedium !== undefined) {
+      updateData.audioSizeMedium = normalizeOptionalSize(data.audioSizeMedium);
+    }
+
+    if (data.audioSizeHigh !== undefined) {
+      updateData.audioSizeHigh = normalizeOptionalSize(data.audioSizeHigh);
     }
 
     if (data.playerAudioQuality !== undefined) {

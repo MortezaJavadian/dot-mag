@@ -36,10 +36,13 @@ function encodeForHeader(value: string): string {
   );
 }
 
-function buildContentDisposition(fileName: string): string {
+function buildContentDisposition(
+  fileName: string,
+  dispositionType: "inline" | "attachment",
+): string {
   const asciiFallback = toAsciiFallback(fileName);
   const encoded = encodeForHeader(fileName);
-  return `inline; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`;
+  return `${dispositionType}; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`;
 }
 
 export async function GET(
@@ -85,11 +88,15 @@ export async function GET(
     const contentType =
       (ext && contentTypeMap[ext]) || "application/octet-stream";
     const requestedName = request.nextUrl.searchParams.get("name");
+    const forceDownload = request.nextUrl.searchParams.get("download") === "1";
     const fileNameForDownload = sanitizeDownloadFileName(
       requestedName,
       filename,
     );
-    const contentDisposition = buildContentDisposition(fileNameForDownload);
+    const contentDisposition = buildContentDisposition(
+      fileNameForDownload,
+      forceDownload ? "attachment" : "inline",
+    );
 
     const range = request.headers.get("range");
     if (range) {

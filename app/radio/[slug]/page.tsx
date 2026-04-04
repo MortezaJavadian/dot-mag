@@ -64,9 +64,20 @@ type RadioDetailItem = {
   audioUrlLow?: string | null;
   audioUrlMedium?: string | null;
   audioUrlHigh?: string | null;
+  audioSizeLow?: number | null;
+  audioSizeMedium?: number | null;
+  audioSizeHigh?: number | null;
   playerAudioQuality?: string | null;
   durationSec: number | null;
   segments: RadioSegmentItem[];
+};
+
+type FullEpisodeQualityOption = {
+  key: PlayerAudioQuality;
+  label: string;
+  url: string;
+  fileName?: string;
+  sizeBytes?: number | null;
 };
 
 function decodeSlug(value: string): string {
@@ -127,26 +138,51 @@ function resolveFullEpisodeAudio(radio: RadioDetailItem): string | null {
   );
 }
 
-function buildFullEpisodeDownloadOptions(radio: RadioDetailItem) {
+function normalizeOptionalSize(value?: number | null): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+
+  if (value <= 0) {
+    return null;
+  }
+
+  return Math.floor(value);
+}
+
+function buildFullEpisodeQualityOptions(
+  radio: RadioDetailItem,
+): FullEpisodeQualityOption[] {
   const hasUrl = (item: {
+    key: PlayerAudioQuality;
     label: string;
     url: string | null;
-    fileName?: string;
-  }): item is { label: string; url: string; fileName?: string } =>
-    Boolean(item.url);
+    sizeBytes?: number | null;
+  }): item is {
+    key: PlayerAudioQuality;
+    label: string;
+    url: string;
+    sizeBytes?: number | null;
+  } => Boolean(item.url);
 
-  const base = [
+  return [
     {
+      key: "low",
       label: "کیفیت پایین",
       url: getUploadUrl(radio.audioUrlLow),
+      sizeBytes: normalizeOptionalSize(radio.audioSizeLow),
     },
     {
+      key: "medium",
       label: "کیفیت متوسط",
       url: getUploadUrl(radio.audioUrlMedium),
+      sizeBytes: normalizeOptionalSize(radio.audioSizeMedium),
     },
     {
+      key: "high",
       label: "کیفیت بالا",
       url: getUploadUrl(radio.audioUrlHigh),
+      sizeBytes: normalizeOptionalSize(radio.audioSizeHigh),
     },
   ]
     .filter(hasUrl)
@@ -154,6 +190,22 @@ function buildFullEpisodeDownloadOptions(radio: RadioDetailItem) {
       ...item,
       fileName: getUploadOriginalFileName(item.url) || undefined,
     }));
+}
+
+function buildFullEpisodeDownloadOptions(
+  radio: RadioDetailItem,
+  qualityOptions: FullEpisodeQualityOption[],
+) {
+  if (qualityOptions.length > 0) {
+    return qualityOptions;
+  }
+
+  const base: Array<{
+    label: string;
+    url: string;
+    fileName?: string;
+    sizeBytes?: number | null;
+  }> = [];
 
   const fallbackUrl = getUploadUrl(radio.audioUrl);
   if (fallbackUrl && !base.some((item) => item.url === fallbackUrl)) {
@@ -161,6 +213,7 @@ function buildFullEpisodeDownloadOptions(radio: RadioDetailItem) {
       label: "کیفیت پیش‌فرض",
       url: fallbackUrl,
       fileName: getUploadOriginalFileName(fallbackUrl) || undefined,
+      sizeBytes: null,
     });
   }
 
@@ -174,6 +227,7 @@ function buildFullEpisodeDownloadOptions(radio: RadioDetailItem) {
           label: "دانلود فایل",
           url: fallbackUrl,
           fileName: getUploadOriginalFileName(fallbackUrl) || undefined,
+          sizeBytes: null,
         },
       ]
     : [];
@@ -276,13 +330,12 @@ export default async function RadioDetailPage({ params }: PageProps) {
   const coverUrl = getUploadUrl(radio.cover);
   const summaryText = toPlainText(radio.summary || "");
   const introHtml = toSafeArticleHtml(radio.intro || "");
+  const qualityOptions = buildFullEpisodeQualityOptions(radio);
   const fullAudioUrl = getUploadUrl(resolveFullEpisodeAudio(radio));
-  const fullDownloadOptions = buildFullEpisodeDownloadOptions(radio);
-  const selectedQualityLabel = {
-    low: "کیفیت پایین",
-    medium: "کیفیت متوسط",
-    high: "کیفیت بالا",
-  }[normalizePlayerAudioQuality(radio.playerAudioQuality)];
+  const fullDownloadOptions = buildFullEpisodeDownloadOptions(
+    radio,
+    qualityOptions,
+  );
 
   return (
     <>
@@ -366,17 +419,16 @@ export default async function RadioDetailPage({ params }: PageProps) {
 
         <section className="py-8 border-b border-card-border">
           <div className="container article-page-container max-w-4xl space-y-4">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <h2 className="text-2xl md:text-3xl font-bold">اپیزود کامل</h2>
-              <span className="text-xs md:text-sm text-foreground-secondary">
-                پلیر داخلی: {selectedQualityLabel}
-              </span>
-            </div>
+            <h2 className="text-2xl md:text-3xl font-bold">اپیزود کامل</h2>
 
             {fullAudioUrl ? (
               <AudioPlayer
                 src={fullAudioUrl}
                 title={radio.title}
+                qualityOptions={qualityOptions}
+                initialQuality={normalizePlayerAudioQuality(
+                  radio.playerAudioQuality,
+                )}
                 downloadOptions={fullDownloadOptions}
               />
             ) : (

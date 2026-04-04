@@ -90,6 +90,9 @@ model Radio {
   audioUrlLow String?        @db.Text
   audioUrlMedium String?     @db.Text
   audioUrlHigh String?       @db.Text
+  audioSizeLow Int?
+  audioSizeMedium Int?
+  audioSizeHigh Int?
   playerAudioQuality String  @default("high")
   publishedAt String
   sortDate    DateTime       @default(now())

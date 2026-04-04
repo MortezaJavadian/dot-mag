@@ -31,6 +31,9 @@ type CreateRadioInput = {
   audioUrlLow?: string | null;
   audioUrlMedium?: string | null;
   audioUrlHigh?: string | null;
+  audioSizeLow?: number | null;
+  audioSizeMedium?: number | null;
+  audioSizeHigh?: number | null;
   playerAudioQuality?: string;
   publishedAt: string;
   sortDate?: string;
@@ -89,6 +92,18 @@ function normalizeOptionalText(value?: string | null): string | null {
   if (typeof value !== "string") return null;
   const normalized = value.trim();
   return normalized ? normalized : null;
+}
+
+function normalizeOptionalSize(value?: number | null): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+
+  if (value <= 0) {
+    return null;
+  }
+
+  return Math.floor(value);
 }
 
 function normalizePlayerAudioQuality(
@@ -180,6 +195,9 @@ export async function createRadio(data: CreateRadioInput) {
     const audioUrlLow = normalizeOptionalText(data.audioUrlLow);
     const audioUrlMedium = normalizeOptionalText(data.audioUrlMedium);
     const audioUrlHigh = normalizeOptionalText(data.audioUrlHigh);
+    const audioSizeLow = normalizeOptionalSize(data.audioSizeLow);
+    const audioSizeMedium = normalizeOptionalSize(data.audioSizeMedium);
+    const audioSizeHigh = normalizeOptionalSize(data.audioSizeHigh);
     const playerAudioQuality = normalizePlayerAudioQuality(
       data.playerAudioQuality,
     );
@@ -195,6 +213,9 @@ export async function createRadio(data: CreateRadioInput) {
         audioUrlLow,
         audioUrlMedium,
         audioUrlHigh,
+        audioSizeLow,
+        audioSizeMedium,
+        audioSizeHigh,
         playerAudioQuality,
         publishedAt: resolveDisplayDate(data.publishedAt, data.sortDate),
         sortDate: resolveSortDate(data.sortDate),
@@ -256,6 +277,18 @@ export async function updateRadio(id: string, data: UpdateRadioInput) {
 
     if (data.audioUrlHigh !== undefined) {
       updateData.audioUrlHigh = normalizeOptionalText(data.audioUrlHigh);
+    }
+
+    if (data.audioSizeLow !== undefined) {
+      updateData.audioSizeLow = normalizeOptionalSize(data.audioSizeLow);
+    }
+
+    if (data.audioSizeMedium !== undefined) {
+      updateData.audioSizeMedium = normalizeOptionalSize(data.audioSizeMedium);
+    }
+
+    if (data.audioSizeHigh !== undefined) {
+      updateData.audioSizeHigh = normalizeOptionalSize(data.audioSizeHigh);
     }
 
     if (data.playerAudioQuality !== undefined) {

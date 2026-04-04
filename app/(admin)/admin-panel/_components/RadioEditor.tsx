@@ -43,6 +43,9 @@ type RadioSource = {
   audioUrlLow?: string | null;
   audioUrlMedium?: string | null;
   audioUrlHigh?: string | null;
+  audioSizeLow?: number | null;
+  audioSizeMedium?: number | null;
+  audioSizeHigh?: number | null;
   playerAudioQuality?: string | null;
   publishedAt?: string;
   sortDate?: string | Date;
@@ -82,6 +85,12 @@ const QUALITY_FIELD_BY_KEY = {
   low: "audioUrlLow",
   medium: "audioUrlMedium",
   high: "audioUrlHigh",
+} as const;
+
+const QUALITY_SIZE_FIELD_BY_KEY = {
+  low: "audioSizeLow",
+  medium: "audioSizeMedium",
+  high: "audioSizeHigh",
 } as const;
 
 const IDLE_UPLOAD_STATUS: UploadTaskState = {
@@ -143,6 +152,37 @@ function toDateInputValue(value?: string | Date | null): string {
   }
 
   return parsed.toISOString().split("T")[0];
+}
+
+function normalizeOptionalSize(value?: number | null): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+
+  if (value <= 0) {
+    return null;
+  }
+
+  return Math.floor(value);
+}
+
+function formatFileSize(sizeBytes?: number | null): string {
+  const size = normalizeOptionalSize(sizeBytes);
+  if (!size) {
+    return "حجم نامشخص";
+  }
+
+  const sizeInMb = size / (1024 * 1024);
+  if (sizeInMb >= 1) {
+    return `${sizeInMb.toFixed(sizeInMb >= 10 ? 1 : 2)} MB`;
+  }
+
+  const sizeInKb = size / 1024;
+  if (sizeInKb >= 1) {
+    return `${sizeInKb.toFixed(sizeInKb >= 10 ? 1 : 2)} KB`;
+  }
+
+  return `${size} B`;
 }
 
 function normalizePlayerAudioQuality(
@@ -274,6 +314,24 @@ function buildQualityStatusState(): Record<
   };
 }
 
+type RadioFormState = {
+  title: string;
+  summary: string;
+  intro: string;
+  personId: string;
+  cover: string;
+  audioUrlLow: string;
+  audioUrlMedium: string;
+  audioUrlHigh: string;
+  audioSizeLow: number | null;
+  audioSizeMedium: number | null;
+  audioSizeHigh: number | null;
+  playerAudioQuality: PlayerAudioQuality;
+  publishedAt: string;
+  sortDate: string;
+  durationSec: string;
+};
+
 export default function RadioEditor({
   radio,
   personOptions,
@@ -283,7 +341,7 @@ export default function RadioEditor({
   const initialHighAudioUrl =
     getUploadUrl(radio?.audioUrlHigh) || getUploadUrl(radio?.audioUrl) || "";
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RadioFormState>({
     title: radio?.title || "",
     summary: radio?.summary || "",
     intro: radio?.intro || "",
@@ -292,6 +350,9 @@ export default function RadioEditor({
     audioUrlLow: getUploadUrl(radio?.audioUrlLow) || "",
     audioUrlMedium: getUploadUrl(radio?.audioUrlMedium) || "",
     audioUrlHigh: initialHighAudioUrl,
+    audioSizeLow: normalizeOptionalSize(radio?.audioSizeLow),
+    audioSizeMedium: normalizeOptionalSize(radio?.audioSizeMedium),
+    audioSizeHigh: normalizeOptionalSize(radio?.audioSizeHigh),
     playerAudioQuality: normalizePlayerAudioQuality(radio?.playerAudioQuality),
     publishedAt: radio?.publishedAt || toDateInputValue(radio?.sortDate),
     sortDate: toDateInputValue(radio?.sortDate),
@@ -412,12 +473,20 @@ export default function RadioEditor({
       ]);
 
       const uploadedUrl = uploadResult.url;
+      const uploadedSize = normalizeOptionalSize(uploadResult.size);
       setFormData((prev) => {
-        const field = QUALITY_FIELD_BY_KEY[quality];
-        const next = {
-          ...prev,
-          [field]: uploadedUrl,
-        };
+        const next: RadioFormState = { ...prev };
+
+        if (quality === "low") {
+          next.audioUrlLow = uploadedUrl;
+          next.audioSizeLow = uploadedSize;
+        } else if (quality === "medium") {
+          next.audioUrlMedium = uploadedUrl;
+          next.audioSizeMedium = uploadedSize;
+        } else {
+          next.audioUrlHigh = uploadedUrl;
+          next.audioSizeHigh = uploadedSize;
+        }
 
         const activeQualityField =
           QUALITY_FIELD_BY_KEY[next.playerAudioQuality];
@@ -486,6 +555,9 @@ export default function RadioEditor({
         audioUrlLow: formData.audioUrlLow || null,
         audioUrlMedium: formData.audioUrlMedium || null,
         audioUrlHigh: formData.audioUrlHigh || null,
+        audioSizeLow: formData.audioSizeLow,
+        audioSizeMedium: formData.audioSizeMedium,
+        audioSizeHigh: formData.audioSizeHigh,
         playerAudioQuality: formData.playerAudioQuality,
         publishedAt: formData.publishedAt,
         sortDate: formData.sortDate,
@@ -989,7 +1061,9 @@ export default function RadioEditor({
             {(["low", "medium", "high"] as PlayerAudioQuality[]).map(
               (quality) => {
                 const qualityField = QUALITY_FIELD_BY_KEY[quality];
+                const qualitySizeField = QUALITY_SIZE_FIELD_BY_KEY[quality];
                 const audioUrl = formData[qualityField];
+                const audioSize = formData[qualitySizeField];
                 const status =
                   qualityUploadStatuses[quality] || IDLE_UPLOAD_STATUS;
 
@@ -1021,6 +1095,10 @@ export default function RadioEditor({
                       successLabel="فایل با موفقیت آپلود شد"
                       errorLabel="آپلود فایل انجام نشد"
                     />
+
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      حجم فایل: {formatFileSize(audioSize)}
+                    </p>
 
                     {audioUrl ? (
                       <audio

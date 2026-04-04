@@ -73,6 +73,9 @@ type RadioItem = {
   audioUrlLow?: string | null;
   audioUrlMedium?: string | null;
   audioUrlHigh?: string | null;
+  audioSizeLow?: number | null;
+  audioSizeMedium?: number | null;
+  audioSizeHigh?: number | null;
   playerAudioQuality?: string | null;
   durationSec?: number | null;
   title: string;

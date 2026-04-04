@@ -4,10 +4,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "@/components/ui/Button";
 import { getUploadOriginalFileName } from "@/lib/uploads";
 
+type PlayerAudioQuality = "low" | "medium" | "high";
+
 type DownloadOption = {
   label: string;
   url: string;
   fileName?: string;
+  sizeBytes?: number | null;
+  qualityKey?: PlayerAudioQuality;
+};
+
+type QualityOption = {
+  key: PlayerAudioQuality;
+  label: string;
+  url: string;
+  fileName?: string;
+  sizeBytes?: number | null;
 };
 
 interface AudioPlayerProps {
@@ -15,6 +27,8 @@ interface AudioPlayerProps {
   title: string;
   downloadFileName?: string;
   downloadOptions?: DownloadOption[];
+  qualityOptions?: QualityOption[];
+  initialQuality?: PlayerAudioQuality;
   compact?: boolean;
 }
 
@@ -42,45 +56,51 @@ function sanitizeDownloadName(name: string): string {
     .trim();
 }
 
-function parseContentDispositionFileName(
-  contentDisposition: string | null,
-): string | null {
-  if (!contentDisposition) {
+function normalizeOptionalSize(value?: number | null): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
     return null;
   }
 
-  const utf8Match = contentDisposition.match(
-    /filename\*\s*=\s*UTF-8''([^;]+)/i,
-  );
-  if (utf8Match?.[1]) {
-    try {
-      const decoded = decodeURIComponent(utf8Match[1].trim());
-      const normalized = sanitizeDownloadName(decoded);
-      if (normalized) {
-        return normalized;
-      }
-    } catch {
-      // Ignore malformed encodings and continue with fallback parsing.
-    }
+  if (value <= 0) {
+    return null;
   }
 
-  const quotedMatch = contentDisposition.match(/filename\s*=\s*"([^"]+)"/i);
-  if (quotedMatch?.[1]) {
-    const normalized = sanitizeDownloadName(quotedMatch[1]);
-    if (normalized) {
-      return normalized;
-    }
+  return Math.floor(value);
+}
+
+function formatFileSize(sizeBytes?: number | null): string {
+  const size = normalizeOptionalSize(sizeBytes);
+  if (!size) {
+    return "حجم نامشخص";
   }
 
-  const plainMatch = contentDisposition.match(/filename\s*=\s*([^;]+)/i);
-  if (plainMatch?.[1]) {
-    const normalized = sanitizeDownloadName(plainMatch[1].trim());
-    if (normalized) {
-      return normalized;
-    }
+  const sizeInMb = size / (1024 * 1024);
+  if (sizeInMb >= 1) {
+    return `${sizeInMb.toFixed(sizeInMb >= 10 ? 1 : 2)} MB`;
   }
 
-  return null;
+  const sizeInKb = size / 1024;
+  if (sizeInKb >= 1) {
+    return `${sizeInKb.toFixed(sizeInKb >= 10 ? 1 : 2)} KB`;
+  }
+
+  return `${size} B`;
+}
+
+function buildDownloadHref(rawUrl: string): string {
+  if (typeof window === "undefined") {
+    return rawUrl;
+  }
+
+  try {
+    const parsed = new URL(rawUrl, window.location.origin);
+    parsed.searchParams.set("download", "1");
+    return parsed.toString();
+  } catch {
+    return rawUrl.includes("?")
+      ? `${rawUrl}&download=1`
+      : `${rawUrl}?download=1`;
+  }
 }
 
 function dedupeDownloadOptions(options: DownloadOption[]): DownloadOption[] {
@@ -88,7 +108,9 @@ function dedupeDownloadOptions(options: DownloadOption[]): DownloadOption[] {
   const output: DownloadOption[] = [];
 
   for (const option of options) {
-    const key = `${option.label}::${option.url}`;
+    const key = option.qualityKey
+      ? `quality::${option.qualityKey}`
+      : `${option.label}::${option.url}`;
     if (seen.has(key)) continue;
     seen.add(key);
     output.push(option);
@@ -102,9 +124,16 @@ export function AudioPlayer({
   title,
   downloadFileName,
   downloadOptions,
+  qualityOptions,
+  initialQuality,
   compact = false,
 }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const sourceChangeResumeRef = useRef<{
+    time: number;
+    shouldResume: boolean;
+  } | null>(null);
+  const previousEffectiveSrcRef = useRef<string | null>(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
@@ -115,13 +144,109 @@ export function AudioPlayer({
   const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
 
+  const normalizedQualityOptions = useMemo(() => {
+    const byKey = new Map<PlayerAudioQuality, QualityOption>();
+
+    for (const option of qualityOptions || []) {
+      if (!option.url) {
+        continue;
+      }
+
+      if (byKey.has(option.key)) {
+        continue;
+      }
+
+      byKey.set(option.key, {
+        key: option.key,
+        label: option.label,
+        url: option.url,
+        fileName:
+          option.fileName || getUploadOriginalFileName(option.url) || undefined,
+        sizeBytes: normalizeOptionalSize(option.sizeBytes),
+      });
+    }
+
+    return (["low", "medium", "high"] as PlayerAudioQuality[])
+      .map((key) => byKey.get(key))
+      .filter((item): item is QualityOption => Boolean(item));
+  }, [qualityOptions]);
+
+  const [activeQuality, setActiveQuality] = useState<PlayerAudioQuality | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (normalizedQualityOptions.length === 0) {
+      setActiveQuality(null);
+      return;
+    }
+
+    const initialIsAvailable =
+      initialQuality &&
+      normalizedQualityOptions.some((option) => option.key === initialQuality);
+
+    setActiveQuality(
+      initialIsAvailable ? initialQuality : normalizedQualityOptions[0].key,
+    );
+  }, [initialQuality, normalizedQualityOptions]);
+
+  const activeQualityOption = useMemo(() => {
+    if (normalizedQualityOptions.length === 0) {
+      return null;
+    }
+
+    if (!activeQuality) {
+      return normalizedQualityOptions[0];
+    }
+
+    return (
+      normalizedQualityOptions.find((option) => option.key === activeQuality) ||
+      normalizedQualityOptions[0]
+    );
+  }, [activeQuality, normalizedQualityOptions]);
+
+  const effectiveSrc = activeQualityOption?.url || src;
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    const previousSrc = previousEffectiveSrcRef.current;
+    previousEffectiveSrcRef.current = effectiveSrc;
+
+    if (!audio || !previousSrc || previousSrc === effectiveSrc) {
+      return;
+    }
+
+    sourceChangeResumeRef.current = {
+      time: Number.isFinite(audio.currentTime) ? audio.currentTime : 0,
+      shouldResume: !audio.paused && !audio.ended,
+    };
+
+    setIsReady(false);
+    setIsPlaying(false);
+    setIsBuffering(false);
+    setBufferedUntil(0);
+    setError("");
+  }, [effectiveSrc]);
+
   const normalizedDownloadOptions = useMemo(() => {
+    if (normalizedQualityOptions.length > 0) {
+      return normalizedQualityOptions.map((option) => ({
+        label: option.label,
+        url: option.url,
+        fileName: option.fileName,
+        sizeBytes: option.sizeBytes,
+        qualityKey: option.key,
+      }));
+    }
+
     const provided = (downloadOptions || [])
       .filter((option) => option.url)
       .map((option) => ({
         label: option.label,
         url: option.url,
         fileName: option.fileName,
+        sizeBytes: normalizeOptionalSize(option.sizeBytes),
+        qualityKey: option.qualityKey,
       }));
 
     if (provided.length > 0) {
@@ -133,17 +258,32 @@ export function AudioPlayer({
         label: "دانلود فایل",
         url: src,
         fileName: downloadFileName,
+        sizeBytes: null,
       },
     ];
-  }, [downloadFileName, downloadOptions, src]);
+  }, [downloadFileName, downloadOptions, normalizedQualityOptions, src]);
 
   const [selectedDownloadUrl, setSelectedDownloadUrl] = useState(
     normalizedDownloadOptions[0]?.url || "",
   );
 
   useEffect(() => {
-    setSelectedDownloadUrl(normalizedDownloadOptions[0]?.url || "");
-  }, [normalizedDownloadOptions]);
+    if (activeQualityOption?.url) {
+      setSelectedDownloadUrl(activeQualityOption.url);
+      return;
+    }
+
+    setSelectedDownloadUrl((currentValue) => {
+      if (
+        currentValue &&
+        normalizedDownloadOptions.some((option) => option.url === currentValue)
+      ) {
+        return currentValue;
+      }
+
+      return normalizedDownloadOptions[0]?.url || "";
+    });
+  }, [activeQualityOption?.url, normalizedDownloadOptions]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -162,6 +302,28 @@ export function AudioPlayer({
     const onLoadedMetadata = () => {
       setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
       updateBuffered();
+
+      const pendingResume = sourceChangeResumeRef.current;
+      if (!pendingResume) {
+        return;
+      }
+
+      const maxDuration = Number.isFinite(audio.duration) ? audio.duration : 0;
+      const boundedTime =
+        maxDuration > 0
+          ? Math.min(Math.max(pendingResume.time, 0), maxDuration)
+          : Math.max(pendingResume.time, 0);
+
+      audio.currentTime = boundedTime;
+      setCurrentTime(boundedTime);
+
+      if (pendingResume.shouldResume) {
+        void audio.play().catch(() => {
+          setError("شروع پخش ممکن نبود");
+        });
+      }
+
+      sourceChangeResumeRef.current = null;
     };
 
     const onCanPlay = () => {
@@ -224,7 +386,7 @@ export function AudioPlayer({
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("error", onError);
     };
-  }, [src]);
+  }, [effectiveSrc]);
 
   const progressPercent = useMemo(() => {
     if (!duration) return 0;
@@ -263,13 +425,16 @@ export function AudioPlayer({
     setCurrentTime(bounded);
   };
 
-  const selectedDownloadOption =
-    normalizedDownloadOptions.find(
-      (option) => option.url === selectedDownloadUrl,
-    ) || normalizedDownloadOptions[0];
+  const selectedDownloadOption = activeQualityOption
+    ? normalizedDownloadOptions.find(
+        (option) => option.qualityKey === activeQualityOption.key,
+      ) || normalizedDownloadOptions[0]
+    : normalizedDownloadOptions.find(
+        (option) => option.url === selectedDownloadUrl,
+      ) || normalizedDownloadOptions[0];
 
-  const handleDownload = async () => {
-    if (!selectedDownloadOption?.url) {
+  const handleDownload = () => {
+    if (!selectedDownloadOption?.url || downloading) {
       return;
     }
 
@@ -277,46 +442,23 @@ export function AudioPlayer({
     setError("");
 
     try {
-      const response = await fetch(selectedDownloadOption.url, {
-        method: "GET",
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error("Download request failed");
-      }
-
-      const blob = await response.blob();
       const originalNameFromUrl = getUploadOriginalFileName(
         selectedDownloadOption.url,
       );
-      const originalNameFromHeader = parseContentDispositionFileName(
-        response.headers.get("content-disposition"),
+      const resolvedFileName = sanitizeDownloadName(
+        selectedDownloadOption.fileName ||
+          originalNameFromUrl ||
+          downloadFileName ||
+          buildDefaultFileName(title),
       );
 
-      if ("caches" in window) {
-        const audioCache = await caches.open("dotmag-audio-v1");
-        await audioCache.put(
-          selectedDownloadOption.url,
-          new Response(blob, {
-            headers: {
-              "Content-Type": blob.type || "audio/mpeg",
-              "Cache-Control": "public, max-age=31536000, immutable",
-            },
-          }),
-        );
-      }
-
-      const objectUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = objectUrl;
-      link.download =
-        originalNameFromUrl ||
-        originalNameFromHeader ||
-        selectedDownloadOption.fileName ||
-        downloadFileName ||
-        buildDefaultFileName(title);
+      link.href = buildDownloadHref(selectedDownloadOption.url);
+      link.download = resolvedFileName || buildDefaultFileName(title);
+      link.rel = "noopener";
+      document.body.appendChild(link);
       link.click();
-      URL.revokeObjectURL(objectUrl);
+      link.remove();
     } catch (downloadError) {
       console.error(downloadError);
       setError("دانلود فایل انجام نشد");
@@ -331,7 +473,7 @@ export function AudioPlayer({
         compact ? "space-y-3" : "space-y-4"
       }`}
     >
-      <audio ref={audioRef} src={src} preload="auto" />
+      <audio ref={audioRef} src={effectiveSrc} preload="auto" />
 
       <div className="flex items-center gap-3 md:gap-4">
         <button
@@ -384,6 +526,41 @@ export function AudioPlayer({
         </div>
       </div>
 
+      {normalizedQualityOptions.length > 0 && (
+        <div className="space-y-2">
+          {normalizedQualityOptions.length > 1 && (
+            <div className="flex flex-wrap gap-2 md:gap-3">
+              {normalizedQualityOptions.map((option) => {
+                const isActive = activeQualityOption?.key === option.key;
+
+                return (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => setActiveQuality(option.key)}
+                    className={`px-4 md:px-5 py-2 md:py-2.5 rounded-full text-sm font-medium transition-colors text-center break-words ${
+                      isActive
+                        ? "bg-primary text-white"
+                        : "bg-foreground/5 hover:bg-foreground/10"
+                    }`}
+                    aria-pressed={isActive}
+                  >
+                    {option.label} ({formatFileSize(option.sizeBytes)})
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {activeQualityOption && (
+            <p className="text-xs md:text-sm text-foreground-secondary">
+              حجم {activeQualityOption.label}:{" "}
+              {formatFileSize(activeQualityOption.sizeBytes)}
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="space-y-2">
         <div className="relative h-3">
           <div className="absolute inset-0 rounded-full bg-foreground/10" />
@@ -415,7 +592,17 @@ export function AudioPlayer({
       </div>
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        {normalizedDownloadOptions.length > 1 ? (
+        {normalizedQualityOptions.length > 1 ? (
+          <Button
+            type="button"
+            onClick={handleDownload}
+            disabled={downloading}
+            size="sm"
+            className="w-fit bg-slate-700 hover:bg-slate-800"
+          >
+            {downloading ? "در حال دانلود..." : "دانلود کیفیت انتخابی"}
+          </Button>
+        ) : normalizedDownloadOptions.length > 1 ? (
           <div className="flex items-center gap-2">
             <select
               value={selectedDownloadUrl}
@@ -428,6 +615,9 @@ export function AudioPlayer({
                   value={option.url}
                 >
                   {option.label}
+                  {option.sizeBytes
+                    ? ` (${formatFileSize(option.sizeBytes)})`
+                    : ""}
                 </option>
               ))}
             </select>
@@ -452,6 +642,12 @@ export function AudioPlayer({
           >
             {downloading ? "در حال دانلود..." : "دانلود"}
           </Button>
+        )}
+
+        {normalizedQualityOptions.length === 0 && selectedDownloadOption && (
+          <span className="text-xs md:text-sm text-foreground-secondary">
+            حجم فایل: {formatFileSize(selectedDownloadOption.sizeBytes)}
+          </span>
         )}
       </div>
 
