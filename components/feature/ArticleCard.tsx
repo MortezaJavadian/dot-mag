@@ -16,17 +16,22 @@ interface Article {
   category: string;
   image: string;
   publishedAt: string;
+  person?: {
+    name: string;
+  } | null;
   tags?: Tag[];
 }
 
 interface ArticleCardProps {
   article: Article;
   variant?: "default" | "featured" | "horizontal";
+  showAuthorInMeta?: boolean;
 }
 
 export function ArticleCard({
   article,
   variant = "default",
+  showAuthorInMeta = false,
 }: ArticleCardProps) {
   const imageSrc = getUploadUrl(article.image);
   const excerptText = toPlainText(article.excerpt);
@@ -173,7 +178,10 @@ export function ArticleCard({
           <p className="text-foreground-secondary text-sm leading-5 line-clamp-1 min-h-[1.25rem] mb-4">
             {hasExcerpt ? excerptText : "\u00a0"}
           </p>
-          <div className="flex items-center justify-end text-foreground-secondary text-xs">
+          <div className="flex items-center justify-between gap-3 text-foreground-secondary text-xs">
+            {showAuthorInMeta && article.person?.name ? (
+              <span className="truncate text-right">{article.person.name}</span>
+            ) : null}
             <span>{article.publishedAt}</span>
           </div>
         </div>

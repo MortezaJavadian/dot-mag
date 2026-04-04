@@ -22,6 +22,10 @@ type PostArticle = {
   category: string;
   image: string;
   publishedAt: string;
+  person?: {
+    id: string;
+    name: string;
+  } | null;
   featured?: boolean;
   tags?: TagOption[];
 };
@@ -128,7 +132,7 @@ function PostsContent() {
                     className="animate-slide-up"
                     style={{ animationDelay: `${Math.min(index * 60, 420)}ms` }}
                   >
-                    <ArticleCard article={article} />
+                    <ArticleCard article={article} showAuthorInMeta />
                   </div>
                 ))}
               </div>
