@@ -165,7 +165,12 @@ function buildFullEpisodeQualityOptions(
     sizeBytes?: number | null;
   } => Boolean(item.url);
 
-  return [
+  const qualityCandidates: Array<{
+    key: PlayerAudioQuality;
+    label: string;
+    url: string | null;
+    sizeBytes?: number | null;
+  }> = [
     {
       key: "low",
       label: "کیفیت پایین",
@@ -184,7 +189,9 @@ function buildFullEpisodeQualityOptions(
       url: getUploadUrl(radio.audioUrlHigh),
       sizeBytes: normalizeOptionalSize(radio.audioSizeHigh),
     },
-  ]
+  ];
+
+  return qualityCandidates
     .filter(hasUrl)
     .map((item) => ({
       ...item,
