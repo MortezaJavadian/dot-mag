@@ -120,6 +120,20 @@ export async function DELETE(
 
     await prisma.person.delete({ where: { id } });
 
+    const remainingPeople = await prisma.person.findMany({
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      select: { id: true },
+    });
+
+    await prisma.$transaction(
+      remainingPeople.map((person, index) =>
+        prisma.person.update({
+          where: { id: person.id },
+          data: { sortOrder: index },
+        }),
+      ),
+    );
+
     revalidateTag(PEOPLE_TAG, PEOPLE_CACHE_PROFILE);
 
     return NextResponse.json({ success: true });

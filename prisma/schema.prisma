@@ -133,6 +133,7 @@ model Person {
   image           String    @db.Text
   bio             String    @db.Text
   isDotTeamMember Boolean   @default(false)
+  sortOrder       Int       @default(0)
   articles        Article[]
   radios          Radio[]
   createdAt       DateTime  @default(now())

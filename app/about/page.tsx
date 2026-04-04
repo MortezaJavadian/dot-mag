@@ -158,24 +158,25 @@ export default async function AboutPage() {
 
       {teamMembers.length > 0 ? (
         <section className="section-spacing-sm border-t border-border">
-          <div className="container space-y-6">
-            <div className="space-y-2">
+          <div className="container space-y-7">
+            <div className="space-y-3 text-center">
               <span
                 className="block h-1.5 w-full rounded-full bg-gradient-to-l from-primary/60 via-primary/30 to-transparent"
                 aria-hidden="true"
               />
-              <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">
+              <h2 className="text-3xl md:text-4xl font-black tracking-tight drop-shadow-sm text-foreground">
                 اعضای تیم دات
               </h2>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))]">
               {teamMembers.map((member) => (
                 <PersonProfileBlock
                   key={member.id}
                   name={member.name}
                   image={member.image}
                   bio={member.bio}
+                  className="w-full"
                 />
               ))}
             </div>
@@ -186,6 +187,10 @@ export default async function AboutPage() {
       <section className="bg-background py-16 md:py-20 border-t border-border text-foreground">
         <div className="container max-w-4xl mx-auto space-y-9">
           <div className="space-y-3 text-center">
+            <span
+              className="block h-1.5 w-full rounded-full bg-gradient-to-l from-primary/60 via-primary/30 to-transparent"
+              aria-hidden="true"
+            />
             <p className="text-3xl md:text-4xl font-black tracking-tight drop-shadow-sm">
               کیوسکِ دات
             </p>

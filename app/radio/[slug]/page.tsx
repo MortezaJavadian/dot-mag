@@ -318,7 +318,7 @@ export default async function RadioDetailPage({ params }: PageProps) {
                     name={radio.person.name}
                     image={radio.person.image}
                     bio={radio.person.bio}
-                    className="mb-5"
+                    className="mb-7 md:mb-8"
                   />
                 ) : null}
 

@@ -4,7 +4,11 @@ import { useState, useEffect } from "react";
 import { getArticles, deleteArticle } from "@/app/actions/articleActions";
 import { getMagazines, deleteMagazine } from "@/app/actions/magazineActions";
 import { getRadios, deleteRadio } from "@/app/actions/radioActions";
-import { getPeople, deletePerson } from "@/app/actions/personActions";
+import {
+  getPeople,
+  deletePerson,
+  reorderPeople,
+} from "@/app/actions/personActions";
 import { getHomeHeroContent } from "@/app/actions/homeActions";
 import {
   getTags,
@@ -90,6 +94,7 @@ type PersonItem = {
   image: string;
   bio: string;
   isDotTeamMember: boolean;
+  sortOrder?: number;
 };
 
 type TagItem = {
@@ -198,6 +203,23 @@ export default function Dashboard() {
       }
     } catch (error) {
       alert("خطا در جابه‌جایی ترتیب برچسب");
+      console.error(error);
+    }
+  };
+
+  const handleMovePerson = async (
+    personId: string,
+    direction: "up" | "down",
+  ) => {
+    try {
+      const result = await reorderPeople(personId, direction);
+      if (result.success) {
+        await loadData();
+      } else {
+        alert(result.error);
+      }
+    } catch (error) {
+      alert("خطا در جابه‌جایی ترتیب افراد");
       console.error(error);
     }
   };
@@ -528,7 +550,7 @@ export default function Dashboard() {
             </p>
           ) : (
             <div className="space-y-2">
-              {people.map((person) => (
+              {people.map((person, index) => (
                 <div
                   key={person.id}
                   className="p-4 border rounded-lg dark:border-slate-700 flex flex-col sm:flex-row justify-between sm:items-center gap-3"
@@ -557,6 +579,20 @@ export default function Dashboard() {
                   </div>
 
                   <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleMovePerson(person.id, "up")}
+                      disabled={index === 0}
+                      className="text-sm bg-slate-600 hover:bg-slate-700"
+                    >
+                      بالا
+                    </Button>
+                    <Button
+                      onClick={() => handleMovePerson(person.id, "down")}
+                      disabled={index === people.length - 1}
+                      className="text-sm bg-slate-600 hover:bg-slate-700"
+                    >
+                      پایین
+                    </Button>
                     <Button
                       onClick={() => setEditingPerson(person)}
                       className="text-sm"

@@ -37,18 +37,19 @@ export async function GET(request: NextRequest) {
       mode === "summary"
         ? await prisma.person.findMany({
             where,
-            orderBy: [{ isDotTeamMember: "desc" }, { createdAt: "desc" }],
+            orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
             select: {
               id: true,
               name: true,
               image: true,
               bio: true,
               isDotTeamMember: true,
+              sortOrder: true,
             },
           })
         : await prisma.person.findMany({
             where,
-            orderBy: [{ isDotTeamMember: "desc" }, { createdAt: "desc" }],
+            orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
           });
 
     return NextResponse.json(people);
@@ -81,12 +82,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const lastPerson = await prisma.person.findFirst({
+      orderBy: { sortOrder: "desc" },
+      select: { sortOrder: true },
+    });
+
     const person = await prisma.person.create({
       data: {
         name,
         image,
         bio,
         isDotTeamMember: Boolean(data.isDotTeamMember),
+        sortOrder: (lastPerson?.sortOrder ?? -1) + 1,
       },
     });
 

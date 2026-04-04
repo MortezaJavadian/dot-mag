@@ -37,7 +37,7 @@ export async function getPeople(options?: { teamOnly?: boolean }) {
   try {
     const people = await prisma.person.findMany({
       where: options?.teamOnly ? { isDotTeamMember: true } : undefined,
-      orderBy: [{ isDotTeamMember: "desc" }, { createdAt: "desc" }],
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
 
     return { success: true, data: people };
@@ -75,12 +75,18 @@ export async function createPerson(data: PersonMutationInput) {
   }
 
   try {
+    const lastPerson = await prisma.person.findFirst({
+      orderBy: { sortOrder: "desc" },
+      select: { sortOrder: true },
+    });
+
     const person = await prisma.person.create({
       data: {
         name,
         image,
         bio,
         isDotTeamMember: Boolean(data.isDotTeamMember),
+        sortOrder: (lastPerson?.sortOrder ?? -1) + 1,
       },
     });
 
@@ -166,10 +172,70 @@ export async function deletePerson(id: string) {
 
   try {
     await prisma.person.delete({ where: { id } });
+
+    const remainingPeople = await prisma.person.findMany({
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      select: { id: true },
+    });
+
+    await prisma.$transaction(
+      remainingPeople.map((person, index) =>
+        prisma.person.update({
+          where: { id: person.id },
+          data: { sortOrder: index },
+        }),
+      ),
+    );
+
     revalidatePeopleCache();
     return { success: true };
   } catch (error) {
     console.error("Delete person error:", error);
     return { success: false, error: "Failed to delete person" };
+  }
+}
+
+export async function reorderPeople(id: string, direction: "up" | "down") {
+  const authResult = await requireAdmin();
+  if (!authResult.success) {
+    return authResult;
+  }
+
+  try {
+    const orderedPeople = await prisma.person.findMany({
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      select: { id: true },
+    });
+
+    const currentIndex = orderedPeople.findIndex((person) => person.id === id);
+    if (currentIndex === -1) {
+      return { success: false, error: "Person not found" };
+    }
+
+    const targetIndex =
+      direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+    if (targetIndex < 0 || targetIndex >= orderedPeople.length) {
+      return { success: false, error: "No more movement possible" };
+    }
+
+    const reorderedPeople = [...orderedPeople];
+    const [movedPerson] = reorderedPeople.splice(currentIndex, 1);
+    reorderedPeople.splice(targetIndex, 0, movedPerson);
+
+    await prisma.$transaction(
+      reorderedPeople.map((person, index) =>
+        prisma.person.update({
+          where: { id: person.id },
+          data: { sortOrder: index },
+        }),
+      ),
+    );
+
+    revalidatePeopleCache();
+    return { success: true };
+  } catch (error) {
+    console.error("Reorder people error:", error);
+    return { success: false, error: "Failed to reorder people" };
   }
 }
