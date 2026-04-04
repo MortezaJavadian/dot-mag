@@ -1,5 +1,6 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getAdminUser } from "@/lib/auth";
 
@@ -14,6 +15,13 @@ function generateSlug(name: string): string {
 
 function normalizeName(name: string): string {
   return name.trim().normalize("NFC");
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002"
+  );
 }
 
 export async function getTags() {
@@ -54,7 +62,7 @@ export async function createTag(name: string) {
     return { success: true, data: tag };
   } catch (error) {
     console.error("Create tag error:", error);
-    if ((error as any).code === "P2002") {
+    if (isUniqueConstraintError(error)) {
       return { success: false, error: "برچسب با این نام از قبل وجود دارد" };
     }
     return { success: false, error: "Failed to create tag" };
@@ -155,7 +163,7 @@ export async function updateTag(id: string, name: string) {
     return { success: true, data: tag };
   } catch (error) {
     console.error("Update tag error:", error);
-    if ((error as any).code === "P2002") {
+    if (isUniqueConstraintError(error)) {
       return { success: false, error: "برچسب با این نام از قبل وجود دارد" };
     }
     return { success: false, error: "Failed to update tag" };

@@ -62,6 +62,15 @@ export async function GET(request: NextRequest) {
               image: true,
               publishedAt: true,
               featured: true,
+              person: {
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                  bio: true,
+                  isDotTeamMember: true,
+                },
+              },
               tags: {
                 select: {
                   id: true,
@@ -73,7 +82,18 @@ export async function GET(request: NextRequest) {
           })
         : await prisma.article.findMany({
             orderBy: [{ sortDate: "desc" }, { createdAt: "desc" }],
-            include: { tags: true },
+            include: {
+              tags: true,
+              person: {
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                  bio: true,
+                  isDotTeamMember: true,
+                },
+              },
+            },
           });
 
     return NextResponse.json(articles);
@@ -94,13 +114,31 @@ export async function POST(request: NextRequest) {
 
   try {
     const data = await request.json();
+    const { personId: rawPersonId, ...articleData } = data;
+    const personId =
+      typeof rawPersonId === "string" && rawPersonId.trim()
+        ? rawPersonId
+        : null;
 
     const article = await prisma.article.create({
       data: {
-        ...data,
+        ...articleData,
         publishedAt: resolveDisplayDate(data.publishedAt, data.sortDate),
         sortDate: resolveSortDate(data.sortDate),
+        person: personId ? { connect: { id: personId } } : undefined,
         tags: data.tags || [],
+      },
+      include: {
+        tags: true,
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
       },
     });
 

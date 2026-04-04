@@ -18,6 +18,7 @@ type ArticleMutationInput = {
   excerpt: string;
   content: string;
   category?: string;
+  personId?: string | null;
   image: string;
   publishedAt: string;
   sortDate?: string;
@@ -63,7 +64,18 @@ export async function getArticles() {
   try {
     const articles = await prisma.article.findMany({
       orderBy: [{ sortDate: "desc" }, { createdAt: "desc" }],
-      include: { tags: true },
+      include: {
+        tags: true,
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
     });
     return { success: true, data: articles };
   } catch (error) {
@@ -76,7 +88,18 @@ export async function getArticle(id: string) {
   try {
     const article = await prisma.article.findUnique({
       where: { id },
-      include: { tags: true },
+      include: {
+        tags: true,
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
     });
     return { success: true, data: article };
   } catch (error) {
@@ -93,11 +116,13 @@ export async function createArticle(data: ArticleMutationInput) {
 
   try {
     const slug = generateSlug(data.title);
-    const { tagIds, sortDate, ...articleData } = data;
+    const { tagIds, sortDate, personId, ...articleData } = data;
     const category =
       typeof articleData.category === "string"
         ? articleData.category.trim()
         : "";
+    const normalizedPersonId =
+      typeof personId === "string" && personId.trim() ? personId : null;
 
     const article = await prisma.article.create({
       data: {
@@ -106,11 +131,25 @@ export async function createArticle(data: ArticleMutationInput) {
         slug,
         publishedAt: resolveDisplayDate(data.publishedAt, sortDate),
         sortDate: resolveSortDate(sortDate),
+        person: normalizedPersonId
+          ? { connect: { id: normalizedPersonId } }
+          : undefined,
         tags: tagIds
           ? { connect: tagIds.map((id: string) => ({ id })) }
           : undefined,
       },
-      include: { tags: true },
+      include: {
+        tags: true,
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
     });
 
     return { success: true, data: article };
@@ -127,7 +166,7 @@ export async function updateArticle(id: string, data: ArticleUpdateInput) {
   }
 
   try {
-    const { tagIds, ...updateData } = data;
+    const { tagIds, personId, ...updateData } = data;
     const finalUpdateData: Prisma.ArticleUpdateInput = {
       ...updateData,
     } as Prisma.ArticleUpdateInput;
@@ -157,10 +196,30 @@ export async function updateArticle(id: string, data: ArticleUpdateInput) {
       };
     }
 
+    if (personId !== undefined) {
+      const normalizedPersonId =
+        typeof personId === "string" && personId.trim() ? personId : null;
+
+      finalUpdateData.person = normalizedPersonId
+        ? { connect: { id: normalizedPersonId } }
+        : { disconnect: true };
+    }
+
     const article = await prisma.article.update({
       where: { id },
       data: finalUpdateData,
-      include: { tags: true },
+      include: {
+        tags: true,
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
     });
 
     return { success: true, data: article };

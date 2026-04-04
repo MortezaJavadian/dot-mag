@@ -78,7 +78,18 @@ export async function GET(
 
     const radio = await prisma.radio.findUnique({
       where: { id },
-      include: { segments: { orderBy: { number: "asc" } } },
+      include: {
+        segments: { orderBy: { number: "asc" } },
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
     });
 
     if (!radio) {
@@ -107,9 +118,10 @@ export async function PUT(
   try {
     const { id } = await params;
     const data = await request.json();
+    const { personId, ...radioData } = data;
 
     const updateData: Prisma.RadioUpdateInput = {
-      ...data,
+      ...radioData,
     } as Prisma.RadioUpdateInput;
     if (typeof data.title === "string") {
       updateData.slug = generateSlug(data.title);
@@ -148,10 +160,30 @@ export async function PUT(
       );
     }
 
+    if (Object.prototype.hasOwnProperty.call(data, "personId")) {
+      const normalizedPersonId =
+        typeof personId === "string" && personId.trim() ? personId : null;
+
+      updateData.person = normalizedPersonId
+        ? { connect: { id: normalizedPersonId } }
+        : { disconnect: true };
+    }
+
     const radio = await prisma.radio.update({
       where: { id },
       data: updateData,
-      include: { segments: { orderBy: { number: "asc" } } },
+      include: {
+        segments: { orderBy: { number: "asc" } },
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
     });
 
     revalidateTag(RADIO_TAG, RADIO_CACHE_PROFILE);

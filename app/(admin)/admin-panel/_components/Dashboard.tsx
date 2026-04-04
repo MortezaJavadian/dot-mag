@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { getArticles, deleteArticle } from "@/app/actions/articleActions";
 import { getMagazines, deleteMagazine } from "@/app/actions/magazineActions";
 import { getRadios, deleteRadio } from "@/app/actions/radioActions";
+import { getPeople, deletePerson } from "@/app/actions/personActions";
 import { getHomeHeroContent } from "@/app/actions/homeActions";
 import {
   getTags,
@@ -15,9 +16,11 @@ import ArticleEditor from "./ArticleEditor";
 import ArticlesTabs from "./ArticlesTabs";
 import HomeEditor from "./HomeEditor";
 import MagazineEditor from "./MagazineEditor";
+import PersonEditor from "./PersonEditor";
 import RadioEditor from "./RadioEditor";
 import Button from "@/components/ui/Button";
 import type { HomeHeroConfig } from "@/lib/homeHero";
+import { getUploadUrl } from "@/lib/uploads";
 
 type ArticleItem = {
   id: string;
@@ -30,6 +33,13 @@ type ArticleItem = {
   publishedAt: string;
   sortDate?: string | Date;
   featured?: boolean;
+  person?: {
+    id: string;
+    name: string;
+    image: string;
+    bio: string;
+    isDotTeamMember: boolean;
+  } | null;
   tags: { id: string; name: string; slug: string }[];
 };
 
@@ -64,7 +74,22 @@ type RadioItem = {
   title: string;
   publishedAt: string;
   sortDate?: string | Date;
+  person?: {
+    id: string;
+    name: string;
+    image: string;
+    bio: string;
+    isDotTeamMember: boolean;
+  } | null;
   segments?: RadioSegmentItem[];
+};
+
+type PersonItem = {
+  id: string;
+  name: string;
+  image: string;
+  bio: string;
+  isDotTeamMember: boolean;
 };
 
 type TagItem = {
@@ -77,11 +102,12 @@ type TagItem = {
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<
-    "home" | "articles" | "magazines" | "radios" | "tags"
+    "home" | "articles" | "magazines" | "radios" | "people" | "tags"
   >("home");
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [magazines, setMagazines] = useState<MagazineItem[]>([]);
   const [radios, setRadios] = useState<RadioItem[]>([]);
+  const [people, setPeople] = useState<PersonItem[]>([]);
   const [tags, setTags] = useState<TagItem[]>([]);
   const [homeConfig, setHomeConfig] = useState<HomeHeroConfig | null>(null);
   const [editingArticle, setEditingArticle] = useState<
@@ -93,6 +119,9 @@ export default function Dashboard() {
   const [editingRadio, setEditingRadio] = useState<
     RadioItem | { id: null } | null
   >(null);
+  const [editingPerson, setEditingPerson] = useState<
+    PersonItem | { id: null } | null
+  >(null);
   const [loading, setLoading] = useState(true);
   const [newTagName, setNewTagName] = useState("");
   const [addingTag, setAddingTag] = useState(false);
@@ -103,11 +132,12 @@ export default function Dashboard() {
 
   const loadData = async () => {
     setLoading(true);
-    const [articlesRes, magazinesRes, radiosRes, tagsRes, homeRes] =
+    const [articlesRes, magazinesRes, radiosRes, peopleRes, tagsRes, homeRes] =
       await Promise.all([
         getArticles(),
         getMagazines(),
         getRadios(),
+        getPeople(),
         getTags(),
         getHomeHeroContent(),
       ]);
@@ -115,6 +145,7 @@ export default function Dashboard() {
     if (articlesRes.success) setArticles(articlesRes.data || []);
     if (magazinesRes.success) setMagazines(magazinesRes.data || []);
     if (radiosRes.success) setRadios(radiosRes.data || []);
+    if (peopleRes.success) setPeople((peopleRes.data || []) as PersonItem[]);
     if (tagsRes.success) setTags(tagsRes.data || []);
     if (homeRes.success && homeRes.data) setHomeConfig(homeRes.data);
     setLoading(false);
@@ -175,6 +206,10 @@ export default function Dashboard() {
     return (
       <ArticleEditor
         article={editingArticle}
+        personOptions={people.map((person) => ({
+          id: person.id,
+          name: person.name,
+        }))}
         onSave={() => {
           setEditingArticle(null);
           loadData();
@@ -201,11 +236,28 @@ export default function Dashboard() {
     return (
       <RadioEditor
         radio={editingRadio}
+        personOptions={people.map((person) => ({
+          id: person.id,
+          name: person.name,
+        }))}
         onSave={() => {
           setEditingRadio(null);
           loadData();
         }}
         onCancel={() => setEditingRadio(null)}
+      />
+    );
+  }
+
+  if (editingPerson) {
+    return (
+      <PersonEditor
+        person={editingPerson}
+        onSave={() => {
+          setEditingPerson(null);
+          loadData();
+        }}
+        onCancel={() => setEditingPerson(null)}
       />
     );
   }
@@ -262,6 +314,16 @@ export default function Dashboard() {
           }`}
         >
           برچسب‌ها ({tags.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("people")}
+          className={`px-4 py-2 font-medium ${
+            activeTab === "people"
+              ? "border-b-2 border-primary text-primary"
+              : "text-slate-600 dark:text-slate-400"
+          }`}
+        >
+          افراد ({people.length})
         </button>
       </div>
 
@@ -436,6 +498,87 @@ export default function Dashboard() {
                             await loadData();
                           } catch (error) {
                             alert("خطا در حذف رادیو");
+                            console.error(error);
+                          }
+                        }
+                      }}
+                      className="text-sm bg-red-500 hover:bg-red-600"
+                    >
+                      حذف
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "people" && (
+        <div className="space-y-4">
+          <Button onClick={() => setEditingPerson({ id: null })}>
+            افزودن فرد
+          </Button>
+
+          {loading ? (
+            <p>در حال بارگذاری...</p>
+          ) : people.length === 0 ? (
+            <p className="text-slate-600 dark:text-slate-400">
+              هنوز فردی ثبت نشده است
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {people.map((person) => (
+                <div
+                  key={person.id}
+                  className="p-4 border rounded-lg dark:border-slate-700 flex flex-col sm:flex-row justify-between sm:items-center gap-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-14 w-14 rounded-full overflow-hidden border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 shrink-0">
+                      {person.image ? (
+                        <img
+                          src={getUploadUrl(person.image) || ""}
+                          alt={person.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : null}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-medium truncate">{person.name}</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                        {person.bio}
+                      </p>
+                      <p className="text-xs mt-1 text-slate-500 dark:text-slate-400">
+                        {person.isDotTeamMember
+                          ? "عضو تیم دات"
+                          : "عضو تیم دات نیست"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setEditingPerson(person)}
+                      className="text-sm"
+                    >
+                      ویرایش
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        if (
+                          confirm(
+                            "آیا اطمینان دارید که می‌خواهید این فرد را حذف کنید؟",
+                          )
+                        ) {
+                          try {
+                            const result = await deletePerson(person.id);
+                            if (!result.success) {
+                              alert(result.error || "خطا در حذف فرد");
+                              return;
+                            }
+                            await loadData();
+                          } catch (error) {
+                            alert("خطا در حذف فرد");
                             console.error(error);
                           }
                         }

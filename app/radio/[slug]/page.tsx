@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { AudioPlayer } from "@/components/feature/AudioPlayer";
+import { PersonProfileBlock } from "@/components/feature/PersonProfileBlock";
 import { RadioCard } from "@/components/feature/RadioCard";
 import { fetchInternalArray } from "@/lib/internalApi";
 import { getUploadOriginalFileName, getUploadUrl } from "@/lib/uploads";
@@ -34,6 +35,13 @@ type RadioSummaryItem = {
   publishedAt: string;
   cover: string | null;
   durationSec: number | null;
+  person?: {
+    id: string;
+    name: string;
+    image: string;
+    bio: string;
+    isDotTeamMember: boolean;
+  } | null;
 };
 
 type RadioDetailItem = {
@@ -42,6 +50,13 @@ type RadioDetailItem = {
   title: string;
   summary?: string | null;
   intro: string;
+  person?: {
+    id: string;
+    name: string;
+    image: string;
+    bio: string;
+    isDotTeamMember: boolean;
+  } | null;
   publishedAt: string;
   sortDate: string;
   cover: string | null;
@@ -297,6 +312,15 @@ export default async function RadioDetailPage({ params }: PageProps) {
                 <p className="text-xl md:text-2xl font-semibold text-foreground mb-5 min-h-[2.2rem]">
                   {summaryText || "\u00a0"}
                 </p>
+
+                {radio.person ? (
+                  <PersonProfileBlock
+                    name={radio.person.name}
+                    image={radio.person.image}
+                    bio={radio.person.bio}
+                    className="mb-5"
+                  />
+                ) : null}
 
                 <div className="flex flex-wrap items-center gap-2 text-foreground-secondary text-sm">
                   <svg

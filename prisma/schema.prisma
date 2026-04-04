@@ -27,6 +27,8 @@ model Article {
   content     String   @db.Text
   category    String
   tags        Tag[]
+  personId    String?
+  person      Person?  @relation(fields: [personId], references: [id], onDelete: SetNull)
   image       String
   publishedAt String
   sortDate    DateTime @default(now())
@@ -81,6 +83,8 @@ model Radio {
   title       String
   summary     String?        @db.Text
   intro       String         @db.Text
+  personId    String?
+  person      Person?        @relation(fields: [personId], references: [id], onDelete: SetNull)
   cover       String?        @db.Text
   audioUrl    String         @db.Text
   audioUrlLow String?        @db.Text
@@ -121,4 +125,16 @@ model HomeHeroConfigStore {
   ctaTargetId        String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+}
+
+model Person {
+  id              String    @id @default(cuid())
+  name            String
+  image           String    @db.Text
+  bio             String    @db.Text
+  isDotTeamMember Boolean   @default(false)
+  articles        Article[]
+  radios          Radio[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }

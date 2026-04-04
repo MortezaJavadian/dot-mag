@@ -105,32 +105,34 @@ dot-mag/
 
 ### App Directory (Updated for API)
 
-| File                                           | Purpose                                                                                                                              |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `app/layout.tsx`                               | Root layout with RTL direction, Vazirmatn font, ThemeProvider, Header, Footer                                                        |
-| `app/globals.css`                              | Custom color palette, Tailwind config, typography, animations                                                                        |
-| `app/page.tsx`                                 | Home page - fetches articles/magazines/radios from API                                                                               |
-| `app/posts/loading.tsx`                        | Route loading state for instant feedback while posts route resolves                                                                  |
-| `app/posts/page.tsx`                           | Articles listing - fetches from API with category filter                                                                             |
-| `app/posts/[slug]/page.tsx`                    | Single article page + related articles via Prisma with decoded slug matching                                                         |
-| `app/archive/loading.tsx`                      | Route loading state for instant feedback while archive route resolves                                                                |
-| `app/archive/page.tsx`                         | Magazine archive - fetches from API                                                                                                  |
-| `app/archive/[slug]/page.tsx`                  | Magazine detail page (desktop two-column, CTA to reader)                                                                             |
-| `app/archive/[slug]/read/page.tsx`             | Full-screen magazine reader page                                                                                                     |
-| `app/radio/layout.tsx`                         | Radio route metadata                                                                                                                 |
-| `app/radio/loading.tsx`                        | Route loading state for instant feedback while radio route resolves                                                                  |
-| `app/radio/page.tsx`                           | Radio listing page                                                                                                                   |
-| `app/radio/[slug]/page.tsx`                    | Radio detail page in article-like layout with cover, summary, rich intro, upgraded players, and quality-aware full-episode downloads |
-| `app/about/page.tsx`                           | About page with unified posts-like title hero and manifesto content                                                                  |
-| `app/api/.well-known/assetlinks.json/route.ts` | Digital Asset Links API for Android TWA verification                                                                                 |
-| `app/api/articles/route.ts`                    | API GET all articles / POST create article                                                                                           |
-| `app/api/articles/[id]/route.ts`               | API GET/PUT/DELETE single article                                                                                                    |
-| `app/api/radios/route.ts`                      | API GET all radios / POST create radio                                                                                               |
-| `app/api/radios/[id]/route.ts`                 | API GET/PUT/DELETE single radio                                                                                                      |
-| `app/api/upload/route.ts`                      | API upload endpoint for image/PDF/audio                                                                                              |
-| `app/api/uploads/[filename]/route.ts`          | Serves uploaded files with byte-range support (PDF/image/audio)                                                                      |
-| `app/api/magazines/route.ts`                   | API GET all magazines / POST create magazine                                                                                         |
-| `app/api/magazines/[id]/route.ts`              | API GET/PUT/DELETE single magazine                                                                                                   |
+| File                                           | Purpose                                                                                                                                            |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/layout.tsx`                               | Root layout with RTL direction, Vazirmatn font, ThemeProvider, Header, Footer                                                                      |
+| `app/globals.css`                              | Custom color palette, Tailwind config, typography, animations                                                                                      |
+| `app/page.tsx`                                 | Home page - fetches articles/magazines/radios from API                                                                                             |
+| `app/posts/loading.tsx`                        | Route loading state for instant feedback while posts route resolves                                                                                |
+| `app/posts/page.tsx`                           | Articles listing - fetches from API with category filter                                                                                           |
+| `app/posts/[slug]/page.tsx`                    | Single article page + related articles via Prisma with decoded slug matching                                                                       |
+| `app/archive/loading.tsx`                      | Route loading state for instant feedback while archive route resolves                                                                              |
+| `app/archive/page.tsx`                         | Magazine archive - fetches from API                                                                                                                |
+| `app/archive/[slug]/page.tsx`                  | Magazine detail page (desktop two-column, CTA to reader)                                                                                           |
+| `app/archive/[slug]/read/page.tsx`             | Full-screen magazine reader page                                                                                                                   |
+| `app/radio/layout.tsx`                         | Radio route metadata                                                                                                                               |
+| `app/radio/loading.tsx`                        | Route loading state for instant feedback while radio route resolves                                                                                |
+| `app/radio/page.tsx`                           | Radio listing page                                                                                                                                 |
+| `app/radio/[slug]/page.tsx`                    | Radio detail page in article-like layout with cover, summary, rich intro, optional selected person block, and quality-aware full-episode downloads |
+| `app/about/page.tsx`                           | About page with unified posts-like title hero, manifesto content, and conditional Dot team members section                                         |
+| `app/api/.well-known/assetlinks.json/route.ts` | Digital Asset Links API for Android TWA verification                                                                                               |
+| `app/api/articles/route.ts`                    | API GET all articles / POST create article                                                                                                         |
+| `app/api/articles/[id]/route.ts`               | API GET/PUT/DELETE single article                                                                                                                  |
+| `app/api/radios/route.ts`                      | API GET all radios / POST create radio                                                                                                             |
+| `app/api/radios/[id]/route.ts`                 | API GET/PUT/DELETE single radio                                                                                                                    |
+| `app/api/people/route.ts`                      | API GET all people (with team filter/mode) / POST create person                                                                                    |
+| `app/api/people/[id]/route.ts`                 | API GET/PUT/DELETE single person                                                                                                                   |
+| `app/api/upload/route.ts`                      | API upload endpoint for image/PDF/audio                                                                                                            |
+| `app/api/uploads/[filename]/route.ts`          | Serves uploaded files with byte-range support (PDF/image/audio)                                                                                    |
+| `app/api/magazines/route.ts`                   | API GET all magazines / POST create magazine                                                                                                       |
+| `app/api/magazines/[id]/route.ts`              | API GET/PUT/DELETE single magazine                                                                                                                 |
 
 ### Admin Panel
 
@@ -139,12 +141,13 @@ dot-mag/
 | `app/(admin)/admin-panel/layout.tsx`                     | Admin layout with logout button                                                                                                                              |
 | `app/(admin)/admin-panel/page.tsx`                       | Main page - shows login or dashboard                                                                                                                         |
 | `app/(admin)/admin-panel/_components/LoginForm.tsx`      | Login form component                                                                                                                                         |
-| `app/(admin)/admin-panel/_components/Dashboard.tsx`      | Dashboard with Articles, Magazines, Radios, Tags tabs                                                                                                        |
+| `app/(admin)/admin-panel/_components/Dashboard.tsx`      | Dashboard with Home, Articles, Radios, Magazines, Tags, and People tabs                                                                                      |
 | `app/(admin)/admin-panel/_components/ArticleEditor.tsx`  | Article editor form                                                                                                                                          |
 | `app/(admin)/admin-panel/_components/RichTextEditor.tsx` | WYSIWYG article editor toolbar + contenteditable surface                                                                                                     |
 | `app/(admin)/admin-panel/_components/HomeEditor.tsx`     | Home hero editor (badge, rich text, image, CTA target)                                                                                                       |
 | `app/(admin)/admin-panel/_components/MagazineEditor.tsx` | Magazine editor form                                                                                                                                         |
 | `app/(admin)/admin-panel/_components/RadioEditor.tsx`    | Radio admin editor with title/summary/rich-intro, 1-3 full-episode quality uploads, internal player quality selection, and auto-duration (editable fallback) |
+| `app/(admin)/admin-panel/_components/PersonEditor.tsx`   | People editor with avatar upload, short bio, and Dot-team membership toggle                                                                                  |
 
 ### Authentication & Actions
 
@@ -162,6 +165,7 @@ dot-mag/
 | `app/actions/articleActions.ts`  | Article CRUD server actions                                            |
 | `app/actions/homeActions.ts`     | Home hero read/update server actions                                   |
 | `app/actions/magazineActions.ts` | Magazine CRUD server actions                                           |
+| `app/actions/personActions.ts`   | People CRUD server actions                                             |
 | `app/actions/radioActions.ts`    | Radio CRUD + highlighted segment CRUD                                  |
 
 ### Database
@@ -173,19 +177,20 @@ dot-mag/
 
 ### Components
 
-| File                                      | Purpose                                                                                                                          |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `components/ui/Logo.tsx`                  | Logo with dark/light variants                                                                                                    |
-| `components/ui/UploadStatus.tsx`          | Unified upload progress/success/error indicator for admin file inputs                                                            |
-| `components/shared/Header.tsx`            | Sticky header, navigation, theme toggle, mobile menu                                                                             |
-| `components/shared/Footer.tsx`            | Footer with links, social, copyright                                                                                             |
-| `components/shared/ThemeProvider.tsx`     | Dark/Light mode context with localStorage                                                                                        |
-| `components/shared/PostsPageSkeleton.tsx` | Shared posts route skeleton blocks (page + cards-only)                                                                           |
-| `components/feature/ArticleCard.tsx`      | Article cards (default, featured, horizontal)                                                                                    |
-| `components/feature/AudioPlayer.tsx`      | Styled audio player with single unified timeline (buffer + progress), compact mode, and optional multi-quality download selector |
-| `components/feature/MagazineCard.tsx`     | Magazine cover card with stronger visual separation + date/page meta row                                                         |
-| `components/feature/MagazineReader.tsx`   | Full-screen reader with instant page switching, adjacent prefetch, glass skeleton fallback, and page-turn transitions            |
-| `components/feature/RadioCard.tsx`        | Radio list card visually unified with article cards, date-left/duration-right metadata row, and minute-up rounding display       |
+| File                                        | Purpose                                                                                                                          |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `components/ui/Logo.tsx`                    | Logo with dark/light variants                                                                                                    |
+| `components/ui/UploadStatus.tsx`            | Unified upload progress/success/error indicator for admin file inputs                                                            |
+| `components/shared/Header.tsx`              | Sticky header, navigation, theme toggle, mobile menu                                                                             |
+| `components/shared/Footer.tsx`              | Footer with links, social, copyright                                                                                             |
+| `components/shared/ThemeProvider.tsx`       | Dark/Light mode context with localStorage                                                                                        |
+| `components/shared/PostsPageSkeleton.tsx`   | Shared posts route skeleton blocks (page + cards-only)                                                                           |
+| `components/feature/ArticleCard.tsx`        | Article cards (default, featured, horizontal)                                                                                    |
+| `components/feature/AudioPlayer.tsx`        | Styled audio player with single unified timeline (buffer + progress), compact mode, and optional multi-quality download selector |
+| `components/feature/MagazineCard.tsx`       | Magazine cover card with stronger visual separation + date/page meta row                                                         |
+| `components/feature/MagazineReader.tsx`     | Full-screen reader with instant page switching, adjacent prefetch, glass skeleton fallback, and page-turn transitions            |
+| `components/feature/PersonProfileBlock.tsx` | Shared person profile presenter for article/radio headers and about team grid                                                    |
+| `components/feature/RadioCard.tsx`          | Radio list card visually unified with article cards, date-left/duration-right metadata row, and minute-up rounding display       |
 
 ### PWA Files
 
@@ -314,6 +319,7 @@ dot-mag/
 | 2026-04-04 | Card title clamp + radio summary source fix              | Updated post and radio cards so titles are clamped to one line with ellipsis, and radio cards now render only `summary` (not `intro`) with a blank-line placeholder when summary is empty to keep consistent card heights.                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 2026-04-04 | Radio admin duration resync action                       | Added a manual button next to main episode duration in `RadioEditor` to recompute and restore duration from the currently selected internal playback quality file, while keeping upload-time automatic duration extraction unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 2026-04-04 | Radio detail cover rendering parity fix                  | Switched `/radio/[slug]` cover rendering from `next/image` to native `<img>` to match card/post behavior and ensure uploaded cover images display reliably in radio detail pages.                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 2026-04-04 | People management + optional person rendering            | Added a new People entity (name, image, short bio, team-member flag), admin People tab/editor CRUD, optional person selector for article and radio editors, conditional person block rendering between summary and date in post/radio detail pages, and conditional Dot team section in About page that only renders when team members exist.                                                                                                                                                                                                                                                                                                          |
 
 ## Reuse Decisions
 
@@ -324,6 +330,7 @@ dot-mag/
 - **Server Actions**: Separate files for articles, magazines, auth (one concern per file)
 - **API Routes**: RESTful structure with shared patterns
 - **Radio module reuse**: Radio list/detail uses existing card/layout patterns from posts/archive with dedicated audio components
+- **Person UI reuse**: A single `PersonProfileBlock` is reused in post detail, radio detail, and About team section
 
 ## Architecture Patterns Established
 

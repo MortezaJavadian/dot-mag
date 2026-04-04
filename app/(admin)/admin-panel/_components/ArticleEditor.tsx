@@ -27,6 +27,8 @@ type EditableArticle = {
   excerpt?: string;
   content?: string;
   category?: string;
+  personId?: string | null;
+  person?: { id: string; name?: string } | null;
   tags?: ArticleTag[];
   image?: string;
   publishedAt?: string;
@@ -39,8 +41,14 @@ type TagOption = {
   slug: string;
 };
 
+type PersonOption = {
+  id: string;
+  name: string;
+};
+
 interface ArticleEditorProps {
   article: EditableArticle | null;
+  personOptions: PersonOption[];
   onSave: () => void;
   onCancel: () => void;
 }
@@ -68,6 +76,7 @@ function toDateInputValue(value?: string | Date | null): string {
 
 export default function ArticleEditor({
   article,
+  personOptions,
   onSave,
   onCancel,
 }: ArticleEditorProps) {
@@ -76,6 +85,7 @@ export default function ArticleEditor({
     excerpt: stripHtml(article?.excerpt),
     content: article?.content || "",
     category: article?.category || "",
+    personId: article?.person?.id || article?.personId || "",
     tagIds: article?.tags?.map((t) => t.id) || [],
     image: getUploadUrl(article?.image) || "",
     publishedAt: article?.publishedAt || toDateInputValue(article?.sortDate),
@@ -161,9 +171,14 @@ export default function ArticleEditor({
     setError("");
 
     try {
+      const payload = {
+        ...formData,
+        personId: formData.personId || null,
+      };
+
       const result = article?.id
-        ? await updateArticle(article.id, formData)
-        : await createArticle(formData);
+        ? await updateArticle(article.id, payload)
+        : await createArticle(payload);
 
       if (result.success) {
         onSave();
@@ -239,6 +254,24 @@ export default function ArticleEditor({
             }
             className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">فرد مرتبط</label>
+          <select
+            value={formData.personId}
+            onChange={(e) =>
+              setFormData({ ...formData, personId: e.target.value })
+            }
+            className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">بدون انتخاب</option>
+            {personOptions.map((person) => (
+              <option key={person.id} value={person.id}>
+                {person.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>

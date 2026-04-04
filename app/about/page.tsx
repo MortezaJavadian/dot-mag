@@ -1,5 +1,7 @@
 import Image from "next/image";
 import { Metadata } from "next";
+import { PersonProfileBlock } from "@/components/feature/PersonProfileBlock";
+import { fetchInternalArray } from "@/lib/internalApi";
 
 export const metadata: Metadata = {
   title: "درباره ما",
@@ -7,7 +9,28 @@ export const metadata: Metadata = {
     "معرفی دات و مسیری که برای روایت صداها و همراهی در مسیر درست برگزیده‌ایم",
 };
 
-export default function AboutPage() {
+type TeamMemberItem = {
+  id: string;
+  name: string;
+  image: string;
+  bio: string;
+  isDotTeamMember: boolean;
+};
+
+async function getTeamMembers(): Promise<TeamMemberItem[]> {
+  return fetchInternalArray<TeamMemberItem>(
+    "/api/people?mode=summary&teamOnly=true",
+    {
+      revalidate: 60,
+      tags: ["people"],
+      timeoutMs: 5000,
+    },
+  );
+}
+
+export default async function AboutPage() {
+  const teamMembers = await getTeamMembers();
+
   return (
     <>
       <section className="pt-12 pb-8 md:pt-16 md:pb-12 bg-background-secondary">
@@ -132,6 +155,33 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      {teamMembers.length > 0 ? (
+        <section className="section-spacing-sm border-t border-border">
+          <div className="container space-y-6">
+            <div className="space-y-2">
+              <span
+                className="block h-1.5 w-full rounded-full bg-gradient-to-l from-primary/60 via-primary/30 to-transparent"
+                aria-hidden="true"
+              />
+              <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">
+                اعضای تیم دات
+              </h2>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {teamMembers.map((member) => (
+                <PersonProfileBlock
+                  key={member.id}
+                  name={member.name}
+                  image={member.image}
+                  bio={member.bio}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="bg-background py-16 md:py-20 border-t border-border text-foreground">
         <div className="container max-w-4xl mx-auto space-y-9">

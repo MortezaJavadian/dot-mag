@@ -36,6 +36,8 @@ type RadioSource = {
   title?: string;
   summary?: string | null;
   intro?: string;
+  personId?: string | null;
+  person?: { id: string; name?: string } | null;
   cover?: string | null;
   audioUrl?: string | null;
   audioUrlLow?: string | null;
@@ -50,6 +52,7 @@ type RadioSource = {
 
 interface RadioEditorProps {
   radio: RadioSource;
+  personOptions: { id: string; name: string }[];
   onSave: () => void;
   onCancel: () => void;
 }
@@ -273,6 +276,7 @@ function buildQualityStatusState(): Record<
 
 export default function RadioEditor({
   radio,
+  personOptions,
   onSave,
   onCancel,
 }: RadioEditorProps) {
@@ -283,6 +287,7 @@ export default function RadioEditor({
     title: radio?.title || "",
     summary: radio?.summary || "",
     intro: radio?.intro || "",
+    personId: radio?.person?.id || radio?.personId || "",
     cover: getUploadUrl(radio?.cover) || "",
     audioUrlLow: getUploadUrl(radio?.audioUrlLow) || "",
     audioUrlMedium: getUploadUrl(radio?.audioUrlMedium) || "",
@@ -475,6 +480,7 @@ export default function RadioEditor({
         title: formData.title,
         summary: formData.summary || null,
         intro: formData.intro,
+        personId: formData.personId || null,
         cover: formData.cover || null,
         audioUrl: primaryAudioUrl,
         audioUrlLow: formData.audioUrlLow || null,
@@ -834,6 +840,24 @@ export default function RadioEditor({
             placeholder="یک خلاصه کوتاه برای کارت و هدر"
             className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">فرد مرتبط</label>
+          <select
+            value={formData.personId}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, personId: e.target.value }))
+            }
+            className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">بدون انتخاب</option>
+            {personOptions.map((person) => (
+              <option key={person.id} value={person.id}>
+                {person.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>

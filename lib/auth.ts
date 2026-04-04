@@ -1,4 +1,3 @@
-// @ts-ignore - bcryptjs doesn't have types, but skipLibCheck should handle this
 import bcrypt from "bcryptjs";
 import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";

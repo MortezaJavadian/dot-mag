@@ -113,12 +113,32 @@ export async function GET(request: NextRequest) {
               cover: true,
               publishedAt: true,
               durationSec: true,
+              person: {
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                  bio: true,
+                  isDotTeamMember: true,
+                },
+              },
             },
           })
         : await prisma.radio.findMany({
             where,
             take,
-            include: { segments: { orderBy: { number: "asc" } } },
+            include: {
+              segments: { orderBy: { number: "asc" } },
+              person: {
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                  bio: true,
+                  isDotTeamMember: true,
+                },
+              },
+            },
             orderBy: { sortDate: "desc" },
           });
 
@@ -140,7 +160,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const data = await request.json();
+    const { personId: rawPersonId, ...radioData } = data;
     const slug = generateSlug(data.title);
+    const personId =
+      typeof rawPersonId === "string" && rawPersonId.trim()
+        ? rawPersonId
+        : null;
     const summary = normalizeOptionalText(data.summary);
     const audioUrlLow = normalizeOptionalText(data.audioUrlLow);
     const audioUrlMedium = normalizeOptionalText(data.audioUrlMedium);
@@ -151,8 +176,9 @@ export async function POST(request: NextRequest) {
 
     const radio = await prisma.radio.create({
       data: {
-        ...data,
+        ...radioData,
         slug,
+        person: personId ? { connect: { id: personId } } : undefined,
         summary,
         audioUrlLow,
         audioUrlMedium,
@@ -161,7 +187,18 @@ export async function POST(request: NextRequest) {
         publishedAt: resolveDisplayDate(data.publishedAt, data.sortDate),
         sortDate: resolveSortDate(data.sortDate),
       },
-      include: { segments: { orderBy: { number: "asc" } } },
+      include: {
+        segments: { orderBy: { number: "asc" } },
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
     });
 
     revalidateTag(RADIO_TAG, RADIO_CACHE_PROFILE);

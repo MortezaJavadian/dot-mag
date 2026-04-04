@@ -25,6 +25,7 @@ type CreateRadioInput = {
   title: string;
   summary?: string | null;
   intro: string;
+  personId?: string | null;
   cover?: string | null;
   audioUrl: string;
   audioUrlLow?: string | null;
@@ -117,7 +118,18 @@ async function requireAdmin() {
 export async function getRadios() {
   try {
     const radios = await prisma.radio.findMany({
-      include: { segments: { orderBy: { number: "asc" } } },
+      include: {
+        segments: { orderBy: { number: "asc" } },
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
       orderBy: { sortDate: "desc" },
     });
 
@@ -132,7 +144,18 @@ export async function getRadio(id: string) {
   try {
     const radio = await prisma.radio.findUnique({
       where: { id },
-      include: { segments: { orderBy: { number: "asc" } } },
+      include: {
+        segments: { orderBy: { number: "asc" } },
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
     });
 
     return { success: true, data: radio };
@@ -149,7 +172,10 @@ export async function createRadio(data: CreateRadioInput) {
   }
 
   try {
+    const { personId, ...radioData } = data;
     const slug = generateSlug(data.title);
+    const normalizedPersonId =
+      typeof personId === "string" && personId.trim() ? personId : null;
     const summary = normalizeOptionalText(data.summary);
     const audioUrlLow = normalizeOptionalText(data.audioUrlLow);
     const audioUrlMedium = normalizeOptionalText(data.audioUrlMedium);
@@ -160,8 +186,11 @@ export async function createRadio(data: CreateRadioInput) {
 
     const radio = await prisma.radio.create({
       data: {
-        ...data,
+        ...radioData,
         slug,
+        person: normalizedPersonId
+          ? { connect: { id: normalizedPersonId } }
+          : undefined,
         summary,
         audioUrlLow,
         audioUrlMedium,
@@ -170,7 +199,18 @@ export async function createRadio(data: CreateRadioInput) {
         publishedAt: resolveDisplayDate(data.publishedAt, data.sortDate),
         sortDate: resolveSortDate(data.sortDate),
       },
-      include: { segments: { orderBy: { number: "asc" } } },
+      include: {
+        segments: { orderBy: { number: "asc" } },
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
     });
 
     revalidateRadiosCache();
@@ -189,8 +229,9 @@ export async function updateRadio(id: string, data: UpdateRadioInput) {
   }
 
   try {
+    const { personId, ...radioData } = data;
     const updateData: Prisma.RadioUpdateInput = {
-      ...data,
+      ...radioData,
     } as Prisma.RadioUpdateInput;
 
     if (data.title) {
@@ -230,10 +271,30 @@ export async function updateRadio(id: string, data: UpdateRadioInput) {
       );
     }
 
+    if (Object.prototype.hasOwnProperty.call(data, "personId")) {
+      const normalizedPersonId =
+        typeof personId === "string" && personId.trim() ? personId : null;
+
+      updateData.person = normalizedPersonId
+        ? { connect: { id: normalizedPersonId } }
+        : { disconnect: true };
+    }
+
     const radio = await prisma.radio.update({
       where: { id },
       data: updateData,
-      include: { segments: { orderBy: { number: "asc" } } },
+      include: {
+        segments: { orderBy: { number: "asc" } },
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
     });
 
     revalidateRadiosCache();

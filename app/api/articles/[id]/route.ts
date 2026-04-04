@@ -52,6 +52,17 @@ export async function GET(
     const { id } = await params;
     const article = await prisma.article.findUnique({
       where: { id },
+      include: {
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
     });
 
     if (!article) {
@@ -80,8 +91,9 @@ export async function PUT(
   try {
     const { id } = await params;
     const data = await request.json();
+    const { personId, ...articleData } = data;
     const updateData: Prisma.ArticleUpdateInput = {
-      ...data,
+      ...articleData,
     } as Prisma.ArticleUpdateInput;
 
     if (typeof data.title === "string") {
@@ -99,9 +111,29 @@ export async function PUT(
       );
     }
 
+    if (Object.prototype.hasOwnProperty.call(data, "personId")) {
+      const normalizedPersonId =
+        typeof personId === "string" && personId.trim() ? personId : null;
+
+      updateData.person = normalizedPersonId
+        ? { connect: { id: normalizedPersonId } }
+        : { disconnect: true };
+    }
+
     const article = await prisma.article.update({
       where: { id },
       data: updateData,
+      include: {
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(article);

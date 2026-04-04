@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArticleCard } from "@/components/feature/ArticleCard";
+import { PersonProfileBlock } from "@/components/feature/PersonProfileBlock";
 import { prisma } from "@/lib/prisma";
 import { getUploadUrl } from "@/lib/uploads";
 import { toPlainText, toSafeArticleHtml } from "@/lib/articleContent";
@@ -29,13 +30,31 @@ interface ArticleItem {
   publishedAt: string;
   sortDate: Date;
   readingTime?: number | null;
+  person?: {
+    id: string;
+    name: string;
+    image: string;
+    bio: string;
+    isDotTeamMember: boolean;
+  } | null;
   tags: ArticleTag[];
 }
 
 async function getArticles(): Promise<ArticleItem[]> {
   try {
     return await prisma.article.findMany({
-      include: { tags: true },
+      include: {
+        tags: true,
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
       orderBy: { sortDate: "desc" },
     });
   } catch (error) {
@@ -135,6 +154,15 @@ export default async function ArticlePage({ params }: PageProps) {
                   <p className="text-xl md:text-2xl font-semibold text-foreground mb-5">
                     {plainExcerpt}
                   </p>
+                ) : null}
+
+                {article.person ? (
+                  <PersonProfileBlock
+                    name={article.person.name}
+                    image={article.person.image}
+                    bio={article.person.bio}
+                    className="mb-5"
+                  />
                 ) : null}
 
                 <div className="flex flex-wrap items-center gap-2 text-foreground-secondary text-sm">
