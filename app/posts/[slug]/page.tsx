@@ -161,7 +161,7 @@ export default async function ArticlePage({ params }: PageProps) {
                     name={article.person.name}
                     image={article.person.image}
                     bio={article.person.bio}
-                    className="mb-7 md:mb-8"
+                    className="mb-[2.1rem] md:mb-[2.4rem]"
                   />
                 ) : null}
 

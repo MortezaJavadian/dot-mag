@@ -159,7 +159,7 @@ export default async function AboutPage() {
       {teamMembers.length > 0 ? (
         <section className="section-spacing-sm border-t border-border">
           <div className="container space-y-7">
-            <div className="space-y-3 text-center">
+            <div className="space-y-3 text-right">
               <span
                 className="block h-1.5 w-full rounded-full bg-gradient-to-l from-primary/60 via-primary/30 to-transparent"
                 aria-hidden="true"
@@ -169,14 +169,13 @@ export default async function AboutPage() {
               </h2>
             </div>
 
-            <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))]">
+            <div className="flex flex-wrap items-start gap-4">
               {teamMembers.map((member) => (
                 <PersonProfileBlock
                   key={member.id}
                   name={member.name}
                   image={member.image}
                   bio={member.bio}
-                  className="w-full"
                 />
               ))}
             </div>
