@@ -647,10 +647,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
         container.scrollHeight - container.scrollTop - container.clientHeight <
         140;
 
-      if (
-        nearBottom ||
-        incoming.senderPerson?.id === activePersonIdRef.current
-      ) {
+      if (nearBottom) {
         requestAnimationFrame(() => {
           scrollToBottom(true);
         });
@@ -1097,8 +1094,8 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                         >
                           <div className="max-w-[86%] md:max-w-[72%]">
                             {!group.isOwn ? (
-                              <div className="mb-1 flex items-center gap-2 px-1">
-                                <div className="h-7 w-7 overflow-hidden rounded-full border border-slate-300 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
+                              <div className="mb-2 flex items-center gap-1.5 px-1">
+                                <div className="h-5 w-5 overflow-hidden rounded-full border border-slate-300/80 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
                                   {group.senderImage ? (
                                     <img
                                       src={
@@ -1109,7 +1106,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                                     />
                                   ) : null}
                                 </div>
-                                <p className="truncate text-[11px] font-semibold text-primary">
+                                <p className="truncate text-[10px] font-semibold leading-none text-primary/90">
                                   {group.senderName}
                                 </p>
                               </div>
