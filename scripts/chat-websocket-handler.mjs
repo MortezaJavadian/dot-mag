@@ -3,7 +3,7 @@ import { jwtVerify } from "jose";
 import { WebSocket, WebSocketServer } from "ws";
 
 const CHAT_WS_PATH = process.env.CHAT_WS_PATH || "/ws/chat";
-const CHAT_WS_ALLOWED_ORIGIN = process.env.CHAT_WS_ALLOWED_ORIGIN?.trim();
+const CHAT_WS_ALLOWED_ORIGIN = process.env.CHAT_WS_ALLOWED_ORIGIN || "";
 const JWT_SECRET =
   process.env.JWT_SECRET || "your-secret-key-change-in-production";
 const COOKIE_NAME = "admin_session";
@@ -11,6 +11,55 @@ const MAX_MESSAGE_LENGTH = 4000;
 
 const encoder = new TextEncoder();
 const prisma = new PrismaClient();
+
+function normalizeOrigin(originValue) {
+  if (typeof originValue !== "string" || !originValue.trim()) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(originValue.trim());
+    const protocol = parsed.protocol.toLowerCase();
+    const hostname = parsed.hostname.toLowerCase();
+    const port = parsed.port;
+    const isDefaultPort =
+      (protocol === "http:" && port === "80") ||
+      (protocol === "https:" && port === "443");
+    const normalizedPort = port && !isDefaultPort ? `:${port}` : "";
+
+    return `${protocol}//${hostname}${normalizedPort}`;
+  } catch {
+    return null;
+  }
+}
+
+function getOriginVariants(originValue) {
+  const normalized = normalizeOrigin(originValue);
+  if (!normalized) {
+    return [];
+  }
+
+  const parsed = new URL(normalized);
+  const baseProtocol = parsed.protocol;
+  const basePort = parsed.port ? `:${parsed.port}` : "";
+  const variants = new Set([normalized]);
+
+  if (parsed.hostname.startsWith("www.")) {
+    const withoutWww = parsed.hostname.slice(4);
+    variants.add(`${baseProtocol}//${withoutWww}${basePort}`);
+  } else {
+    variants.add(`${baseProtocol}//www.${parsed.hostname}${basePort}`);
+  }
+
+  return [...variants];
+}
+
+const allowedOrigins = new Set(
+  CHAT_WS_ALLOWED_ORIGIN.split(",")
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .flatMap((originValue) => getOriginVariants(originValue)),
+);
 
 function parseCookies(cookieHeader = "") {
   const parsed = {};
@@ -325,9 +374,9 @@ export function setupChatWebsocket(server) {
       return;
     }
 
-    if (CHAT_WS_ALLOWED_ORIGIN) {
-      const requestOrigin = request.headers.origin;
-      if (requestOrigin !== CHAT_WS_ALLOWED_ORIGIN) {
+    if (allowedOrigins.size > 0) {
+      const requestOrigin = normalizeOrigin(request.headers.origin || "");
+      if (!requestOrigin || !allowedOrigins.has(requestOrigin)) {
         rejectUpgrade(socket, 403, "Forbidden");
         return;
       }

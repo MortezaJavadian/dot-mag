@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  createChatMessage,
   createChatRoom,
   getChatMessages,
   getChatRooms,
@@ -74,19 +75,51 @@ type MessagingPanelProps = {
 
 const MOBILE_HISTORY_LIMIT = 20;
 const DESKTOP_HISTORY_LIMIT = 30;
+const CHAT_WS_PATH = "/ws/chat";
+
+function isCompatibleSocketHostname(currentHost: string, targetHost: string) {
+  const normalizedCurrent = currentHost.toLowerCase();
+  const normalizedTarget = targetHost.toLowerCase();
+
+  return normalizedCurrent === normalizedTarget;
+}
 
 function resolveSocketUrl(): string {
   if (typeof window === "undefined") {
     return "";
   }
 
+  const fallbackProtocol =
+    window.location.protocol === "https:" ? "wss:" : "ws:";
+  const fallbackUrl = `${fallbackProtocol}//${window.location.host}`;
+
   const explicitUrl = process.env.NEXT_PUBLIC_CHAT_WS_URL?.trim();
-  if (explicitUrl) {
-    return explicitUrl.replace(/\/$/, "");
+  if (!explicitUrl) {
+    return fallbackUrl;
   }
 
-  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-  return `${protocol}://${window.location.host}`;
+  try {
+    const parsed = new URL(explicitUrl);
+
+    if (
+      !isCompatibleSocketHostname(window.location.hostname, parsed.hostname)
+    ) {
+      return fallbackUrl;
+    }
+
+    const resolvedProtocol =
+      parsed.protocol === "ws:" || parsed.protocol === "wss:"
+        ? parsed.protocol
+        : parsed.protocol === "https:"
+          ? "wss:"
+          : parsed.protocol === "http:"
+            ? "ws:"
+            : fallbackProtocol;
+
+    return `${resolvedProtocol}//${parsed.host}`;
+  } catch {
+    return fallbackUrl;
+  }
 }
 
 function sortRooms(rooms: ChatRoomSummary[]): ChatRoomSummary[] {
@@ -455,7 +488,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
       setConnectionStatus("connecting");
       setSocketError(null);
 
-      const socket = new WebSocket(`${socketBaseUrl}/ws/chat`);
+      const socket = new WebSocket(`${socketBaseUrl}${CHAT_WS_PATH}`);
       socketRef.current = socket;
 
       socket.onopen = () => {
@@ -505,6 +538,14 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
         }
 
         setConnectionStatus("disconnected");
+        setSocketError((currentError) => {
+          if (currentError) {
+            return currentError;
+          }
+
+          return "Realtime connection is unavailable. Fallback send is enabled.";
+        });
+
         reconnectTimeout = setTimeout(() => {
           connect();
         }, 1500);
@@ -527,27 +568,47 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
     };
   }, [activePersonId, appendIncomingMessage, selectedRoomId]);
 
-  const handleSendMessage = useCallback(() => {
+  const handleSendMessage = useCallback(async () => {
     const content = draft.trim();
     if (!content) {
       return;
     }
 
     const socket = socketRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-      setSocketError("اتصال realtime برقرار نیست");
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(
+        JSON.stringify({
+          type: "send-message",
+          content,
+        }),
+      );
+
+      setDraft("");
       return;
     }
 
-    socket.send(
-      JSON.stringify({
-        type: "send-message",
-        content,
-      }),
-    );
+    if (!selectedRoomId || !activePersonId) {
+      setSocketError("Select a room and identity before sending a message");
+      return;
+    }
+
+    const result = await createChatMessage({
+      roomId: selectedRoomId,
+      personId: activePersonId,
+      content,
+    });
+
+    if (!result.success) {
+      setSocketError(result.error || "Message send failed");
+      return;
+    }
+
+    appendIncomingMessage(result.data);
+    setSocketError("Realtime is offline. Message was sent via fallback mode.");
+    setConnectionStatus("disconnected");
 
     setDraft("");
-  }, [draft]);
+  }, [activePersonId, appendIncomingMessage, draft, selectedRoomId]);
 
   const currentPendingRoom = useMemo(
     () => rooms.find((room) => room.id === pendingRoomId) || null,
@@ -843,11 +904,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                   <Button
                     type="button"
                     onClick={handleSendMessage}
-                    disabled={
-                      !activePerson ||
-                      !draft.trim() ||
-                      connectionStatus !== "connected"
-                    }
+                    disabled={!activePerson || !draft.trim()}
                     className="h-10 px-4"
                   >
                     ارسال

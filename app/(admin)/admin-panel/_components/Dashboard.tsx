@@ -308,16 +308,6 @@ export default function Dashboard() {
           خانه
         </button>
         <button
-          onClick={() => setActiveTab("messaging")}
-          className={`px-4 py-2 font-medium ${
-            activeTab === "messaging"
-              ? "border-b-2 border-primary text-primary"
-              : "text-slate-600 dark:text-slate-400"
-          }`}
-        >
-          پیام‌رسان
-        </button>
-        <button
           onClick={() => setActiveTab("articles")}
           className={`px-4 py-2 font-medium ${
             activeTab === "articles"
@@ -366,6 +356,16 @@ export default function Dashboard() {
           }`}
         >
           افراد ({people.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("messaging")}
+          className={`px-4 py-2 font-medium ${
+            activeTab === "messaging"
+              ? "border-b-2 border-primary text-primary"
+              : "text-slate-600 dark:text-slate-400"
+          }`}
+        >
+          پیام‌رسان
         </button>
       </div>
 
