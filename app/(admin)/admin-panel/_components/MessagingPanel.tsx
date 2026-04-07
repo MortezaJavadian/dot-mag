@@ -1,12 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  createChatMessage,
-  createChatRoom,
-  getChatMessages,
-  getChatRooms,
-} from "@/app/actions/chatActions";
 import Button from "@/components/ui/Button";
 import { getUploadUrl } from "@/lib/uploads";
 
@@ -76,6 +70,178 @@ type MessagingPanelProps = {
 const MOBILE_HISTORY_LIMIT = 20;
 const DESKTOP_HISTORY_LIMIT = 30;
 const CHAT_WS_PATH = "/ws/chat";
+
+type ActionResultSuccess<T> = {
+  success: true;
+  data: T;
+};
+
+type ActionResultFailure = {
+  success: false;
+  error: string;
+};
+
+type ChatMessagesPayload = {
+  roomId: string;
+  messages: ChatMessage[];
+  hasMore: boolean;
+  nextCursor: string | null;
+};
+
+async function fetchChatRoomsFromApi() {
+  try {
+    const response = await fetch("/api/chat/rooms", {
+      method: "GET",
+      cache: "no-store",
+      credentials: "include",
+    });
+
+    const payload = (await response.json()) as
+      | ActionResultSuccess<ChatRoomSummary[]>
+      | ActionResultFailure;
+
+    if (!response.ok || !payload.success) {
+      return {
+        success: false as const,
+        error:
+          "error" in payload ? payload.error : "Failed to fetch chat rooms",
+      };
+    }
+
+    return {
+      success: true as const,
+      data: payload.data,
+    };
+  } catch {
+    return {
+      success: false as const,
+      error: "Failed to fetch chat rooms",
+    };
+  }
+}
+
+async function fetchChatMessagesFromApi(options: {
+  roomId: string;
+  beforeMessageId?: string | null;
+  limit?: number;
+}) {
+  try {
+    const searchParams = new URLSearchParams({
+      roomId: options.roomId,
+    });
+
+    if (options.beforeMessageId) {
+      searchParams.set("beforeMessageId", options.beforeMessageId);
+    }
+
+    if (typeof options.limit === "number") {
+      searchParams.set("limit", String(options.limit));
+    }
+
+    const response = await fetch(
+      `/api/chat/messages?${searchParams.toString()}`,
+      {
+        method: "GET",
+        cache: "no-store",
+        credentials: "include",
+      },
+    );
+
+    const payload = (await response.json()) as
+      | ActionResultSuccess<ChatMessagesPayload>
+      | ActionResultFailure;
+
+    if (!response.ok || !payload.success) {
+      return {
+        success: false as const,
+        error:
+          "error" in payload ? payload.error : "Failed to fetch chat messages",
+      };
+    }
+
+    return {
+      success: true as const,
+      data: payload.data,
+    };
+  } catch {
+    return {
+      success: false as const,
+      error: "Failed to fetch chat messages",
+    };
+  }
+}
+
+async function createChatRoomViaApi(name: string) {
+  try {
+    const response = await fetch("/api/chat/rooms", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ name }),
+    });
+
+    const payload = (await response.json()) as
+      | ActionResultSuccess<ChatRoomSummary>
+      | ActionResultFailure;
+
+    if (!response.ok || !payload.success) {
+      return {
+        success: false as const,
+        error: "error" in payload ? payload.error : "Failed to create room",
+      };
+    }
+
+    return {
+      success: true as const,
+      data: payload.data,
+    };
+  } catch {
+    return {
+      success: false as const,
+      error: "Failed to create room",
+    };
+  }
+}
+
+async function createChatMessageViaApi(data: {
+  roomId: string;
+  personId: string;
+  content: string;
+}) {
+  try {
+    const response = await fetch("/api/chat/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(data),
+    });
+
+    const payload = (await response.json()) as
+      | ActionResultSuccess<ChatMessage>
+      | ActionResultFailure;
+
+    if (!response.ok || !payload.success) {
+      return {
+        success: false as const,
+        error: "error" in payload ? payload.error : "Failed to create message",
+      };
+    }
+
+    return {
+      success: true as const,
+      data: payload.data,
+    };
+  } catch {
+    return {
+      success: false as const,
+      error: "Failed to create message",
+    };
+  }
+}
 
 function isCompatibleSocketHostname(currentHost: string, targetHost: string) {
   const normalizedCurrent = currentHost.toLowerCase();
@@ -250,7 +416,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
       setLoadingHistory(true);
       setHistoryError(null);
 
-      const result = await getChatMessages({
+      const result = await fetchChatMessagesFromApi({
         roomId,
         limit: historyLimit,
       });
@@ -280,7 +446,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
     setRoomsLoading(true);
     setRoomsError(null);
 
-    const result = await getChatRooms();
+    const result = await fetchChatRoomsFromApi();
 
     if (!result.success) {
       setRoomsError(result.error || "بارگذاری گروه‌ها انجام نشد");
@@ -420,7 +586,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
     }
 
     setCreatingRoom(true);
-    const result = await createChatRoom(name);
+    const result = await createChatRoomViaApi(name);
 
     if (!result.success) {
       setRoomsError(result.error || "ایجاد گروه انجام نشد");
@@ -444,7 +610,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
 
     setLoadingOlder(true);
 
-    const result = await getChatMessages({
+    const result = await fetchChatMessagesFromApi({
       roomId: selectedRoomId,
       beforeMessageId: nextCursor,
       limit: historyLimit,
@@ -488,7 +654,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
     isPollingFallbackRef.current = true;
 
     try {
-      const result = await getChatMessages({
+      const result = await fetchChatMessagesFromApi({
         roomId: selectedRoomId,
         limit: historyLimit,
       });
@@ -710,7 +876,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
       return;
     }
 
-    const result = await createChatMessage({
+    const result = await createChatMessageViaApi({
       roomId: selectedRoomId,
       personId: activePersonId,
       content,
