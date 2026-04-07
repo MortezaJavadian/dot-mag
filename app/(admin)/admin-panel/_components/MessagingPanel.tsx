@@ -287,51 +287,11 @@ function formatRoomPreview(
 }
 
 function getBubbleRadiusClass(
-  isOwn: boolean,
-  isFirstInGroup: boolean,
-  isLastInGroup: boolean,
+  _isOwn: boolean,
+  _isFirstInGroup: boolean,
+  _isLastInGroup: boolean,
 ): string {
-  if (isOwn) {
-    if (isFirstInGroup && isLastInGroup) {
-      return "rounded-2xl rounded-tr-md rounded-br-[7px]";
-    }
-
-    if (isFirstInGroup) {
-      return "rounded-2xl rounded-tr-md";
-    }
-
-    if (isLastInGroup) {
-      return "rounded-2xl rounded-br-[7px]";
-    }
-
-    return "rounded-2xl";
-  }
-
-  if (isFirstInGroup && isLastInGroup) {
-    return "rounded-2xl rounded-tl-md rounded-bl-[7px]";
-  }
-
-  if (isFirstInGroup) {
-    return "rounded-2xl rounded-tl-md";
-  }
-
-  if (isLastInGroup) {
-    return "rounded-2xl rounded-bl-[7px]";
-  }
-
-  return "rounded-2xl";
-}
-
-function getBubbleNubClass(isOwn: boolean, isLastInGroup: boolean): string {
-  if (!isLastInGroup) {
-    return "";
-  }
-
-  if (isOwn) {
-    return "after:pointer-events-none after:absolute after:bottom-[2px] after:-right-1 after:h-3 after:w-2 after:rounded-l-md after:bg-[#d7f4bf] dark:after:bg-[#2e6843] after:content-['']";
-  }
-
-  return "after:pointer-events-none after:absolute after:bottom-[2px] after:-left-1 after:h-3 after:w-2 after:rounded-r-md after:border-b after:border-l after:border-slate-200 after:bg-white dark:after:border-slate-700 dark:after:bg-slate-900 after:content-['']";
+  return "rounded-[1.1rem]";
 }
 
 function mergeMessagesChronologically(
@@ -1083,9 +1043,6 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                                       group.isOwn,
                                       isFirstInGroup,
                                       isLastInGroup,
-                                    )} ${getBubbleNubClass(
-                                      group.isOwn,
-                                      isLastInGroup,
                                     )} ${
                                       group.isOwn
                                         ? "bg-[#d7f4bf] text-slate-900 dark:bg-[#2e6843] dark:text-slate-100"
@@ -1138,9 +1095,6 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                     ارسال
                   </Button>
                 </div>
-                <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
-                  ارسال با Enter و خط جدید با Shift+Enter
-                </p>
                 {sendError ? (
                   <p className="mt-1 text-[11px] text-rose-600 dark:text-rose-400">
                     {sendError}
