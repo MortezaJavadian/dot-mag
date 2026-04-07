@@ -108,10 +108,29 @@ function rejectUpgrade(socket, statusCode, statusText) {
 }
 
 async function verifyUserFromRequest(request) {
-  const cookies = parseCookies(request.headers.cookie || "");
+  const rawCookieHeader = request.headers.cookie || "";
+  const cookies = parseCookies(rawCookieHeader);
   const token = cookies[COOKIE_NAME];
+  const cookieNames = Object.keys(cookies);
+
+  if (!rawCookieHeader) {
+    return {
+      userId: null,
+      reason: "missing_cookie_header",
+      hasCookieHeader: false,
+      hasSessionCookie: false,
+      cookieNames,
+    };
+  }
+
   if (!token) {
-    return null;
+    return {
+      userId: null,
+      reason: "missing_admin_session_cookie",
+      hasCookieHeader: true,
+      hasSessionCookie: false,
+      cookieNames,
+    };
   }
 
   try {
@@ -119,17 +138,40 @@ async function verifyUserFromRequest(request) {
     const userId = verified?.payload?.userId;
 
     if (typeof userId !== "string" || !userId.trim()) {
-      return null;
+      return {
+        userId: null,
+        reason: "missing_user_id_claim",
+        hasCookieHeader: true,
+        hasSessionCookie: true,
+        cookieNames,
+      };
     }
 
-    return userId;
+    return {
+      userId,
+      reason: null,
+      hasCookieHeader: true,
+      hasSessionCookie: true,
+      cookieNames,
+    };
   } catch {
-    return null;
+    return {
+      userId: null,
+      reason: "invalid_admin_session_token",
+      hasCookieHeader: true,
+      hasSessionCookie: true,
+      cookieNames,
+    };
   }
 }
 
 export function setupChatWebsocket(server) {
   const clients = new Map();
+
+  console.log("[chat-ws] runtime initialized", {
+    path: CHAT_WS_PATH,
+    allowedOrigins: [...allowedOrigins],
+  });
 
   const wss = new WebSocketServer({
     noServer: true,
@@ -369,10 +411,29 @@ export function setupChatWebsocket(server) {
 
   server.on("upgrade", async (request, socket, head) => {
     const url = new URL(request.url || "/", `http://${request.headers.host}`);
+    const upgradeHeader = (request.headers.upgrade || "").toLowerCase();
+
+    if (upgradeHeader === "websocket" && url.pathname !== CHAT_WS_PATH) {
+      console.warn("[chat-ws] upgrade ignored: path mismatch", {
+        requestedPath: url.pathname,
+        expectedPath: CHAT_WS_PATH,
+        host: request.headers.host || null,
+        origin: request.headers.origin || null,
+      });
+    }
 
     if (url.pathname !== CHAT_WS_PATH) {
       return;
     }
+
+    console.log("[chat-ws] upgrade request", {
+      host: request.headers.host || null,
+      origin: request.headers.origin || null,
+      path: url.pathname,
+      upgradeHeader: request.headers.upgrade || null,
+      connectionHeader: request.headers.connection || null,
+      userAgent: request.headers["user-agent"] || null,
+    });
 
     if (allowedOrigins.size > 0) {
       const requestOrigin = normalizeOrigin(request.headers.origin || "");
@@ -387,26 +448,29 @@ export function setupChatWebsocket(server) {
       }
     }
 
-    const userId = await verifyUserFromRequest(request);
-    if (!userId) {
+    const authResult = await verifyUserFromRequest(request);
+    if (!authResult.userId) {
       console.warn("[chat-ws] upgrade rejected: unauthorized", {
+        reason: authResult.reason,
         origin: request.headers.origin || null,
         host: request.headers.host || null,
-        hasCookieHeader: Boolean(request.headers.cookie),
+        hasCookieHeader: authResult.hasCookieHeader,
+        hasSessionCookie: authResult.hasSessionCookie,
+        cookieNames: authResult.cookieNames,
       });
       rejectUpgrade(socket, 401, "Unauthorized");
       return;
     }
 
     console.log("[chat-ws] upgrade accepted", {
-      userId,
+      userId: authResult.userId,
       origin: request.headers.origin || null,
       host: request.headers.host || null,
       path: url.pathname,
     });
 
     wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit("connection", ws, request, userId);
+      wss.emit("connection", ws, request, authResult.userId);
     });
   });
 

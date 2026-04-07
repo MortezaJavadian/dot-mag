@@ -604,7 +604,6 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
       }
 
       setConnectionStatus("connecting");
-      setSocketError(null);
 
       const socket = new WebSocket(`${socketBaseUrl}${CHAT_WS_PATH}`);
       socketRef.current = socket;
@@ -631,6 +630,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
 
         if (packet.type === "joined-room") {
           setConnectionStatus("connected");
+          setSocketError(null);
           return;
         }
 
@@ -970,11 +970,13 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                         return (
                           <div
                             key={message.id}
+                            dir="ltr"
                             className={`flex ${
                               isOwn ? "justify-end" : "justify-start"
                             }`}
                           >
                             <div
+                              dir="rtl"
                               className={`max-w-[86%] rounded-2xl px-3 py-2 text-sm leading-7 shadow-sm md:max-w-[72%] ${
                                 isOwn
                                   ? "bg-[#d7f4bf] text-slate-900 dark:bg-[#2e6843] dark:text-slate-100"
