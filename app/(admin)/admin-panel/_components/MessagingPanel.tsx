@@ -238,10 +238,12 @@ function sortRooms(rooms: ChatRoomSummary[]): ChatRoomSummary[] {
 }
 
 function formatClockTime(value: string): string {
-  return new Date(value).toLocaleTimeString("fa-IR", {
+  return new Intl.DateTimeFormat("fa-IR", {
     hour: "2-digit",
     minute: "2-digit",
-  });
+    hour12: false,
+    timeZone: "Asia/Tehran",
+  }).format(new Date(value));
 }
 
 function formatRoomTime(value: string | null): string {
@@ -289,31 +291,47 @@ function getBubbleRadiusClass(
   isFirstInGroup: boolean,
   isLastInGroup: boolean,
 ): string {
-  if (isFirstInGroup && isLastInGroup) {
-    return "rounded-2xl";
-  }
-
   if (isOwn) {
-    if (isFirstInGroup) {
-      return "rounded-2xl rounded-br-md";
+    if (isFirstInGroup && isLastInGroup) {
+      return "rounded-2xl rounded-tr-md rounded-br-[7px]";
     }
 
-    if (isLastInGroup) {
+    if (isFirstInGroup) {
       return "rounded-2xl rounded-tr-md";
     }
 
-    return "rounded-2xl rounded-tr-md rounded-br-md";
+    if (isLastInGroup) {
+      return "rounded-2xl rounded-br-[7px]";
+    }
+
+    return "rounded-2xl";
+  }
+
+  if (isFirstInGroup && isLastInGroup) {
+    return "rounded-2xl rounded-tl-md rounded-bl-[7px]";
   }
 
   if (isFirstInGroup) {
-    return "rounded-2xl rounded-bl-md";
-  }
-
-  if (isLastInGroup) {
     return "rounded-2xl rounded-tl-md";
   }
 
-  return "rounded-2xl rounded-tl-md rounded-bl-md";
+  if (isLastInGroup) {
+    return "rounded-2xl rounded-bl-[7px]";
+  }
+
+  return "rounded-2xl";
+}
+
+function getBubbleNubClass(isOwn: boolean, isLastInGroup: boolean): string {
+  if (!isLastInGroup) {
+    return "";
+  }
+
+  if (isOwn) {
+    return "after:pointer-events-none after:absolute after:bottom-[2px] after:-right-1 after:h-3 after:w-2 after:rounded-l-md after:bg-[#d7f4bf] dark:after:bg-[#2e6843] after:content-['']";
+  }
+
+  return "after:pointer-events-none after:absolute after:bottom-[2px] after:-left-1 after:h-3 after:w-2 after:rounded-r-md after:border-b after:border-l after:border-slate-200 after:bg-white dark:after:border-slate-700 dark:after:bg-slate-900 after:content-['']";
 }
 
 function mergeMessagesChronologically(
@@ -919,14 +937,14 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
   );
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 shadow-[0_20px_55px_rgba(2,6,23,0.08)] dark:border-slate-800 dark:from-slate-950 dark:to-slate-900 dark:shadow-[0_20px_55px_rgba(2,6,23,0.45)]">
-      <div className="grid min-h-[72vh] grid-cols-1 lg:grid-cols-[20.5rem_minmax(0,1fr)]">
+    <div className="relative h-[72vh] min-h-[32rem] overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 shadow-[0_20px_55px_rgba(2,6,23,0.08)] dark:border-slate-800 dark:from-slate-950 dark:to-slate-900 dark:shadow-[0_20px_55px_rgba(2,6,23,0.45)]">
+      <div className="grid h-full grid-cols-1 lg:grid-cols-[20.5rem_minmax(0,1fr)]">
         <div className={`${mobileRoomsVisible ? "flex" : "hidden"} lg:flex`}>
           {roomsPanel}
         </div>
 
         <section
-          className={`${mobileRoomsVisible ? "hidden" : "flex"} lg:flex min-h-[72vh] flex-col`}
+          className={`${mobileRoomsVisible ? "hidden" : "flex"} lg:flex h-full flex-col overflow-hidden`}
         >
           {!selectedRoom ? (
             <div className="flex h-full flex-col items-center justify-center px-6 text-center text-slate-600 dark:text-slate-300">
@@ -1065,6 +1083,9 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                                       group.isOwn,
                                       isFirstInGroup,
                                       isLastInGroup,
+                                    )} ${getBubbleNubClass(
+                                      group.isOwn,
+                                      isLastInGroup,
                                     )} ${
                                       group.isOwn
                                         ? "bg-[#d7f4bf] text-slate-900 dark:bg-[#2e6843] dark:text-slate-100"
@@ -1076,19 +1097,9 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                                     </p>
 
                                     {isLastInGroup ? (
-                                      <>
-                                        <div className="mt-1 text-right text-[11px] opacity-70">
-                                          {formatClockTime(message.createdAt)}
-                                        </div>
-                                        <span
-                                          aria-hidden
-                                          className={`pointer-events-none absolute bottom-1 h-3 w-3 rotate-45 ${
-                                            group.isOwn
-                                              ? "right-[-4px] bg-[#d7f4bf] dark:bg-[#2e6843]"
-                                              : "left-[-4px] border-b border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
-                                          }`}
-                                        />
-                                      </>
+                                      <div className="mt-1 text-right text-[11px] opacity-70">
+                                        {formatClockTime(message.createdAt)}
+                                      </div>
                                     ) : null}
                                   </div>
                                 );
