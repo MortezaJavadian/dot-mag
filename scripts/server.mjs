@@ -19,6 +19,21 @@ async function bootstrap() {
 
   const server = createServer((request, response) => {
     const nextActionHeader = request.headers["next-action"];
+    const requestUrl = request.url || "";
+
+    if (requestUrl.startsWith("/ws/chat")) {
+      console.warn("[chat-ws] ws-path request reached http handler", {
+        method: request.method || null,
+        url: requestUrl,
+        host: request.headers.host || null,
+        origin: request.headers.origin || null,
+        upgradeHeader: request.headers.upgrade || null,
+        connectionHeader: request.headers.connection || null,
+        secWebSocketKey: request.headers["sec-websocket-key"] || null,
+        userAgent: request.headers["user-agent"] || null,
+        forwardedFor: request.headers["x-forwarded-for"] || null,
+      });
+    }
 
     if (typeof nextActionHeader === "string" && nextActionHeader) {
       console.warn("[next-action] incoming request", {

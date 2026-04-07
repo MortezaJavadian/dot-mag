@@ -374,6 +374,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
     "idle" | "connecting" | "connected" | "disconnected"
   >("idle");
   const [socketError, setSocketError] = useState<string | null>(null);
+  const [isFallbackSyncActive, setIsFallbackSyncActive] = useState(false);
 
   const [mobileRoomsVisible, setMobileRoomsVisible] = useState(true);
 
@@ -381,10 +382,15 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
   const socketRef = useRef<WebSocket | null>(null);
   const activePersonIdRef = useRef<string | null>(null);
   const isPollingFallbackRef = useRef(false);
+  const fallbackSyncStateRef = useRef(false);
 
   useEffect(() => {
     activePersonIdRef.current = activePersonId;
   }, [activePersonId]);
+
+  useEffect(() => {
+    fallbackSyncStateRef.current = isFallbackSyncActive;
+  }, [isFallbackSyncActive]);
 
   const selectedRoom = useMemo(
     () => rooms.find((room) => room.id === selectedRoomId) || null,
@@ -663,6 +669,9 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
         return;
       }
 
+      setIsFallbackSyncActive(true);
+      setSocketError(null);
+
       const latestMessages = result.data.messages || [];
       let hasAnyNew = false;
 
@@ -747,6 +756,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
       const timer = setTimeout(() => {
         setConnectionStatus("idle");
         setSocketError(null);
+        setIsFallbackSyncActive(false);
       }, 0);
 
       return () => {
@@ -770,6 +780,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
       }
 
       setConnectionStatus("connecting");
+      setIsFallbackSyncActive(false);
 
       const socket = new WebSocket(`${socketBaseUrl}${CHAT_WS_PATH}`);
       socketRef.current = socket;
@@ -796,6 +807,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
 
         if (packet.type === "joined-room") {
           setConnectionStatus("connected");
+          setIsFallbackSyncActive(false);
           setSocketError(null);
           return;
         }
@@ -822,13 +834,16 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
         }
 
         setConnectionStatus("disconnected");
-        setSocketError((currentError) => {
-          if (currentError) {
-            return currentError;
-          }
 
-          return "Realtime connection is unavailable. Fallback send is enabled.";
-        });
+        if (!fallbackSyncStateRef.current) {
+          setSocketError((currentError) => {
+            if (currentError) {
+              return currentError;
+            }
+
+            return "Realtime connection is unavailable. Fallback sync is active.";
+          });
+        }
 
         reconnectTimeout = setTimeout(() => {
           connect();
@@ -888,7 +903,8 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
     }
 
     appendIncomingMessage(result.data);
-    setSocketError("Realtime is offline. Message was sent via fallback mode.");
+    setIsFallbackSyncActive(true);
+    setSocketError(null);
     setConnectionStatus("disconnected");
 
     setDraft("");
@@ -1056,16 +1072,20 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                       className={`rounded-full px-2 py-1 text-[11px] font-medium ${
                         connectionStatus === "connected"
                           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                          : connectionStatus === "connecting"
-                            ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-                            : "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
+                          : isFallbackSyncActive
+                            ? "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300"
+                            : connectionStatus === "connecting"
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                              : "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
                       }`}
                     >
                       {connectionStatus === "connected"
                         ? "آنلاین"
-                        : connectionStatus === "connecting"
-                          ? "در حال اتصال"
-                          : "آفلاین"}
+                        : isFallbackSyncActive
+                          ? "همگام‌سازی"
+                          : connectionStatus === "connecting"
+                            ? "در حال اتصال"
+                            : "آفلاین"}
                     </span>
                     <Button
                       type="button"
@@ -1081,9 +1101,14 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                   </div>
                 </div>
 
-                {socketError ? (
+                {socketError && !isFallbackSyncActive ? (
                   <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-300">
                     {socketError}
+                  </div>
+                ) : isFallbackSyncActive ? (
+                  <div className="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-700 dark:border-sky-900 dark:bg-sky-950/50 dark:text-sky-300">
+                    Realtime websocket is unavailable. Live sync fallback is
+                    active.
                   </div>
                 ) : null}
               </header>
