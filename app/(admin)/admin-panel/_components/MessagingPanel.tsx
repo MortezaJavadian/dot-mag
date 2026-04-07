@@ -70,6 +70,7 @@ type MessagingPanelProps = {
 const MOBILE_HISTORY_LIMIT = 20;
 const DESKTOP_HISTORY_LIMIT = 30;
 const CHAT_WS_PATH = "/ws/chat";
+const MAX_WS_WARMUP_FAILURES = 3;
 
 type ActionResultSuccess<T> = {
   success: true;
@@ -383,6 +384,8 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
   const activePersonIdRef = useRef<string | null>(null);
   const isPollingFallbackRef = useRef(false);
   const fallbackSyncStateRef = useRef(false);
+  const wsWarmupFailureCountRef = useRef(0);
+  const wsDisabledForSessionRef = useRef(false);
 
   useEffect(() => {
     activePersonIdRef.current = activePersonId;
@@ -772,6 +775,13 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
         return;
       }
 
+      if (wsDisabledForSessionRef.current) {
+        setConnectionStatus("disconnected");
+        setIsFallbackSyncActive(true);
+        setSocketError(null);
+        return;
+      }
+
       const socketBaseUrl = resolveSocketUrl();
       if (!socketBaseUrl) {
         setConnectionStatus("disconnected");
@@ -781,6 +791,8 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
 
       setConnectionStatus("connecting");
       setIsFallbackSyncActive(false);
+
+      let didJoinRoom = false;
 
       const socket = new WebSocket(`${socketBaseUrl}${CHAT_WS_PATH}`);
       socketRef.current = socket;
@@ -806,6 +818,8 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
         }
 
         if (packet.type === "joined-room") {
+          didJoinRoom = true;
+          wsWarmupFailureCountRef.current = 0;
           setConnectionStatus("connected");
           setIsFallbackSyncActive(false);
           setSocketError(null);
@@ -834,6 +848,17 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
         }
 
         setConnectionStatus("disconnected");
+
+        if (!didJoinRoom) {
+          wsWarmupFailureCountRef.current += 1;
+
+          if (wsWarmupFailureCountRef.current >= MAX_WS_WARMUP_FAILURES) {
+            wsDisabledForSessionRef.current = true;
+            setIsFallbackSyncActive(true);
+            setSocketError(null);
+            return;
+          }
+        }
 
         if (!fallbackSyncStateRef.current) {
           setSocketError((currentError) => {
@@ -1107,8 +1132,8 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                   </div>
                 ) : isFallbackSyncActive ? (
                   <div className="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-700 dark:border-sky-900 dark:bg-sky-950/50 dark:text-sky-300">
-                    Realtime websocket is unavailable. Live sync fallback is
-                    active.
+                    Live sync mode is active. Realtime websocket is blocked
+                    upstream.
                   </div>
                 ) : null}
               </header>

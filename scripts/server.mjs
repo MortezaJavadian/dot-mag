@@ -12,6 +12,10 @@ const app = next({
   port,
 });
 
+const WS_PATH_HTTP_LOG_WINDOW_MS = 15000;
+let wsPathHttpHitsSinceLastLog = 0;
+let wsPathHttpLastLogAt = 0;
+
 const handle = app.getRequestHandler();
 
 async function bootstrap() {
@@ -22,17 +26,30 @@ async function bootstrap() {
     const requestUrl = request.url || "";
 
     if (requestUrl.startsWith("/ws/chat")) {
-      console.warn("[chat-ws] ws-path request reached http handler", {
-        method: request.method || null,
-        url: requestUrl,
-        host: request.headers.host || null,
-        origin: request.headers.origin || null,
-        upgradeHeader: request.headers.upgrade || null,
-        connectionHeader: request.headers.connection || null,
-        secWebSocketKey: request.headers["sec-websocket-key"] || null,
-        userAgent: request.headers["user-agent"] || null,
-        forwardedFor: request.headers["x-forwarded-for"] || null,
-      });
+      wsPathHttpHitsSinceLastLog += 1;
+
+      const now = Date.now();
+      const shouldLogNow =
+        wsPathHttpHitsSinceLastLog === 1 ||
+        now - wsPathHttpLastLogAt >= WS_PATH_HTTP_LOG_WINDOW_MS;
+
+      if (shouldLogNow) {
+        console.warn("[chat-ws] ws-path request reached http handler", {
+          method: request.method || null,
+          url: requestUrl,
+          host: request.headers.host || null,
+          origin: request.headers.origin || null,
+          upgradeHeader: request.headers.upgrade || null,
+          connectionHeader: request.headers.connection || null,
+          secWebSocketKey: request.headers["sec-websocket-key"] || null,
+          userAgent: request.headers["user-agent"] || null,
+          forwardedFor: request.headers["x-forwarded-for"] || null,
+          hitsSinceLastLog: wsPathHttpHitsSinceLastLog,
+        });
+
+        wsPathHttpHitsSinceLastLog = 0;
+        wsPathHttpLastLogAt = now;
+      }
     }
 
     if (typeof nextActionHeader === "string" && nextActionHeader) {
