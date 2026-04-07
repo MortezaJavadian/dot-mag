@@ -54,9 +54,6 @@ const ROOM_PREVIEW_MAX_CHARS = 52;
 const IRAN_TIMEZONE = "Asia/Tehran";
 const GROUP_TIME_GAP_MS = 60 * 1000;
 
-let serverClockSkewMs = 0;
-let hasServerClockSkew = false;
-
 type ActionResultSuccess<T> = {
   success: true;
   data: T;
@@ -74,31 +71,17 @@ type ChatMessagesPayload = {
   nextCursor: string | null;
 };
 
-function syncServerClockFromHeader(dateHeader: string | null) {
-  if (!dateHeader) {
-    return;
-  }
-
-  const serverMs = Date.parse(dateHeader);
-  if (Number.isNaN(serverMs)) {
-    return;
-  }
-
-  serverClockSkewMs = Date.now() - serverMs;
-  hasServerClockSkew = true;
+function syncServerClockFromHeader(_dateHeader: string | null) {
+  // Intentionally no-op: message timestamps are absolute UTC values.
 }
 
 function toCalibratedDate(value: string): Date {
   const baseMs = Date.parse(value);
   if (Number.isNaN(baseMs)) {
-    return new Date(value);
+    return new Date();
   }
 
-  if (!hasServerClockSkew) {
-    return new Date(baseMs);
-  }
-
-  return new Date(baseMs + serverClockSkewMs);
+  return new Date(baseMs);
 }
 
 function getIranDayKey(dateValue: Date): string {
@@ -305,10 +288,11 @@ function formatRoomTime(value: string | null): string {
     return formatClockTime(value);
   }
 
-  return date.toLocaleDateString("fa-IR", {
+  return new Intl.DateTimeFormat("fa-IR", {
     month: "short",
     day: "numeric",
-  });
+    timeZone: IRAN_TIMEZONE,
+  }).format(date);
 }
 
 function formatRoomPreview(
@@ -537,6 +521,9 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
 
       requestAnimationFrame(() => {
         scrollToBottom();
+        requestAnimationFrame(() => {
+          scrollToBottom();
+        });
       });
     },
     [historyLimit, scrollToBottom],
@@ -620,7 +607,12 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
   }, []);
 
   const appendIncomingMessage = useCallback(
-    (incoming: ChatMessage) => {
+    (
+      incoming: ChatMessage,
+      options?: {
+        forceScrollToBottom?: boolean;
+      },
+    ) => {
       let wasAdded = false;
 
       setMessages((prev) => {
@@ -647,9 +639,12 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
         container.scrollHeight - container.scrollTop - container.clientHeight <
         140;
 
-      if (nearBottom) {
+      const shouldAutoScroll =
+        Boolean(options?.forceScrollToBottom) || nearBottom;
+
+      if (shouldAutoScroll) {
         requestAnimationFrame(() => {
-          scrollToBottom(true);
+          scrollToBottom(options?.forceScrollToBottom ? false : true);
         });
       }
     },
@@ -865,7 +860,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
       return;
     }
 
-    appendIncomingMessage(result.data);
+    appendIncomingMessage(result.data, { forceScrollToBottom: true });
     setSendError(null);
     setDraft("");
   }, [activePersonId, appendIncomingMessage, draft, selectedRoomId]);
@@ -876,7 +871,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
   );
 
   const roomsPanel = (
-    <aside className="flex h-full flex-col border-slate-200 bg-white/90 backdrop-blur md:border-e dark:border-slate-800 dark:bg-slate-950/85">
+    <aside className="flex h-full min-w-0 flex-col overflow-hidden border-slate-200 bg-white/90 backdrop-blur md:border-e dark:border-slate-800 dark:bg-slate-950/85">
       <div className="border-b border-slate-200 p-4 dark:border-slate-800">
         <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
           پیام‌رسان
@@ -946,7 +941,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                   key={room.id}
                   type="button"
                   onClick={() => handleSelectRoom(room.id)}
-                  className={`w-full rounded-2xl border p-3 text-right transition ${
+                  className={`w-full overflow-hidden rounded-2xl border p-3 text-right transition ${
                     isActive
                       ? "border-primary bg-primary/10"
                       : "border-slate-200 bg-slate-50/70 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700"
@@ -981,13 +976,15 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
 
   return (
     <div className="relative h-[72vh] min-h-[32rem] overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 shadow-[0_20px_55px_rgba(2,6,23,0.08)] dark:border-slate-800 dark:from-slate-950 dark:to-slate-900 dark:shadow-[0_20px_55px_rgba(2,6,23,0.45)]">
-      <div className="grid h-full grid-cols-1 lg:grid-cols-[20.5rem_minmax(0,1fr)]">
-        <div className={`${mobileRoomsVisible ? "flex" : "hidden"} lg:flex`}>
+      <div className="grid h-full grid-cols-1 lg:grid-cols-[16.4rem_minmax(0,1fr)]">
+        <div
+          className={`${mobileRoomsVisible ? "flex" : "hidden"} min-w-0 lg:flex`}
+        >
           {roomsPanel}
         </div>
 
         <section
-          className={`${mobileRoomsVisible ? "hidden" : "flex"} lg:flex h-full flex-col overflow-hidden`}
+          className={`${mobileRoomsVisible ? "hidden" : "flex"} min-w-0 lg:flex h-full flex-col overflow-hidden`}
         >
           {!selectedRoom ? (
             <div className="flex h-full flex-col items-center justify-center px-6 text-center text-slate-600 dark:text-slate-300">
@@ -1047,7 +1044,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
               <div
                 ref={messagesContainerRef}
                 onScroll={handleMessagesScroll}
-                className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,_rgba(215,59,58,0.08),_transparent_48%)] px-3 py-4 md:px-6"
+                className="flex-1 overflow-x-hidden overflow-y-auto bg-[radial-gradient(circle_at_top,_rgba(215,59,58,0.08),_transparent_48%)] px-3 py-4 md:px-6"
               >
                 {loadingHistory ? (
                   <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
@@ -1088,11 +1085,11 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                         <div
                           key={group.id}
                           dir="ltr"
-                          className={`flex ${
+                          className={`flex min-w-0 ${
                             group.isOwn ? "justify-end" : "justify-start"
                           }`}
                         >
-                          <div className="max-w-[86%] md:max-w-[72%]">
+                          <div className="min-w-0 max-w-[86%] md:max-w-[72%]">
                             {!group.isOwn ? (
                               <div className="mb-2 flex items-center gap-1.5 px-1">
                                 <div className="h-5 w-5 overflow-hidden rounded-full border border-slate-300/80 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
@@ -1126,7 +1123,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                                   <div
                                     key={message.id}
                                     dir="rtl"
-                                    className={`relative px-3 py-2 text-sm leading-7 shadow-sm ${getBubbleRadiusClass(
+                                    className={`relative w-fit max-w-full px-3 py-2 text-sm leading-7 shadow-sm ${getBubbleRadiusClass(
                                       group.isOwn,
                                       isFirstInGroup,
                                       isLastInGroup,
