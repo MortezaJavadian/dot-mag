@@ -1109,7 +1109,11 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                               </div>
                             ) : null}
 
-                            <div className="space-y-0.5">
+                            <div
+                              className={`flex flex-col gap-0.5 ${
+                                group.isOwn ? "items-end" : "items-start"
+                              }`}
+                            >
                               {group.messages.map((message, messageIndex) => {
                                 const isFirstInGroup = messageIndex === 0;
                                 const isLastInGroup =
@@ -1123,7 +1127,9 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                                   <div
                                     key={message.id}
                                     dir="rtl"
-                                    className={`relative w-fit max-w-full px-3 py-2 text-sm leading-7 shadow-sm ${getBubbleRadiusClass(
+                                    className={`relative w-fit max-w-full ${
+                                      group.isOwn ? "ms-auto" : "me-auto"
+                                    } px-3 py-2 text-sm leading-7 shadow-sm ${getBubbleRadiusClass(
                                       group.isOwn,
                                       isFirstInGroup,
                                       isLastInGroup,
