@@ -163,6 +163,25 @@ function formatRoomTime(value: string | null): string {
   });
 }
 
+function mergeMessagesChronologically(
+  currentMessages: ChatMessage[],
+  incomingMessages: ChatMessage[],
+): ChatMessage[] {
+  const mergedById = new Map<string, ChatMessage>();
+
+  for (const message of currentMessages) {
+    mergedById.set(message.id, message);
+  }
+
+  for (const message of incomingMessages) {
+    mergedById.set(message.id, message);
+  }
+
+  return [...mergedById.values()].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+}
+
 export default function MessagingPanel({ people }: MessagingPanelProps) {
   const [rooms, setRooms] = useState<ChatRoomSummary[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(true);
@@ -195,6 +214,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const activePersonIdRef = useRef<string | null>(null);
+  const isPollingFallbackRef = useRef(false);
 
   useEffect(() => {
     activePersonIdRef.current = activePersonId;
@@ -281,16 +301,23 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
       return;
     }
 
-    const nextRoomId =
-      selectedRoomId && ordered.some((room) => room.id === selectedRoomId)
-        ? selectedRoomId
-        : ordered[0].id;
+    const selectedStillExists = Boolean(
+      selectedRoomId && ordered.some((room) => room.id === selectedRoomId),
+    );
 
-    if (nextRoomId !== selectedRoomId) {
-      setSelectedRoomId(nextRoomId);
+    if (!selectedStillExists) {
+      setSelectedRoomId(null);
+      setMessages([]);
+      setHasMoreHistory(false);
+      setNextCursor(null);
+      setHistoryError(null);
+      setRoomsLoading(false);
+      return;
     }
 
-    void loadInitialMessages(nextRoomId);
+    if (selectedRoomId) {
+      void loadInitialMessages(selectedRoomId);
+    }
 
     setRoomsLoading(false);
   }, [loadInitialMessages, selectedRoomId]);
@@ -452,6 +479,97 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
       handleLoadOlderMessages();
     }
   }, [handleLoadOlderMessages]);
+
+  const pollLatestMessagesFallback = useCallback(async () => {
+    if (!selectedRoomId || isPollingFallbackRef.current) {
+      return;
+    }
+
+    isPollingFallbackRef.current = true;
+
+    try {
+      const result = await getChatMessages({
+        roomId: selectedRoomId,
+        limit: historyLimit,
+      });
+
+      if (!result.success) {
+        return;
+      }
+
+      const latestMessages = result.data.messages || [];
+      let hasAnyNew = false;
+
+      setMessages((previousMessages) => {
+        const previousIds = new Set(previousMessages.map((m) => m.id));
+        hasAnyNew = latestMessages.some(
+          (m: ChatMessage) => !previousIds.has(m.id),
+        );
+
+        if (!hasAnyNew && previousMessages.length >= latestMessages.length) {
+          return previousMessages;
+        }
+
+        return mergeMessagesChronologically(previousMessages, latestMessages);
+      });
+
+      if (!hasAnyNew) {
+        return;
+      }
+
+      const container = messagesContainerRef.current;
+      if (!container) {
+        return;
+      }
+
+      const nearBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight <
+        140;
+
+      if (nearBottom) {
+        requestAnimationFrame(() => {
+          scrollToBottom(true);
+        });
+      }
+    } finally {
+      isPollingFallbackRef.current = false;
+    }
+  }, [historyLimit, scrollToBottom, selectedRoomId]);
+
+  useEffect(() => {
+    if (!selectedRoomId || !activePersonId) {
+      return;
+    }
+
+    if (connectionStatus === "connected") {
+      return;
+    }
+
+    let cancelled = false;
+
+    const runPolling = async () => {
+      if (cancelled) {
+        return;
+      }
+
+      await pollLatestMessagesFallback();
+    };
+
+    void runPolling();
+    const timer = setInterval(() => {
+      void runPolling();
+    }, 2000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [
+    activePersonId,
+    connectionStatus,
+    pollLatestMessagesFallback,
+    selectedRoomId,
+  ]);
 
   useEffect(() => {
     if (!selectedRoomId || !activePersonId) {

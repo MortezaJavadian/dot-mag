@@ -377,6 +377,11 @@ export function setupChatWebsocket(server) {
     if (allowedOrigins.size > 0) {
       const requestOrigin = normalizeOrigin(request.headers.origin || "");
       if (!requestOrigin || !allowedOrigins.has(requestOrigin)) {
+        console.warn("[chat-ws] upgrade rejected: origin", {
+          origin: request.headers.origin || null,
+          normalizedOrigin: requestOrigin,
+          allowedOrigins: [...allowedOrigins],
+        });
         rejectUpgrade(socket, 403, "Forbidden");
         return;
       }
@@ -384,9 +389,21 @@ export function setupChatWebsocket(server) {
 
     const userId = await verifyUserFromRequest(request);
     if (!userId) {
+      console.warn("[chat-ws] upgrade rejected: unauthorized", {
+        origin: request.headers.origin || null,
+        host: request.headers.host || null,
+        hasCookieHeader: Boolean(request.headers.cookie),
+      });
       rejectUpgrade(socket, 401, "Unauthorized");
       return;
     }
+
+    console.log("[chat-ws] upgrade accepted", {
+      userId,
+      origin: request.headers.origin || null,
+      host: request.headers.host || null,
+      path: url.pathname,
+    });
 
     wss.handleUpgrade(request, socket, head, (ws) => {
       wss.emit("connection", ws, request, userId);
