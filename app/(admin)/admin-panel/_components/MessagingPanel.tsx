@@ -71,6 +71,7 @@ const MOBILE_HISTORY_LIMIT = 20;
 const DESKTOP_HISTORY_LIMIT = 30;
 const CHAT_WS_PATH = "/ws/chat";
 const MAX_WS_WARMUP_FAILURES = 3;
+const ROOM_PREVIEW_MAX_CHARS = 52;
 
 type ActionResultSuccess<T> = {
   success: true;
@@ -328,6 +329,20 @@ function formatRoomTime(value: string | null): string {
     month: "short",
     day: "numeric",
   });
+}
+
+function formatRoomPreview(value: string | null): string {
+  const normalized = (value || "").replace(/\s+/g, " ").trim();
+
+  if (!normalized) {
+    return "هنوز پیامی ارسال نشده";
+  }
+
+  if (normalized.length <= ROOM_PREVIEW_MAX_CHARS) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, ROOM_PREVIEW_MAX_CHARS - 3).trimEnd()}...`;
 }
 
 function mergeMessagesChronologically(
@@ -1018,8 +1033,11 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                       <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {room.name}
                       </p>
-                      <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
-                        {room.lastMessagePreview || "هنوز پیامی ارسال نشده"}
+                      <p
+                        className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400"
+                        title={room.lastMessagePreview || ""}
+                      >
+                        {formatRoomPreview(room.lastMessagePreview)}
                       </p>
                     </div>
                     <div className="text-left">

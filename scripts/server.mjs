@@ -30,7 +30,7 @@ async function bootstrap() {
 
       const now = Date.now();
       const shouldLogNow =
-        wsPathHttpHitsSinceLastLog === 1 ||
+        wsPathHttpLastLogAt === 0 ||
         now - wsPathHttpLastLogAt >= WS_PATH_HTTP_LOG_WINDOW_MS;
 
       if (shouldLogNow) {
