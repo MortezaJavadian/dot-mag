@@ -51,6 +51,11 @@ type MessagingPanelProps = {
 const MOBILE_HISTORY_LIMIT = 20;
 const DESKTOP_HISTORY_LIMIT = 30;
 const ROOM_PREVIEW_MAX_CHARS = 52;
+const IRAN_TIMEZONE = "Asia/Tehran";
+const GROUP_TIME_GAP_MS = 60 * 1000;
+
+let serverClockSkewMs = 0;
+let hasServerClockSkew = false;
 
 type ActionResultSuccess<T> = {
   success: true;
@@ -69,6 +74,42 @@ type ChatMessagesPayload = {
   nextCursor: string | null;
 };
 
+function syncServerClockFromHeader(dateHeader: string | null) {
+  if (!dateHeader) {
+    return;
+  }
+
+  const serverMs = Date.parse(dateHeader);
+  if (Number.isNaN(serverMs)) {
+    return;
+  }
+
+  serverClockSkewMs = Date.now() - serverMs;
+  hasServerClockSkew = true;
+}
+
+function toCalibratedDate(value: string): Date {
+  const baseMs = Date.parse(value);
+  if (Number.isNaN(baseMs)) {
+    return new Date(value);
+  }
+
+  if (!hasServerClockSkew) {
+    return new Date(baseMs);
+  }
+
+  return new Date(baseMs + serverClockSkewMs);
+}
+
+function getIranDayKey(dateValue: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: IRAN_TIMEZONE,
+  }).format(dateValue);
+}
+
 async function fetchChatRoomsFromApi() {
   try {
     const response = await fetch("/api/chat/rooms", {
@@ -76,6 +117,7 @@ async function fetchChatRoomsFromApi() {
       cache: "no-store",
       credentials: "include",
     });
+    syncServerClockFromHeader(response.headers.get("date"));
 
     const payload = (await response.json()) as
       | ActionResultSuccess<ChatRoomSummary[]>
@@ -127,6 +169,7 @@ async function fetchChatMessagesFromApi(options: {
         credentials: "include",
       },
     );
+    syncServerClockFromHeader(response.headers.get("date"));
 
     const payload = (await response.json()) as
       | ActionResultSuccess<ChatMessagesPayload>
@@ -162,6 +205,7 @@ async function createChatRoomViaApi(name: string) {
       credentials: "include",
       body: JSON.stringify({ name }),
     });
+    syncServerClockFromHeader(response.headers.get("date"));
 
     const payload = (await response.json()) as
       | ActionResultSuccess<ChatRoomSummary>
@@ -200,6 +244,7 @@ async function createChatMessageViaApi(data: {
       credentials: "include",
       body: JSON.stringify(data),
     });
+    syncServerClockFromHeader(response.headers.get("date"));
 
     const payload = (await response.json()) as
       | ActionResultSuccess<ChatMessage>
@@ -238,24 +283,23 @@ function sortRooms(rooms: ChatRoomSummary[]): ChatRoomSummary[] {
 }
 
 function formatClockTime(value: string): string {
+  const calibratedDate = toCalibratedDate(value);
+
   return new Intl.DateTimeFormat("fa-IR", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-    timeZone: "Asia/Tehran",
-  }).format(new Date(value));
+    timeZone: IRAN_TIMEZONE,
+  }).format(calibratedDate);
 }
 
 function formatRoomTime(value: string | null): string {
   if (!value) return "";
 
-  const date = new Date(value);
+  const date = toCalibratedDate(value);
   const today = new Date();
 
-  const isToday =
-    date.getFullYear() === today.getFullYear() &&
-    date.getMonth() === today.getMonth() &&
-    date.getDate() === today.getDate();
+  const isToday = getIranDayKey(date) === getIranDayKey(today);
 
   if (isToday) {
     return formatClockTime(value);
@@ -287,11 +331,53 @@ function formatRoomPreview(
 }
 
 function getBubbleRadiusClass(
-  _isOwn: boolean,
-  _isFirstInGroup: boolean,
-  _isLastInGroup: boolean,
+  isOwn: boolean,
+  isFirstInGroup: boolean,
+  isLastInGroup: boolean,
 ): string {
-  return "rounded-[1.1rem]";
+  if (isFirstInGroup && isLastInGroup) {
+    return "rounded-2xl";
+  }
+
+  if (isOwn) {
+    if (isFirstInGroup) {
+      return "rounded-2xl rounded-br-lg";
+    }
+
+    if (isLastInGroup) {
+      return "rounded-2xl rounded-tr-lg";
+    }
+
+    return "rounded-xl rounded-tr-lg rounded-br-lg";
+  }
+
+  if (isFirstInGroup) {
+    return "rounded-2xl rounded-bl-lg";
+  }
+
+  if (isLastInGroup) {
+    return "rounded-2xl rounded-tl-lg";
+  }
+
+  return "rounded-xl rounded-tl-lg rounded-bl-lg";
+}
+
+function shouldShowMessageTime(
+  messages: ChatMessage[],
+  index: number,
+): boolean {
+  if (index === messages.length - 1) {
+    return true;
+  }
+
+  const currentMs = Date.parse(messages[index].createdAt);
+  const nextMs = Date.parse(messages[index + 1].createdAt);
+
+  if (Number.isNaN(currentMs) || Number.isNaN(nextMs)) {
+    return true;
+  }
+
+  return nextMs - currentMs > GROUP_TIME_GAP_MS;
 }
 
 function mergeMessagesChronologically(
@@ -1029,11 +1115,15 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                               </div>
                             ) : null}
 
-                            <div className="space-y-1">
+                            <div className="space-y-0.5">
                               {group.messages.map((message, messageIndex) => {
                                 const isFirstInGroup = messageIndex === 0;
                                 const isLastInGroup =
                                   messageIndex === group.messages.length - 1;
+                                const showTime = shouldShowMessageTime(
+                                  group.messages,
+                                  messageIndex,
+                                );
 
                                 return (
                                   <div
@@ -1053,7 +1143,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                                       {message.content}
                                     </p>
 
-                                    {isLastInGroup ? (
+                                    {showTime ? (
                                       <div className="mt-1 text-right text-[11px] opacity-70">
                                         {formatClockTime(message.createdAt)}
                                       </div>
