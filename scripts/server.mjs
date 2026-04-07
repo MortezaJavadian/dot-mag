@@ -18,6 +18,21 @@ async function bootstrap() {
   await app.prepare();
 
   const server = createServer((request, response) => {
+    const nextActionHeader = request.headers["next-action"];
+
+    if (typeof nextActionHeader === "string" && nextActionHeader) {
+      console.warn("[next-action] incoming request", {
+        actionId: nextActionHeader,
+        method: request.method || null,
+        url: request.url || null,
+        host: request.headers.host || null,
+        origin: request.headers.origin || null,
+        referer: request.headers.referer || null,
+        userAgent: request.headers["user-agent"] || null,
+        forwardedFor: request.headers["x-forwarded-for"] || null,
+      });
+    }
+
     handle(request, response).catch((error) => {
       console.error("Request handler error:", error);
       response.statusCode = 500;
