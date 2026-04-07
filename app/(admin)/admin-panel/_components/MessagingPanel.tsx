@@ -62,11 +62,13 @@ let hasClockSkewCalibration = false;
 type ActionResultSuccess<T> = {
   success: true;
   data: T;
+  serverNow?: string;
 };
 
 type ActionResultFailure = {
   success: false;
   error: string;
+  serverNow?: string;
 };
 
 type ChatMessagesPayload = {
@@ -118,6 +120,19 @@ function syncServerClockFromFreshMessage(messageCreatedAt: string) {
   updateServerClockSkew(Date.now() - messageMs);
 }
 
+function syncServerClockFromPayload(serverNow: string | null | undefined) {
+  if (!serverNow) {
+    return;
+  }
+
+  const serverMs = Date.parse(serverNow);
+  if (Number.isNaN(serverMs)) {
+    return;
+  }
+
+  updateServerClockSkew(Date.now() - serverMs);
+}
+
 function toCalibratedDate(value: string): Date {
   const baseMs = Date.parse(value);
   if (Number.isNaN(baseMs)) {
@@ -143,6 +158,7 @@ async function fetchChatRoomsFromApi() {
     const payload = (await response.json()) as
       | ActionResultSuccess<ChatRoomSummary[]>
       | ActionResultFailure;
+    syncServerClockFromPayload(payload.serverNow);
 
     if (!response.ok || !payload.success) {
       return {
@@ -195,6 +211,7 @@ async function fetchChatMessagesFromApi(options: {
     const payload = (await response.json()) as
       | ActionResultSuccess<ChatMessagesPayload>
       | ActionResultFailure;
+    syncServerClockFromPayload(payload.serverNow);
 
     if (!response.ok || !payload.success) {
       return {
@@ -231,6 +248,7 @@ async function createChatRoomViaApi(name: string) {
     const payload = (await response.json()) as
       | ActionResultSuccess<ChatRoomSummary>
       | ActionResultFailure;
+    syncServerClockFromPayload(payload.serverNow);
 
     if (!response.ok || !payload.success) {
       return {
@@ -270,6 +288,7 @@ async function createChatMessageViaApi(data: {
     const payload = (await response.json()) as
       | ActionResultSuccess<ChatMessage>
       | ActionResultFailure;
+    syncServerClockFromPayload(payload.serverNow);
 
     if (!response.ok || !payload.success) {
       return {

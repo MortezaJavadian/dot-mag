@@ -177,6 +177,7 @@ export async function GET() {
       {
         success: true,
         data: rooms.map(toRoomSummary),
+        serverNow: new Date().toISOString(),
       },
       { status: 200 },
     );
@@ -235,6 +236,7 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         data: toRoomSummary(room),
+        serverNow: new Date().toISOString(),
       },
       { status: 201 },
     );

@@ -200,6 +200,7 @@ export async function GET(request: NextRequest) {
           hasMore,
           nextCursor,
         },
+        serverNow: new Date().toISOString(),
       },
       { status: 200 },
     );
@@ -298,6 +299,7 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         data: toMessagePayload(message),
+        serverNow: new Date().toISOString(),
       },
       { status: 201 },
     );
