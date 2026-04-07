@@ -10,6 +10,7 @@ type ChatRoomSummary = {
   isDefault: boolean;
   messageCount: number;
   lastMessageAt: string | null;
+  lastMessageSenderName: string | null;
   lastMessagePreview: string | null;
   createdAt: string;
   updatedAt: string;
@@ -50,7 +51,11 @@ function toRoomSummary(room: {
   createdAt: Date;
   updatedAt: Date;
   _count: { messages: number };
-  messages: { content: string; createdAt: Date }[];
+  messages: {
+    content: string;
+    createdAt: Date;
+    senderPerson: { name: string } | null;
+  }[];
 }): ChatRoomSummary {
   const lastMessage = room.messages[0] ?? null;
 
@@ -61,6 +66,7 @@ function toRoomSummary(room: {
     isDefault: room.isDefault,
     messageCount: room._count.messages,
     lastMessageAt: lastMessage ? lastMessage.createdAt.toISOString() : null,
+    lastMessageSenderName: lastMessage?.senderPerson?.name ?? null,
     lastMessagePreview: lastMessage ? lastMessage.content.slice(0, 120) : null,
     createdAt: room.createdAt.toISOString(),
     updatedAt: room.updatedAt.toISOString(),
@@ -188,6 +194,11 @@ export async function getChatRooms() {
           select: {
             content: true,
             createdAt: true,
+            senderPerson: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
       },
@@ -238,6 +249,11 @@ export async function createChatRoom(rawName: string) {
           select: {
             content: true,
             createdAt: true,
+            senderPerson: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
       },

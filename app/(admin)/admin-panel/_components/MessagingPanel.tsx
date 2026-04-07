@@ -17,6 +17,7 @@ type ChatRoomSummary = {
   isDefault: boolean;
   messageCount: number;
   lastMessageAt: string | null;
+  lastMessageSenderName: string | null;
   lastMessagePreview: string | null;
   createdAt: string;
   updatedAt: string;
@@ -34,34 +35,14 @@ type ChatMessage = {
   } | null;
 };
 
-type IncomingSocketMessage =
-  | {
-      type: "connected";
-      userId: string;
-    }
-  | {
-      type: "joined-room";
-      room: {
-        id: string;
-        name: string;
-        slug: string;
-      };
-      person: {
-        id: string;
-        name: string;
-        image: string;
-      };
-    }
-  | {
-      type: "new-message";
-      roomId: string;
-      message: ChatMessage;
-    }
-  | {
-      type: "error";
-      code: string;
-      message: string;
-    };
+type MessageGroup = {
+  id: string;
+  senderId: string | null;
+  senderName: string;
+  senderImage: string;
+  isOwn: boolean;
+  messages: ChatMessage[];
+};
 
 type MessagingPanelProps = {
   people: PersonIdentity[];
@@ -69,8 +50,6 @@ type MessagingPanelProps = {
 
 const MOBILE_HISTORY_LIMIT = 20;
 const DESKTOP_HISTORY_LIMIT = 30;
-const CHAT_WS_PATH = "/ws/chat";
-const MAX_WS_WARMUP_FAILURES = 3;
 const ROOM_PREVIEW_MAX_CHARS = 52;
 
 type ActionResultSuccess<T> = {
@@ -245,51 +224,6 @@ async function createChatMessageViaApi(data: {
   }
 }
 
-function isCompatibleSocketHostname(currentHost: string, targetHost: string) {
-  const normalizedCurrent = currentHost.toLowerCase();
-  const normalizedTarget = targetHost.toLowerCase();
-
-  return normalizedCurrent === normalizedTarget;
-}
-
-function resolveSocketUrl(): string {
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  const fallbackProtocol =
-    window.location.protocol === "https:" ? "wss:" : "ws:";
-  const fallbackUrl = `${fallbackProtocol}//${window.location.host}`;
-
-  const explicitUrl = process.env.NEXT_PUBLIC_CHAT_WS_URL?.trim();
-  if (!explicitUrl) {
-    return fallbackUrl;
-  }
-
-  try {
-    const parsed = new URL(explicitUrl);
-
-    if (
-      !isCompatibleSocketHostname(window.location.hostname, parsed.hostname)
-    ) {
-      return fallbackUrl;
-    }
-
-    const resolvedProtocol =
-      parsed.protocol === "ws:" || parsed.protocol === "wss:"
-        ? parsed.protocol
-        : parsed.protocol === "https:"
-          ? "wss:"
-          : parsed.protocol === "http:"
-            ? "ws:"
-            : fallbackProtocol;
-
-    return `${resolvedProtocol}//${parsed.host}`;
-  } catch {
-    return fallbackUrl;
-  }
-}
-
 function sortRooms(rooms: ChatRoomSummary[]): ChatRoomSummary[] {
   return [...rooms].sort((a, b) => {
     if (a.isDefault !== b.isDefault) {
@@ -331,18 +265,55 @@ function formatRoomTime(value: string | null): string {
   });
 }
 
-function formatRoomPreview(value: string | null): string {
+function formatRoomPreview(
+  senderName: string | null,
+  value: string | null,
+): string {
   const normalized = (value || "").replace(/\s+/g, " ").trim();
 
   if (!normalized) {
     return "هنوز پیامی ارسال نشده";
   }
 
-  if (normalized.length <= ROOM_PREVIEW_MAX_CHARS) {
-    return normalized;
+  const prefixedText = senderName ? `${senderName}: ${normalized}` : normalized;
+
+  if (prefixedText.length <= ROOM_PREVIEW_MAX_CHARS) {
+    return prefixedText;
   }
 
-  return `${normalized.slice(0, ROOM_PREVIEW_MAX_CHARS - 3).trimEnd()}...`;
+  return `${prefixedText.slice(0, ROOM_PREVIEW_MAX_CHARS - 3).trimEnd()}...`;
+}
+
+function getBubbleRadiusClass(
+  isOwn: boolean,
+  isFirstInGroup: boolean,
+  isLastInGroup: boolean,
+): string {
+  if (isFirstInGroup && isLastInGroup) {
+    return "rounded-2xl";
+  }
+
+  if (isOwn) {
+    if (isFirstInGroup) {
+      return "rounded-2xl rounded-br-md";
+    }
+
+    if (isLastInGroup) {
+      return "rounded-2xl rounded-tr-md";
+    }
+
+    return "rounded-2xl rounded-tr-md rounded-br-md";
+  }
+
+  if (isFirstInGroup) {
+    return "rounded-2xl rounded-bl-md";
+  }
+
+  if (isLastInGroup) {
+    return "rounded-2xl rounded-tl-md";
+  }
+
+  return "rounded-2xl rounded-tl-md rounded-bl-md";
 }
 
 function mergeMessagesChronologically(
@@ -386,29 +357,18 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
 
   const [draft, setDraft] = useState("");
-  const [connectionStatus, setConnectionStatus] = useState<
-    "idle" | "connecting" | "connected" | "disconnected"
-  >("idle");
-  const [socketError, setSocketError] = useState<string | null>(null);
-  const [isFallbackSyncActive, setIsFallbackSyncActive] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const [mobileRoomsVisible, setMobileRoomsVisible] = useState(true);
 
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
-  const socketRef = useRef<WebSocket | null>(null);
   const activePersonIdRef = useRef<string | null>(null);
   const isPollingFallbackRef = useRef(false);
-  const fallbackSyncStateRef = useRef(false);
-  const wsWarmupFailureCountRef = useRef(0);
-  const wsDisabledForSessionRef = useRef(false);
+  const identityPromptedOnMountRef = useRef(false);
 
   useEffect(() => {
     activePersonIdRef.current = activePersonId;
   }, [activePersonId]);
-
-  useEffect(() => {
-    fallbackSyncStateRef.current = isFallbackSyncActive;
-  }, [isFallbackSyncActive]);
 
   const selectedRoom = useMemo(
     () => rooms.find((room) => room.id === selectedRoomId) || null,
@@ -419,6 +379,58 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
     () => people.find((person) => person.id === activePersonId) || null,
     [people, activePersonId],
   );
+
+  const groupedMessages = useMemo<MessageGroup[]>(() => {
+    if (messages.length === 0) {
+      return [];
+    }
+
+    const groups: MessageGroup[] = [];
+
+    for (const message of messages) {
+      const isOwn = Boolean(
+        activePersonId && message.senderPerson?.id === activePersonId,
+      );
+      const senderId = message.senderPerson?.id || null;
+      const senderName = message.senderPerson?.name || "کاربر";
+      const senderImage = message.senderPerson?.image || "";
+      const previousGroup = groups[groups.length - 1];
+
+      if (
+        previousGroup &&
+        previousGroup.senderId === senderId &&
+        previousGroup.isOwn === isOwn
+      ) {
+        previousGroup.messages.push(message);
+      } else {
+        groups.push({
+          id: message.id,
+          senderId,
+          senderName,
+          senderImage,
+          isOwn,
+          messages: [message],
+        });
+      }
+    }
+
+    return groups;
+  }, [activePersonId, messages]);
+
+  useEffect(() => {
+    if (activePersonId) {
+      identityPromptedOnMountRef.current = false;
+      return;
+    }
+
+    if (people.length === 0 || identityPromptedOnMountRef.current) {
+      return;
+    }
+
+    identityPromptedOnMountRef.current = true;
+    setPendingRoomId(null);
+    setPickerOpen(true);
+  }, [activePersonId, people.length]);
 
   const historyLimit =
     typeof window !== "undefined" && window.innerWidth < 768
@@ -533,6 +545,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
           ...room,
           messageCount: room.messageCount + 1,
           lastMessageAt: incoming.createdAt,
+          lastMessageSenderName: incoming.senderPerson?.name || null,
           lastMessagePreview: incoming.content.slice(0, 120),
           updatedAt: incoming.createdAt,
         };
@@ -582,25 +595,42 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
     [scrollToBottom, updateRoomFromMessage],
   );
 
-  const openIdentityPicker = useCallback((roomId: string) => {
-    setPendingRoomId(roomId);
+  const openIdentityPicker = useCallback((roomId?: string | null) => {
+    setPendingRoomId(roomId || null);
     setPickerOpen(true);
   }, []);
 
-  const selectIdentityAndEnterRoom = useCallback(
-    (personId: string) => {
-      if (!pendingRoomId) {
+  const handleSelectRoom = useCallback(
+    (roomId: string) => {
+      if (!activePersonId) {
+        openIdentityPicker(roomId);
         return;
       }
 
-      setActivePersonId(personId);
-      setSelectedRoomId(pendingRoomId);
-      void loadInitialMessages(pendingRoomId);
+      setSelectedRoomId(roomId);
+      setSendError(null);
+      void loadInitialMessages(roomId);
       setMobileRoomsVisible(false);
+    },
+    [activePersonId, loadInitialMessages, openIdentityPicker],
+  );
+
+  const selectIdentityAndEnterRoom = useCallback(
+    (personId: string) => {
+      const targetRoomId = pendingRoomId || selectedRoomId;
+
+      setActivePersonId(personId);
       setPickerOpen(false);
       setPendingRoomId(null);
+
+      if (targetRoomId) {
+        setSelectedRoomId(targetRoomId);
+        setSendError(null);
+        void loadInitialMessages(targetRoomId);
+        setMobileRoomsVisible(false);
+      }
     },
-    [loadInitialMessages, pendingRoomId],
+    [loadInitialMessages, pendingRoomId, selectedRoomId],
   );
 
   const handleCreateRoom = useCallback(async () => {
@@ -670,7 +700,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
     }
   }, [handleLoadOlderMessages]);
 
-  const pollLatestMessagesFallback = useCallback(async () => {
+  const pollLatestMessages = useCallback(async () => {
     if (!selectedRoomId || isPollingFallbackRef.current) {
       return;
     }
@@ -686,9 +716,6 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
       if (!result.success) {
         return;
       }
-
-      setIsFallbackSyncActive(true);
-      setSocketError(null);
 
       const latestMessages = result.data.messages || [];
       let hasAnyNew = false;
@@ -734,10 +761,6 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
       return;
     }
 
-    if (connectionStatus === "connected") {
-      return;
-    }
-
     let cancelled = false;
 
     const runPolling = async () => {
@@ -745,7 +768,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
         return;
       }
 
-      await pollLatestMessagesFallback();
+      await pollLatestMessages();
     };
 
     void runPolling();
@@ -757,155 +780,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [
-    activePersonId,
-    connectionStatus,
-    pollLatestMessagesFallback,
-    selectedRoomId,
-  ]);
-
-  useEffect(() => {
-    if (!selectedRoomId || !activePersonId) {
-      if (socketRef.current) {
-        socketRef.current.close();
-        socketRef.current = null;
-      }
-
-      const timer = setTimeout(() => {
-        setConnectionStatus("idle");
-        setSocketError(null);
-        setIsFallbackSyncActive(false);
-      }, 0);
-
-      return () => {
-        clearTimeout(timer);
-      };
-    }
-
-    let cancelled = false;
-    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-
-    const connect = () => {
-      if (cancelled) {
-        return;
-      }
-
-      if (wsDisabledForSessionRef.current) {
-        setConnectionStatus("disconnected");
-        setIsFallbackSyncActive(true);
-        setSocketError(null);
-        return;
-      }
-
-      const socketBaseUrl = resolveSocketUrl();
-      if (!socketBaseUrl) {
-        setConnectionStatus("disconnected");
-        setSocketError("آدرس اتصال realtime تعریف نشده است");
-        return;
-      }
-
-      setConnectionStatus("connecting");
-      setIsFallbackSyncActive(false);
-
-      let didJoinRoom = false;
-
-      const socket = new WebSocket(`${socketBaseUrl}${CHAT_WS_PATH}`);
-      socketRef.current = socket;
-
-      socket.onopen = () => {
-        socket.send(
-          JSON.stringify({
-            type: "join-room",
-            roomId: selectedRoomId,
-            personId: activePersonId,
-          }),
-        );
-      };
-
-      socket.onmessage = (event) => {
-        let packet: IncomingSocketMessage;
-
-        try {
-          packet = JSON.parse(event.data as string) as IncomingSocketMessage;
-        } catch {
-          setSocketError("داده realtime معتبر نیست");
-          return;
-        }
-
-        if (packet.type === "joined-room") {
-          didJoinRoom = true;
-          wsWarmupFailureCountRef.current = 0;
-          setConnectionStatus("connected");
-          setIsFallbackSyncActive(false);
-          setSocketError(null);
-          return;
-        }
-
-        if (packet.type === "new-message") {
-          if (packet.roomId === selectedRoomId) {
-            appendIncomingMessage(packet.message);
-          }
-          return;
-        }
-
-        if (packet.type === "error") {
-          setSocketError(packet.message || "خطای realtime");
-        }
-      };
-
-      socket.onerror = () => {
-        setConnectionStatus("disconnected");
-      };
-
-      socket.onclose = () => {
-        if (cancelled) {
-          return;
-        }
-
-        setConnectionStatus("disconnected");
-
-        if (!didJoinRoom) {
-          wsWarmupFailureCountRef.current += 1;
-
-          if (wsWarmupFailureCountRef.current >= MAX_WS_WARMUP_FAILURES) {
-            wsDisabledForSessionRef.current = true;
-            setIsFallbackSyncActive(true);
-            setSocketError(null);
-            return;
-          }
-        }
-
-        if (!fallbackSyncStateRef.current) {
-          setSocketError((currentError) => {
-            if (currentError) {
-              return currentError;
-            }
-
-            return "Realtime connection is unavailable. Fallback sync is active.";
-          });
-        }
-
-        reconnectTimeout = setTimeout(() => {
-          connect();
-        }, 1500);
-      };
-    };
-
-    connect();
-
-    return () => {
-      cancelled = true;
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-      }
-
-      if (socketRef.current) {
-        socketRef.current.close();
-      }
-
-      socketRef.current = null;
-    };
-  }, [activePersonId, appendIncomingMessage, selectedRoomId]);
+  }, [activePersonId, pollLatestMessages, selectedRoomId]);
 
   const handleSendMessage = useCallback(async () => {
     const content = draft.trim();
@@ -913,21 +788,8 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
       return;
     }
 
-    const socket = socketRef.current;
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(
-        JSON.stringify({
-          type: "send-message",
-          content,
-        }),
-      );
-
-      setDraft("");
-      return;
-    }
-
     if (!selectedRoomId || !activePersonId) {
-      setSocketError("Select a room and identity before sending a message");
+      setSendError("Select a room and identity before sending a message");
       return;
     }
 
@@ -938,15 +800,12 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
     });
 
     if (!result.success) {
-      setSocketError(result.error || "Message send failed");
+      setSendError(result.error || "Message send failed");
       return;
     }
 
     appendIncomingMessage(result.data);
-    setIsFallbackSyncActive(true);
-    setSocketError(null);
-    setConnectionStatus("disconnected");
-
+    setSendError(null);
     setDraft("");
   }, [activePersonId, appendIncomingMessage, draft, selectedRoomId]);
 
@@ -961,9 +820,6 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
         <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
           پیام‌رسان
         </h2>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          گروه انتخاب کنید، هویت را مشخص کنید، و پیام متنی بفرستید.
-        </p>
       </div>
 
       <div className="border-b border-slate-200 p-4 dark:border-slate-800">
@@ -1019,46 +875,41 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
           <div className="space-y-2">
             {rooms.map((room) => {
               const isActive = room.id === selectedRoomId;
+              const roomPreview = formatRoomPreview(
+                room.lastMessageSenderName,
+                room.lastMessagePreview,
+              );
+
               return (
-                <div
+                <button
                   key={room.id}
-                  className={`rounded-2xl border p-3 transition ${
+                  type="button"
+                  onClick={() => handleSelectRoom(room.id)}
+                  className={`w-full rounded-2xl border p-3 text-right transition ${
                     isActive
                       ? "border-primary bg-primary/10"
                       : "border-slate-200 bg-slate-50/70 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700"
                   }`}
                 >
-                  <div className="mb-2 flex items-start justify-between gap-3">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {room.name}
                       </p>
                       <p
-                        className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400"
-                        title={room.lastMessagePreview || ""}
+                        className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400"
+                        title={roomPreview}
                       >
-                        {formatRoomPreview(room.lastMessagePreview)}
+                        {roomPreview}
                       </p>
                     </div>
-                    <div className="text-left">
+                    <div className="shrink-0 text-left">
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
                         {formatRoomTime(room.lastMessageAt)}
                       </p>
-                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                        {room.messageCount} پیام
-                      </p>
                     </div>
                   </div>
-
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => openIdentityPicker(room.id)}
-                    className="w-full"
-                  >
-                    ورود به گروه
-                  </Button>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -1081,8 +932,7 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
             <div className="flex h-full flex-col items-center justify-center px-6 text-center text-slate-600 dark:text-slate-300">
               <h3 className="text-xl font-semibold">پیام‌رسان گروهی</h3>
               <p className="mt-2 max-w-md text-sm leading-7 text-slate-500 dark:text-slate-400">
-                از لیست گروه‌ها یکی را انتخاب کنید و با هویت یکی از افراد وارد
-                گفتگو شوید.
+                از لیست گروه‌ها یکی را انتخاب کنید و گفتگو را شروع کنید.
               </p>
             </div>
           ) : (
@@ -1102,58 +952,35 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                       <h3 className="truncate text-base font-semibold text-slate-900 dark:text-slate-100 md:text-lg">
                         {selectedRoom.name}
                       </h3>
-                      <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                        {activePerson
-                          ? `هویت فعال: ${activePerson.name}`
-                          : "برای ارسال پیام هویت انتخاب کنید"}
-                      </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`rounded-full px-2 py-1 text-[11px] font-medium ${
-                        connectionStatus === "connected"
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                          : isFallbackSyncActive
-                            ? "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300"
-                            : connectionStatus === "connecting"
-                              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-                              : "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
-                      }`}
-                    >
-                      {connectionStatus === "connected"
-                        ? "آنلاین"
-                        : isFallbackSyncActive
-                          ? "همگام‌سازی"
-                          : connectionStatus === "connecting"
-                            ? "در حال اتصال"
-                            : "آفلاین"}
-                    </span>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setPendingRoomId(selectedRoom.id);
-                        setPickerOpen(true);
-                      }}
-                    >
-                      تغییر هویت
-                    </Button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openIdentityPicker(selectedRoom.id)}
+                    className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/70 px-2.5 py-1.5 text-right transition hover:border-primary hover:bg-primary/5 dark:border-slate-700 dark:bg-slate-900"
+                  >
+                    <div className="h-9 w-9 overflow-hidden rounded-full border border-slate-300 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
+                      {activePerson?.image ? (
+                        <img
+                          src={getUploadUrl(activePerson.image) || ""}
+                          alt={activePerson.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : null}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-slate-800 dark:text-slate-100">
+                        {activePerson ? activePerson.name : "انتخاب هویت"}
+                      </p>
+                      <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                        {activePerson
+                          ? "هویت فعال"
+                          : "برای ارسال پیام لازم است"}
+                      </p>
+                    </div>
+                  </button>
                 </div>
-
-                {socketError && !isFallbackSyncActive ? (
-                  <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-300">
-                    {socketError}
-                  </div>
-                ) : isFallbackSyncActive ? (
-                  <div className="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-700 dark:border-sky-900 dark:bg-sky-950/50 dark:text-sky-300">
-                    Live sync mode is active. Realtime websocket is blocked
-                    upstream.
-                  </div>
-                ) : null}
               </header>
 
               <div
@@ -1195,45 +1022,81 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                       </div>
                     ) : null}
 
-                    <div className="space-y-2">
-                      {messages.map((message) => {
-                        const isOwn =
-                          activePersonId &&
-                          message.senderPerson?.id === activePersonId;
-
-                        return (
-                          <div
-                            key={message.id}
-                            dir="ltr"
-                            className={`flex ${
-                              isOwn ? "justify-end" : "justify-start"
-                            }`}
-                          >
-                            <div
-                              dir="rtl"
-                              className={`max-w-[86%] rounded-2xl px-3 py-2 text-sm leading-7 shadow-sm md:max-w-[72%] ${
-                                isOwn
-                                  ? "bg-[#d7f4bf] text-slate-900 dark:bg-[#2e6843] dark:text-slate-100"
-                                  : "border border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                              }`}
-                            >
-                              {!isOwn ? (
-                                <p className="mb-1 text-[11px] font-semibold text-primary">
-                                  {message.senderPerson?.name || "کاربر"}
+                    <div className="space-y-3">
+                      {groupedMessages.map((group) => (
+                        <div
+                          key={group.id}
+                          dir="ltr"
+                          className={`flex ${
+                            group.isOwn ? "justify-end" : "justify-start"
+                          }`}
+                        >
+                          <div className="max-w-[86%] md:max-w-[72%]">
+                            {!group.isOwn ? (
+                              <div className="mb-1 flex items-center gap-2 px-1">
+                                <div className="h-7 w-7 overflow-hidden rounded-full border border-slate-300 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
+                                  {group.senderImage ? (
+                                    <img
+                                      src={
+                                        getUploadUrl(group.senderImage) || ""
+                                      }
+                                      alt={group.senderName}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : null}
+                                </div>
+                                <p className="truncate text-[11px] font-semibold text-primary">
+                                  {group.senderName}
                                 </p>
-                              ) : null}
-
-                              <p className="whitespace-pre-wrap break-words">
-                                {message.content}
-                              </p>
-
-                              <div className="mt-1 text-left text-[11px] opacity-70">
-                                {formatClockTime(message.createdAt)}
                               </div>
+                            ) : null}
+
+                            <div className="space-y-1">
+                              {group.messages.map((message, messageIndex) => {
+                                const isFirstInGroup = messageIndex === 0;
+                                const isLastInGroup =
+                                  messageIndex === group.messages.length - 1;
+
+                                return (
+                                  <div
+                                    key={message.id}
+                                    dir="rtl"
+                                    className={`relative px-3 py-2 text-sm leading-7 shadow-sm ${getBubbleRadiusClass(
+                                      group.isOwn,
+                                      isFirstInGroup,
+                                      isLastInGroup,
+                                    )} ${
+                                      group.isOwn
+                                        ? "bg-[#d7f4bf] text-slate-900 dark:bg-[#2e6843] dark:text-slate-100"
+                                        : "border border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                                    }`}
+                                  >
+                                    <p className="whitespace-pre-wrap break-words">
+                                      {message.content}
+                                    </p>
+
+                                    {isLastInGroup ? (
+                                      <>
+                                        <div className="mt-1 text-right text-[11px] opacity-70">
+                                          {formatClockTime(message.createdAt)}
+                                        </div>
+                                        <span
+                                          aria-hidden
+                                          className={`pointer-events-none absolute bottom-1 h-3 w-3 rotate-45 ${
+                                            group.isOwn
+                                              ? "right-[-4px] bg-[#d7f4bf] dark:bg-[#2e6843]"
+                                              : "left-[-4px] border-b border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+                                          }`}
+                                        />
+                                      </>
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
                   </>
                 )}
@@ -1267,6 +1130,11 @@ export default function MessagingPanel({ people }: MessagingPanelProps) {
                 <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
                   ارسال با Enter و خط جدید با Shift+Enter
                 </p>
+                {sendError ? (
+                  <p className="mt-1 text-[11px] text-rose-600 dark:text-rose-400">
+                    {sendError}
+                  </p>
+                ) : null}
               </footer>
             </>
           )}

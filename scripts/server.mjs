@@ -1,6 +1,5 @@
 import { createServer } from "node:http";
 import next from "next";
-import { setupChatWebsocket } from "./chat-websocket-handler.mjs";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOST || "0.0.0.0";
@@ -12,67 +11,18 @@ const app = next({
   port,
 });
 
-const WS_PATH_HTTP_LOG_WINDOW_MS = 15000;
-let wsPathHttpHitsSinceLastLog = 0;
-let wsPathHttpLastLogAt = 0;
-
 const handle = app.getRequestHandler();
 
 async function bootstrap() {
   await app.prepare();
 
   const server = createServer((request, response) => {
-    const nextActionHeader = request.headers["next-action"];
-    const requestUrl = request.url || "";
-
-    if (requestUrl.startsWith("/ws/chat")) {
-      wsPathHttpHitsSinceLastLog += 1;
-
-      const now = Date.now();
-      const shouldLogNow =
-        wsPathHttpLastLogAt === 0 ||
-        now - wsPathHttpLastLogAt >= WS_PATH_HTTP_LOG_WINDOW_MS;
-
-      if (shouldLogNow) {
-        console.warn("[chat-ws] ws-path request reached http handler", {
-          method: request.method || null,
-          url: requestUrl,
-          host: request.headers.host || null,
-          origin: request.headers.origin || null,
-          upgradeHeader: request.headers.upgrade || null,
-          connectionHeader: request.headers.connection || null,
-          secWebSocketKey: request.headers["sec-websocket-key"] || null,
-          userAgent: request.headers["user-agent"] || null,
-          forwardedFor: request.headers["x-forwarded-for"] || null,
-          hitsSinceLastLog: wsPathHttpHitsSinceLastLog,
-        });
-
-        wsPathHttpHitsSinceLastLog = 0;
-        wsPathHttpLastLogAt = now;
-      }
-    }
-
-    if (typeof nextActionHeader === "string" && nextActionHeader) {
-      console.warn("[next-action] incoming request", {
-        actionId: nextActionHeader,
-        method: request.method || null,
-        url: request.url || null,
-        host: request.headers.host || null,
-        origin: request.headers.origin || null,
-        referer: request.headers.referer || null,
-        userAgent: request.headers["user-agent"] || null,
-        forwardedFor: request.headers["x-forwarded-for"] || null,
-      });
-    }
-
     handle(request, response).catch((error) => {
       console.error("Request handler error:", error);
       response.statusCode = 500;
       response.end("Internal Server Error");
     });
   });
-
-  const websocketRuntime = setupChatWebsocket(server);
 
   server.listen(port, hostname, () => {
     console.log(
@@ -83,8 +33,7 @@ async function bootstrap() {
   async function shutdown(signal) {
     console.log(`Received ${signal}. Shutting down DotMag server...`);
 
-    server.close(async () => {
-      await websocketRuntime.shutdown();
+    server.close(() => {
       process.exit(0);
     });
   }
