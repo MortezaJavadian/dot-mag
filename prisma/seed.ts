@@ -2,6 +2,8 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+const DEFAULT_CHAT_ROOM_NAME = "همگانی";
+const DEFAULT_CHAT_ROOM_SLUG = "general";
 
 async function main() {
   console.log("Seeding database...");
@@ -27,6 +29,22 @@ async function main() {
   });
 
   console.log(`Admin user "${user.username}" created/verified`);
+
+  const defaultRoom = await prisma.chatRoom.upsert({
+    where: { slug: DEFAULT_CHAT_ROOM_SLUG },
+    update: {
+      name: DEFAULT_CHAT_ROOM_NAME,
+      isDefault: true,
+    },
+    create: {
+      name: DEFAULT_CHAT_ROOM_NAME,
+      slug: DEFAULT_CHAT_ROOM_SLUG,
+      isDefault: true,
+      createdByUserId: user.id,
+    },
+  });
+
+  console.log(`Default chat room "${defaultRoom.name}" created/verified`);
   console.log("Database seeded - existing data preserved");
 }
 

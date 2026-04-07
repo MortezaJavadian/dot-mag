@@ -42,7 +42,8 @@ dot-mag/
 │           ├── page.tsx        # Admin dashboard/login
 │           └── _components/
 │               ├── LoginForm.tsx       # Login page
-│               ├── Dashboard.tsx       # Articles, Magazines, Radios, Tags tabs
+│               ├── Dashboard.tsx       # Home, Messaging, Articles, Radios, Magazines, Tags, People tabs
+│               ├── MessagingPanel.tsx  # Telegram-like group chat UI (text-only)
 │               ├── ArticleEditor.tsx   # Article CRUD form
 │               ├── MagazineEditor.tsx  # Magazine CRUD form + pages
 │               └── RadioEditor.tsx     # Radio editor with summary, rich intro, multi-quality full audio, auto-duration
@@ -72,11 +73,12 @@ dot-mag/
 ├── actions/
 │   ├── authActions.ts          # Server action: login/logout
 │   ├── articleActions.ts       # Server actions: Article CRUD
+│   ├── chatActions.ts          # Server actions: chat rooms, history, fallback message create
 │   ├── magazineActions.ts      # Server actions: Magazine CRUD
 │   └── radioActions.ts         # Server actions: Radio CRUD + segment CRUD
 ├── prisma/
-│   ├── schema.prisma           # Database schema (User, Article, Magazine, Radio, segments)
-│   └── seed.ts                 # Database seeding script
+│   ├── schema.prisma           # Database schema (+ ChatRoom, ChatMessage)
+│   └── seed.ts                 # Database seeding script + default global room
 ├── public/
 │   ├── assets/
 │   │   ├── fonts/
@@ -141,7 +143,8 @@ dot-mag/
 | `app/(admin)/admin-panel/layout.tsx`                     | Admin layout with logout button                                                                                                                              |
 | `app/(admin)/admin-panel/page.tsx`                       | Main page - shows login or dashboard                                                                                                                         |
 | `app/(admin)/admin-panel/_components/LoginForm.tsx`      | Login form component                                                                                                                                         |
-| `app/(admin)/admin-panel/_components/Dashboard.tsx`      | Dashboard with Home, Articles, Radios, Magazines, Tags, and People tabs                                                                                      |
+| `app/(admin)/admin-panel/_components/Dashboard.tsx`      | Dashboard with Home, Messaging, Articles, Radios, Magazines, Tags, and People tabs                                                                           |
+| `app/(admin)/admin-panel/_components/MessagingPanel.tsx` | Telegram-like text-only group chat UI with group list, identity picker, realtime socket, and paginated history                                               |
 | `app/(admin)/admin-panel/_components/ArticleEditor.tsx`  | Article editor form                                                                                                                                          |
 | `app/(admin)/admin-panel/_components/RichTextEditor.tsx` | WYSIWYG article editor toolbar + contenteditable surface                                                                                                     |
 | `app/(admin)/admin-panel/_components/HomeEditor.tsx`     | Home hero editor (badge, rich text, image, CTA target)                                                                                                       |
@@ -151,29 +154,30 @@ dot-mag/
 
 ### Authentication & Actions
 
-| File                             | Purpose                                                                |
-| -------------------------------- | ---------------------------------------------------------------------- |
-| `lib/auth.ts`                    | JWT, session, password utilities                                       |
-| `lib/magazines.ts`               | Shared archive magazine fetch + slug normalize/decode helpers          |
-| `lib/uploads.ts`                 | Normalizes upload URLs for CDN/API                                     |
-| `lib/clientUpload.ts`            | Shared admin uploader with progress callbacks, timeout, and retry      |
-| `lib/articleContent.ts`          | Converts legacy/plain text to safe sanitized HTML for post rendering   |
-| `lib/homeHero.ts`                | Home hero config schema + file-backed read/write helpers               |
-| `lib/internalApi.ts`             | Shared server-only internal API fetch helper with timeout/cache policy |
-| `middleware.ts`                  | Route protection for /admin-panel                                      |
-| `app/actions/authActions.ts`     | Login/logout server actions                                            |
-| `app/actions/articleActions.ts`  | Article CRUD server actions                                            |
-| `app/actions/homeActions.ts`     | Home hero read/update server actions                                   |
-| `app/actions/magazineActions.ts` | Magazine CRUD server actions                                           |
-| `app/actions/personActions.ts`   | People CRUD server actions                                             |
-| `app/actions/radioActions.ts`    | Radio CRUD + highlighted segment CRUD                                  |
+| File                             | Purpose                                                                   |
+| -------------------------------- | ------------------------------------------------------------------------- |
+| `lib/auth.ts`                    | JWT, session, password utilities                                          |
+| `lib/magazines.ts`               | Shared archive magazine fetch + slug normalize/decode helpers             |
+| `lib/uploads.ts`                 | Normalizes upload URLs for CDN/API                                        |
+| `lib/clientUpload.ts`            | Shared admin uploader with progress callbacks, timeout, and retry         |
+| `lib/articleContent.ts`          | Converts legacy/plain text to safe sanitized HTML for post rendering      |
+| `lib/homeHero.ts`                | Home hero config schema + file-backed read/write helpers                  |
+| `lib/internalApi.ts`             | Shared server-only internal API fetch helper with timeout/cache policy    |
+| `middleware.ts`                  | Route protection for /admin-panel                                         |
+| `app/actions/authActions.ts`     | Login/logout server actions                                               |
+| `app/actions/articleActions.ts`  | Article CRUD server actions                                               |
+| `app/actions/homeActions.ts`     | Home hero read/update server actions                                      |
+| `app/actions/magazineActions.ts` | Magazine CRUD server actions                                              |
+| `app/actions/personActions.ts`   | People CRUD server actions                                                |
+| `app/actions/radioActions.ts`    | Radio CRUD + highlighted segment CRUD                                     |
+| `app/actions/chatActions.ts`     | Chat room CRUD-lite, paginated history fetch, and fallback message create |
 
 ### Database
 
-| File                   | Purpose                            |
-| ---------------------- | ---------------------------------- |
-| `prisma/schema.prisma` | Database schema definition         |
-| `prisma/seed.ts`       | Initial data + admin user creation |
+| File                   | Purpose                                                       |
+| ---------------------- | ------------------------------------------------------------- |
+| `prisma/schema.prisma` | Database schema definition including ChatRoom and ChatMessage |
+| `prisma/seed.ts`       | Initial data + admin user creation + default "همگانی" room    |
 
 ### Components
 
@@ -202,16 +206,19 @@ dot-mag/
 
 ### Configuration & Documentation
 
-| File                  | Purpose                                           |
-| --------------------- | ------------------------------------------------- |
-| `.env.example`        | Environment variables template                    |
-| `docker-compose.yml`  | PostgreSQL + web services orchestration           |
-| `Dockerfile`          | Build configuration for Next.js container startup |
-| `package.json`        | Dependencies + db scripts (generate, push, seed)  |
-| `ADMIN_SETUP.md`      | Detailed local setup instructions                 |
-| `DEPLOYMENT_GUIDE.md` | Complete deployment & API documentation           |
-| `AGENTS.md`           | Architecture rules (locked - read-only)           |
-| `CLAUDE.md`           | Agent instructions (locked)                       |
+| File                                 | Purpose                                                     |
+| ------------------------------------ | ----------------------------------------------------------- |
+| `.env.example`                       | Environment variables template                              |
+| `docker-compose.yml`                 | PostgreSQL + web services orchestration                     |
+| `Dockerfile`                         | Build configuration for Next.js container startup           |
+| `package.json`                       | Dependencies + db scripts + unified server runtime scripts  |
+| `scripts/server.mjs`                 | Unified Next.js HTTP server with websocket upgrade handling |
+| `scripts/chat-websocket-handler.mjs` | Websocket auth, room join, and realtime broadcast handler   |
+| `scripts/docker-entrypoint.sh`       | Startup orchestration for unified server process            |
+| `ADMIN_SETUP.md`                     | Detailed local setup instructions                           |
+| `DEPLOYMENT_GUIDE.md`                | Complete deployment & API documentation                     |
+| `AGENTS.md`                          | Architecture rules (locked - read-only)                     |
+| `CLAUDE.md`                          | Agent instructions (locked)                                 |
 
 ## Change Journal
 
@@ -324,6 +331,8 @@ dot-mag/
 | 2026-04-04 | Person/About spacing and heading parity refinements      | Reduced person profile card footprint while increasing name emphasis, added extra bottom gap below person blocks in post/radio detail headers, matched About team heading style to kiosk heading, added divider line above kiosk title, and switched About team cards to auto-fit responsive columns for better horizontal fill.                                                                                                                                                                                                                                                                                                                       |
 | 2026-04-04 | About team right-alignment + non-stretch cards           | Moved About team heading alignment to the right, changed team member layout from full-width auto-fit grid to non-stretch wrapped cards (matching post/radio person-block behavior), and increased post/radio person-block bottom margin to 1.2x previous spacing for clearer separation from the date row.                                                                                                                                                                                                                                                                                                                                             |
 | 2026-04-04 | Posts cards optional author-name meta row                | Extended `ArticleCard` with a page-controlled `showAuthorInMeta` toggle and rendered only the author name (when present) on the same bottom metadata line as date for `/posts` cards, while leaving other card usages unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| 2026-04-07 | Admin realtime messaging module                          | Added Prisma chat models (`ChatRoom`, `ChatMessage`), seeded default global room (`همگانی`), implemented server actions for room list/create + paginated history, integrated new Messaging tab in admin dashboard, and delivered Telegram-like text-only UI with group entry, person identity picker, and infinite upward history loading for performance.                                                                                                                                                                                                                                                                                             |
+| 2026-04-07 | Single-domain websocket deployment hardening             | Replaced separate realtime process/port with a unified Next.js server (`scripts/server.mjs`) and upgrade handler (`scripts/chat-websocket-handler.mjs`) so websocket runs on the same domain and port, removing nginx/proxy dependency for an extra websocket port.                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## Reuse Decisions
 
@@ -335,6 +344,7 @@ dot-mag/
 - **API Routes**: RESTful structure with shared patterns
 - **Radio module reuse**: Radio list/detail uses existing card/layout patterns from posts/archive with dedicated audio components
 - **Person UI reuse**: A single `PersonProfileBlock` is reused in post detail, radio detail, and About team section
+- **Messaging reuse**: New chat flow reuses existing admin auth/session (`getAdminUser`) and admin tab orchestration pattern in `Dashboard`
 
 ## Architecture Patterns Established
 
@@ -344,6 +354,7 @@ dot-mag/
 2. Admin panel → server actions → Prisma → PostgreSQL
 3. API routes → auth check → server actions → Prisma → PostgreSQL
 4. Radio playback → `/api/uploads/*` byte-range responses → service worker audio/runtime caches
+5. Admin messaging → websocket join/broadcast + server-action paginated history backed by PostgreSQL
 
 ### Authentication
 
@@ -355,7 +366,7 @@ dot-mag/
 
 - `/admin-panel` (no auth) → LoginForm
 - `/admin-panel` (authenticated) → Dashboard with tabs
-- Dashboard → ArticleEditor, MagazineEditor, or RadioEditor
+- Dashboard → MessagingPanel, ArticleEditor, MagazineEditor, or RadioEditor
 - Editors submit to server actions → database updates
 
 ## Pending / TODOs
@@ -607,7 +618,7 @@ See DEPLOYMENT_GUIDE.md for detailed deployment instructions.
 | 2026-03-31 | Offline APK install support                  | Added `offline-pkgs/apk` bundle path, Dockerfile offline-first `openssl` install, and `scripts/fetch-offline-apk.sh` helper                                                                                                                                                                                                                                                                                                |
 | 2026-03-31 | Admin route + shell update                   | Renamed admin URL to `/admin-panel` and removed global Header/Footer chrome from admin pages                                                                                                                                                                                                                                                                                                                               |
 | 2026-04-04 | Radio quality UX + native download hardening | Added per-quality audio size persistence (`audioSizeLow/Medium/High`) from admin uploads, exposed full-episode user quality tabs with size labels and default-from-admin playback initialization, removed static internal-player quality text, preserved in-player time when switching quality, and changed audio download flow to native browser download-manager mode via `/api/uploads/*?download=1` attachment headers |
-| 2026-04-04 | Radio deploy type-check hotfix               | Fixed `buildFullEpisodeQualityOptions` typing in `app/radio/[slug]/page.tsx` by explicitly typing quality candidates with `PlayerAudioQuality` keys to prevent production build widening `key` to `string` during Docker/CI type-check.                                                                                                                                                                           |
+| 2026-04-04 | Radio deploy type-check hotfix               | Fixed `buildFullEpisodeQualityOptions` typing in `app/radio/[slug]/page.tsx` by explicitly typing quality candidates with `PlayerAudioQuality` keys to prevent production build widening `key` to `string` during Docker/CI type-check.                                                                                                                                                                                    |
 
 ## Reuse Decisions
 

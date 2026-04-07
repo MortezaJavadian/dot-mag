@@ -191,12 +191,10 @@ function buildFullEpisodeQualityOptions(
     },
   ];
 
-  return qualityCandidates
-    .filter(hasUrl)
-    .map((item) => ({
-      ...item,
-      fileName: getUploadOriginalFileName(item.url) || undefined,
-    }));
+  return qualityCandidates.filter(hasUrl).map((item) => ({
+    ...item,
+    fileName: getUploadOriginalFileName(item.url) || undefined,
+  }));
 }
 
 function buildFullEpisodeDownloadOptions(

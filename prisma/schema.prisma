@@ -15,8 +15,40 @@ model User {
   id        String     @id @default(cuid())
   username  String     @unique
   password  String
+  createdChatRooms ChatRoom[] @relation("ChatRoomCreatedBy")
+  chatMessages     ChatMessage[] @relation("ChatMessageSenderUser")
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+}
+
+model ChatRoom {
+  id              String        @id @default(cuid())
+  name            String
+  slug            String        @unique
+  isDefault       Boolean       @default(false)
+  createdByUserId String?
+  createdByUser   User?         @relation("ChatRoomCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  messages        ChatMessage[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([createdAt])
+}
+
+model ChatMessage {
+  id             String    @id @default(cuid())
+  roomId         String
+  room           ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderUserId   String?
+  senderUser     User?     @relation("ChatMessageSenderUser", fields: [senderUserId], references: [id], onDelete: SetNull)
+  senderPersonId String?
+  senderPerson   Person?   @relation(fields: [senderPersonId], references: [id], onDelete: SetNull)
+  content        String    @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([roomId, createdAt])
+  @@index([senderPersonId])
 }
 
 model Article {
@@ -139,6 +171,7 @@ model Person {
   sortOrder       Int       @default(0)
   articles        Article[]
   radios          Radio[]
+  chatMessages    ChatMessage[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }

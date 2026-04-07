@@ -20,6 +20,7 @@ import ArticleEditor from "./ArticleEditor";
 import ArticlesTabs from "./ArticlesTabs";
 import HomeEditor from "./HomeEditor";
 import MagazineEditor from "./MagazineEditor";
+import MessagingPanel from "./MessagingPanel";
 import PersonEditor from "./PersonEditor";
 import RadioEditor from "./RadioEditor";
 import Button from "@/components/ui/Button";
@@ -110,7 +111,13 @@ type TagItem = {
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<
-    "home" | "articles" | "magazines" | "radios" | "people" | "tags"
+    | "home"
+    | "messaging"
+    | "articles"
+    | "magazines"
+    | "radios"
+    | "people"
+    | "tags"
   >("home");
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [magazines, setMagazines] = useState<MagazineItem[]>([]);
@@ -301,6 +308,16 @@ export default function Dashboard() {
           خانه
         </button>
         <button
+          onClick={() => setActiveTab("messaging")}
+          className={`px-4 py-2 font-medium ${
+            activeTab === "messaging"
+              ? "border-b-2 border-primary text-primary"
+              : "text-slate-600 dark:text-slate-400"
+          }`}
+        >
+          پیام‌رسان
+        </button>
+        <button
           onClick={() => setActiveTab("articles")}
           className={`px-4 py-2 font-medium ${
             activeTab === "articles"
@@ -379,6 +396,16 @@ export default function Dashboard() {
             />
           )}
         </div>
+      )}
+
+      {activeTab === "messaging" && (
+        <MessagingPanel
+          people={people.map((person) => ({
+            id: person.id,
+            name: person.name,
+            image: person.image,
+          }))}
+        />
       )}
 
       {activeTab === "articles" && (
