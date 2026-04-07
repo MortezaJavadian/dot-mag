@@ -53,6 +53,11 @@ const DESKTOP_HISTORY_LIMIT = 30;
 const ROOM_PREVIEW_MAX_CHARS = 52;
 const IRAN_TIMEZONE = "Asia/Tehran";
 const GROUP_TIME_GAP_MS = 60 * 1000;
+const MAX_REASONABLE_CLOCK_SKEW_MS = 12 * 60 * 60 * 1000;
+const CLOCK_CALIBRATION_EPSILON_MS = 15 * 1000;
+
+let serverClockSkewMs = 0;
+let hasClockSkewCalibration = false;
 
 type ActionResultSuccess<T> = {
   success: true;
@@ -71,8 +76,46 @@ type ChatMessagesPayload = {
   nextCursor: string | null;
 };
 
+function updateServerClockSkew(candidateMs: number) {
+  if (!Number.isFinite(candidateMs)) {
+    return;
+  }
+
+  if (Math.abs(candidateMs) > MAX_REASONABLE_CLOCK_SKEW_MS) {
+    return;
+  }
+
+  if (
+    hasClockSkewCalibration &&
+    Math.abs(serverClockSkewMs - candidateMs) < CLOCK_CALIBRATION_EPSILON_MS
+  ) {
+    return;
+  }
+
+  serverClockSkewMs = candidateMs;
+  hasClockSkewCalibration = true;
+}
+
 function syncServerClockFromHeader(_dateHeader: string | null) {
-  // Intentionally no-op: message timestamps are absolute UTC values.
+  if (!_dateHeader) {
+    return;
+  }
+
+  const serverMs = Date.parse(_dateHeader);
+  if (Number.isNaN(serverMs)) {
+    return;
+  }
+
+  updateServerClockSkew(Date.now() - serverMs);
+}
+
+function syncServerClockFromFreshMessage(messageCreatedAt: string) {
+  const messageMs = Date.parse(messageCreatedAt);
+  if (Number.isNaN(messageMs)) {
+    return;
+  }
+
+  updateServerClockSkew(Date.now() - messageMs);
 }
 
 function toCalibratedDate(value: string): Date {
@@ -81,16 +124,11 @@ function toCalibratedDate(value: string): Date {
     return new Date();
   }
 
-  return new Date(baseMs);
-}
+  if (!hasClockSkewCalibration) {
+    return new Date(baseMs);
+  }
 
-function getIranDayKey(dateValue: Date): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: IRAN_TIMEZONE,
-  }).format(dateValue);
+  return new Date(baseMs + serverClockSkewMs);
 }
 
 async function fetchChatRoomsFromApi() {
@@ -240,6 +278,8 @@ async function createChatMessageViaApi(data: {
       };
     }
 
+    syncServerClockFromFreshMessage(payload.data.createdAt);
+
     return {
       success: true as const,
       data: payload.data,
@@ -279,20 +319,8 @@ function formatClockTime(value: string): string {
 function formatRoomTime(value: string | null): string {
   if (!value) return "";
 
-  const date = toCalibratedDate(value);
-  const today = new Date();
-
-  const isToday = getIranDayKey(date) === getIranDayKey(today);
-
-  if (isToday) {
-    return formatClockTime(value);
-  }
-
-  return new Intl.DateTimeFormat("fa-IR", {
-    month: "short",
-    day: "numeric",
-    timeZone: IRAN_TIMEZONE,
-  }).format(date);
+  // Keep room list clock aligned with the same timezone/rendering as message bubbles.
+  return formatClockTime(value);
 }
 
 function formatRoomPreview(
