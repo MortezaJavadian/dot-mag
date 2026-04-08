@@ -19,8 +19,7 @@ export const metadata: Metadata = {
     default: "دات | خانه",
     template: "%s | دات",
   },
-  description:
-    "مجله دات",
+  description: "مجله دات",
   keywords: ["دات"],
   authors: [{ name: "دات" }],
   creator: "دات",
@@ -32,8 +31,7 @@ export const metadata: Metadata = {
     url: "https://dotmag.ir",
     siteName: "دات",
     title: "دات | خانه",
-    description:
-      "مجله دات",
+    description: "مجله دات",
   },
   twitter: {
     card: "summary_large_image",
@@ -45,7 +43,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 3,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
     { media: "(prefers-color-scheme: dark)", color: "#0B0B0B" },
