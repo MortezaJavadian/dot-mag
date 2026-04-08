@@ -39,8 +39,8 @@ const TOUCH_CLICK_SUPPRESS_WINDOW_MS = 700;
 const SWIPE_TAP_SUPPRESS_MS = 250;
 const MAGAZINE_PAGE_ASPECT_RATIO = 33 / 47;
 const READER_GESTURE_ZOOM_DELTA_STEP = 0.0025;
-const DESKTOP_READER_ZOOM_SCALE = 1.1;
-const MOBILE_READER_ZOOM_SCALE = 0.7;
+const DESKTOP_READER_ZOOM_SCALE = 2;
+const MOBILE_READER_ZOOM_SCALE = 0.1;
 
 type PageMoveDirection = "next" | "prev" | "idle";
 type ImageLoadState = "loading" | "loaded" | "error";
