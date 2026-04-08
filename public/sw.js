@@ -1,6 +1,6 @@
-const STATIC_CACHE_NAME = "dotmag-static-v2";
-const RUNTIME_CACHE_NAME = "dotmag-runtime-v2";
-const AUDIO_CACHE_NAME = "dotmag-audio-v1";
+const STATIC_CACHE_NAME = "dotmag-static-v3";
+const RUNTIME_CACHE_NAME = "dotmag-runtime-v3";
+const AUDIO_CACHE_NAME = "dotmag-audio-v2";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_URLS = [
