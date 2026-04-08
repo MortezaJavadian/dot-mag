@@ -38,8 +38,8 @@ const TRACKPAD_NAV_COOLDOWN_MS = 420;
 const TOUCH_CLICK_SUPPRESS_WINDOW_MS = 700;
 const SWIPE_TAP_SUPPRESS_MS = 250;
 const MAGAZINE_PAGE_ASPECT_RATIO = 33 / 47;
-const DESKTOP_READER_ZOOM_SCALE = 1.3;
-const MOBILE_READER_ZOOM_SCALE = 0.5;
+const DESKTOP_READER_ZOOM_SCALE = 1.1;
+const MOBILE_READER_ZOOM_SCALE = 0.7;
 
 type PageMoveDirection = "next" | "prev" | "idle";
 type ImageLoadState = "loading" | "loaded" | "error";
@@ -934,39 +934,29 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
             <div className="shrink-0 flex items-center gap-1 md:gap-2 justify-end z-[1]">
               {pdfDownloadUrl && (
-                <>
-                  <button
-                    onClick={handlePdfDownload}
-                    disabled={isDownloading}
-                    className="md:hidden p-2 text-white/80 hover:text-white transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-                    title={isDownloading ? "در حال دانلود" : "دانلود PDF"}
-                    aria-label={isDownloading ? "در حال دانلود" : "دانلود PDF"}
+                <button
+                  onClick={handlePdfDownload}
+                  disabled={isDownloading}
+                  className="p-2 text-white/80 hover:text-white transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                  title={isDownloading ? "در حال دانلود" : "دانلود PDF"}
+                  aria-label={isDownloading ? "در حال دانلود" : "دانلود PDF"}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M12 3v12" />
-                      <path d="m7 10 5 5 5-5" />
-                      <path d="M5 21h14" />
-                    </svg>
-                  </button>
-
-                  <button
-                    onClick={handlePdfDownload}
-                    disabled={isDownloading}
-                    className="hidden md:inline-flex px-3 py-2 rounded-full text-xs md:text-sm bg-white text-deep-black font-semibold hover:bg-white/90 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {isDownloading ? "در حال دانلود..." : "دانلود PDF"}
-                  </button>
-                </>
+                    <path d="M12 3v12" />
+                    <path d="m7 10 5 5 5-5" />
+                    <path d="M5 21h14" />
+                  </svg>
+                </button>
               )}
               <button
                 onClick={toggleFullscreen}
