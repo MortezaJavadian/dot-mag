@@ -899,15 +899,18 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
                 <h1 className="text-white font-bold text-sm md:text-base text-center leading-tight w-full">
                   {magazine.title}
                 </h1>
-                <p className="text-white/78 text-xs md:text-sm text-center leading-tight mt-0.5 w-full">
+                <div
+                  className="text-white/78 text-xs md:text-sm leading-tight mt-0.5 w-full"
+                  style={{ textAlign: "center" }}
+                >
                   {magazine.subtitle}
-                </p>
-                <p
-                  className="text-white/74 text-[11px] md:text-xs text-center leading-tight mt-0.5 w-full"
-                  style={{ unicodeBidi: "plaintext" }}
+                </div>
+                <div
+                  className="text-white/74 text-[11px] md:text-xs leading-tight mt-0.5 w-full"
+                  style={{ textAlign: "center" }}
                 >
                   {magazine.publishedAt}
-                </p>
+                </div>
               </div>
             </div>
 
