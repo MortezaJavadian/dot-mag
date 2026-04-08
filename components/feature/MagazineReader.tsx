@@ -38,6 +38,7 @@ const TRACKPAD_NAV_COOLDOWN_MS = 420;
 const TOUCH_CLICK_SUPPRESS_WINDOW_MS = 700;
 const SWIPE_TAP_SUPPRESS_MS = 250;
 const MAGAZINE_PAGE_ASPECT_RATIO = 33 / 47;
+const READER_GESTURE_ZOOM_DELTA_STEP = 0.0025;
 const DESKTOP_READER_ZOOM_SCALE = 1.1;
 const MOBILE_READER_ZOOM_SCALE = 0.7;
 
@@ -84,16 +85,35 @@ function getFrameMaxWidthRem(
   return 30;
 }
 
-function getReaderZoomScale(viewportWidth: number): number {
+function getReaderGestureMaxZoomScale(viewportWidth: number): number {
   if (viewportWidth >= 1024) {
-    return DESKTOP_READER_ZOOM_SCALE;
+    return 1 + DESKTOP_READER_ZOOM_SCALE;
   }
 
   if (viewportWidth < 768) {
-    return MOBILE_READER_ZOOM_SCALE;
+    return 1 + MOBILE_READER_ZOOM_SCALE;
   }
 
-  return 1;
+  return 1 + (DESKTOP_READER_ZOOM_SCALE + MOBILE_READER_ZOOM_SCALE) / 2;
+}
+
+function clampReaderGestureZoomScale(
+  zoomScale: number,
+  viewportWidth: number,
+): number {
+  return Math.min(
+    Math.max(zoomScale, 1),
+    getReaderGestureMaxZoomScale(viewportWidth),
+  );
+}
+
+function getTouchDistance(
+  touchA: { clientX: number; clientY: number },
+  touchB: { clientX: number; clientY: number },
+): number {
+  const deltaX = touchA.clientX - touchB.clientX;
+  const deltaY = touchA.clientY - touchB.clientY;
+  return Math.hypot(deltaX, deltaY);
 }
 
 function getPageTransitionClass(direction: PageMoveDirection): string {
@@ -120,6 +140,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   } | null>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
+  const [readerZoomScale, setReaderZoomScale] = useState(1);
   const readerRootRef = useRef<HTMLDivElement | null>(null);
   const controlsHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -130,6 +151,8 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     typeof setTimeout
   > | null>(null);
   const isMultiTouchGestureRef = useRef(false);
+  const pinchStartDistanceRef = useRef<number | null>(null);
+  const pinchStartZoomScaleRef = useRef(1);
   const lastTrackpadNavAtRef = useRef(0);
   const isMountedRef = useRef(false);
   const imagePreloadPromisesRef = useRef<Map<string, Promise<void>>>(new Map());
@@ -371,6 +394,12 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   }, []);
 
   useEffect(() => {
+    setReaderZoomScale((prev) =>
+      clampReaderGestureZoomScale(prev, viewportWidth),
+    );
+  }, [viewportWidth]);
+
+  useEffect(() => {
     const syncFullscreenState = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
     };
@@ -517,6 +546,21 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
     const handleTrackpadSwipe = (event: WheelEvent) => {
       if (event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+        const zoomDelta = -event.deltaY * READER_GESTURE_ZOOM_DELTA_STEP;
+
+        if (zoomDelta !== 0) {
+          setReaderZoomScale((prev) =>
+            clampReaderGestureZoomScale(prev + zoomDelta, viewportWidth),
+          );
+          setShowControls(true);
+          armControlsAutoHide();
+        }
+
+        return;
+      }
+
+      if (readerZoomScale > 1.01) {
         return;
       }
 
@@ -577,6 +621,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     maxPage,
     nextPage,
     prevPage,
+    readerZoomScale,
     spreadCount,
     viewportWidth,
   ]);
@@ -616,6 +661,17 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   );
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      isMultiTouchGestureRef.current = true;
+      setTouchStart(null);
+      pinchStartDistanceRef.current = getTouchDistance(
+        e.touches[0],
+        e.touches[1],
+      );
+      pinchStartZoomScaleRef.current = readerZoomScale;
+      return;
+    }
+
     if (e.touches.length !== 1) {
       isMultiTouchGestureRef.current = true;
       setTouchStart(null);
@@ -627,7 +683,42 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length > 1) {
+    if (e.touches.length === 2) {
+      isMultiTouchGestureRef.current = true;
+      setTouchStart(null);
+
+      const pinchStartDistance = pinchStartDistanceRef.current;
+      if (!pinchStartDistance || pinchStartDistance <= 0) {
+        return;
+      }
+
+      const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+      if (currentDistance <= 0) {
+        return;
+      }
+
+      const nextZoomScale =
+        pinchStartZoomScaleRef.current * (currentDistance / pinchStartDistance);
+
+      setReaderZoomScale((prev) => {
+        const clamped = clampReaderGestureZoomScale(
+          nextZoomScale,
+          viewportWidth,
+        );
+        if (Math.abs(prev - clamped) < 0.001) {
+          return prev;
+        }
+
+        return clamped;
+      });
+
+      setShowControls(true);
+      armControlsAutoHide();
+      e.preventDefault();
+      return;
+    }
+
+    if (e.touches.length > 2) {
       isMultiTouchGestureRef.current = true;
       setTouchStart(null);
     }
@@ -636,8 +727,13 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   const handleTouchEnd = (e: React.TouchEvent) => {
     armSyntheticClickSuppression();
 
+    if (e.touches.length < 2) {
+      pinchStartDistanceRef.current = null;
+      pinchStartZoomScaleRef.current = readerZoomScale;
+    }
+
     if (isMultiTouchGestureRef.current) {
-      if (e.touches.length === 0) {
+      if (e.touches.length < 2) {
         isMultiTouchGestureRef.current = false;
       }
       setTouchStart(null);
@@ -662,8 +758,9 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     const touchedInteractiveElement = Boolean(
       target?.closest("button, a, input, textarea, select, label"),
     );
+    const canSwipeNavigate = readerZoomScale <= 1.01;
 
-    if (isHorizontalSwipe) {
+    if (isHorizontalSwipe && canSwipeNavigate) {
       suppressTapToggleRef.current = true;
       window.setTimeout(() => {
         suppressTapToggleRef.current = false;
@@ -781,11 +878,11 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         viewportHeight - verticalPaddingRem * 16,
       );
       const widthFromHeightPx = availableHeightPx * MAGAZINE_PAGE_ASPECT_RATIO;
-      const zoomScale = getReaderZoomScale(viewportWidth);
-      const frameWidthPx =
+      const baseFrameWidthPx =
         viewportHeight > 0
-          ? Math.min(frameMaxWidthPx, widthFromHeightPx) * zoomScale
-          : frameMaxWidthPx * zoomScale;
+          ? Math.min(frameMaxWidthPx, widthFromHeightPx)
+          : frameMaxWidthPx;
+      const frameWidthPx = baseFrameWidthPx * readerZoomScale;
 
       const frameShapeClassName = `${MAGAZINE_PAGE_ASPECT_RATIO_CLASS} ${MAGAZINE_PAGE_RADIUS_CLASS}`;
       const frameStyle = {
@@ -855,6 +952,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       isFullscreen,
       navigationTick,
       pageTransitionClass,
+      readerZoomScale,
       setImageStatus,
       viewportHeight,
       viewportWidth,
@@ -1012,6 +1110,8 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
       <main
         className={`relative h-full w-full flex items-center justify-center px-2 md:px-4 ${
+          readerZoomScale > 1.01 ? "overflow-auto" : "overflow-hidden"
+        } ${
           isFullscreen
             ? "pt-5 md:pt-6 lg:pt-7 pb-5 md:pb-6 lg:pb-7"
             : "pt-7 md:pt-8 pb-7 md:pb-8 lg:pt-14 lg:pb-14"
