@@ -95,8 +95,7 @@ export async function Footer() {
           <div className="lg:col-span-2">
             <Logo variant="white" className="mb-4" />
             <p className="text-white/70 max-w-md leading-relaxed mb-6">
-              مجله دات را در شبکه‌های اجتماعی دنبال کنید و از تازه‌ترین مطالب و
-              رویدادها باخبر شوید!
+              مجله دات را در شبکه‌های اجتماعی دنبال کنید.
             </p>
             {/* Social Links */}
             <div className="flex gap-3">

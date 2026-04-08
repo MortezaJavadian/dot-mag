@@ -37,12 +37,50 @@ const TRACKPAD_SWIPE_THRESHOLD = 36;
 const TRACKPAD_NAV_COOLDOWN_MS = 420;
 const TOUCH_CLICK_SUPPRESS_WINDOW_MS = 700;
 const SWIPE_TAP_SUPPRESS_MS = 250;
+const MAGAZINE_PAGE_ASPECT_RATIO = 33 / 47;
 
 type PageMoveDirection = "next" | "prev" | "idle";
 type ImageLoadState = "loading" | "loaded" | "error";
 
 const MAGAZINE_PAGE_ASPECT_RATIO_CLASS = "aspect-[33/47]";
 const MAGAZINE_PAGE_RADIUS_CLASS = "rounded-xl md:rounded-2xl";
+
+function getReaderVerticalPaddingRem(
+  isFullscreen: boolean,
+  viewportWidth: number,
+): number {
+  if (isFullscreen) {
+    if (viewportWidth >= 1024) return 7;
+    if (viewportWidth >= 768) return 6;
+    return 5;
+  }
+
+  if (viewportWidth >= 1024) return 14;
+  if (viewportWidth >= 768) return 8;
+  return 7;
+}
+
+function getFrameMaxWidthRem(
+  variant: "single" | "spread",
+  isFullscreen: boolean,
+  viewportWidth: number,
+): number {
+  if (variant === "single") {
+    if (isFullscreen) {
+      return viewportWidth >= 1024 ? 56 : 48;
+    }
+
+    return 42;
+  }
+
+  if (isFullscreen) {
+    return viewportWidth >= 1024 ? 38 : 33;
+  }
+
+  if (viewportWidth >= 1024) return 28;
+  if (viewportWidth >= 768) return 32;
+  return 30;
+}
 
 function getPageTransitionClass(direction: PageMoveDirection): string {
   if (direction === "next") return "reader-page-transition-next";
@@ -67,6 +105,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
     y: number;
   } | null>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
   const readerRootRef = useRef<HTMLDivElement | null>(null);
   const controlsHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -307,10 +346,14 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   }, [magazine.slug, router]);
 
   useEffect(() => {
-    const updateWidth = () => setViewportWidth(window.innerWidth);
-    updateWidth();
-    window.addEventListener("resize", updateWidth);
-    return () => window.removeEventListener("resize", updateWidth);
+    const updateViewportSize = () => {
+      setViewportWidth(window.innerWidth);
+      setViewportHeight(window.innerHeight);
+    };
+
+    updateViewportSize();
+    window.addEventListener("resize", updateViewportSize);
+    return () => window.removeEventListener("resize", updateViewportSize);
   }, []);
 
   useEffect(() => {
@@ -708,22 +751,40 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
 
       const imageUrl = page.imageUrl;
       const imageStatus = imageStatusByUrl[imageUrl] ?? "loading";
-      const frameSizeClassName =
-        variant === "single"
-          ? isFullscreen
-            ? "w-full max-w-[48rem] lg:max-w-[56rem]"
-            : "w-full max-w-[42rem]"
-          : isFullscreen
-            ? "w-full max-w-[33rem] lg:max-w-[38rem]"
-            : "w-full max-w-[30rem] md:max-w-[32rem] lg:max-w-[28rem]";
+
+      const frameMaxWidthRem = getFrameMaxWidthRem(
+        variant,
+        isFullscreen,
+        viewportWidth,
+      );
+      const frameMaxWidthPx = frameMaxWidthRem * 16;
+      const verticalPaddingRem = getReaderVerticalPaddingRem(
+        isFullscreen,
+        viewportWidth,
+      );
+      const availableHeightPx = Math.max(
+        0,
+        viewportHeight - verticalPaddingRem * 16,
+      );
+      const widthFromHeightPx = availableHeightPx * MAGAZINE_PAGE_ASPECT_RATIO;
+      const frameWidthPx =
+        viewportHeight > 0
+          ? Math.min(frameMaxWidthPx, widthFromHeightPx)
+          : frameMaxWidthPx;
+
       const frameShapeClassName = `${MAGAZINE_PAGE_ASPECT_RATIO_CLASS} ${MAGAZINE_PAGE_RADIUS_CLASS}`;
+      const frameStyle = {
+        width: `${Math.max(0, frameWidthPx)}px`,
+        maxWidth: "100%",
+      };
       const frameKey = `${variant}-${page.id ?? page.number}-${navigationTick}`;
 
       if (imageStatus === "loaded") {
         return (
           <div
             key={`${frameKey}-image`}
-            className={`${pageTransitionClass} ${frameSizeClassName} max-h-full flex items-center justify-center`}
+            className={`${pageTransitionClass} ${frameShapeClassName} overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]`}
+            style={frameStyle}
           >
             <img
               src={imageUrl}
@@ -731,7 +792,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
               draggable={false}
               onLoad={() => setImageStatus(imageUrl, "loaded")}
               onError={() => setImageStatus(imageUrl, "error")}
-              className={`reader-page-image max-w-full max-h-full w-auto h-auto object-contain ${MAGAZINE_PAGE_RADIUS_CLASS} shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_24px_56px_rgba(0,0,0,0.72),0_10px_24px_rgba(255,255,255,0.08)]`}
+              className="reader-page-image h-full w-full object-contain"
             />
           </div>
         );
@@ -741,7 +802,8 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         return (
           <div
             key={`${frameKey}-error`}
-            className={`${pageTransitionClass} reader-page-fallback ${frameSizeClassName} ${frameShapeClassName} max-h-full`}
+            className={`${pageTransitionClass} reader-page-fallback ${frameShapeClassName}`}
+            style={frameStyle}
           >
             <div className="h-12 w-12 rounded-full border border-white/30 bg-white/10 flex items-center justify-center">
               <svg
@@ -768,7 +830,8 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       return (
         <div
           key={`${frameKey}-skeleton`}
-          className={`${pageTransitionClass} reader-page-skeleton ${frameSizeClassName} ${frameShapeClassName} max-h-full`}
+          className={`${pageTransitionClass} reader-page-skeleton ${frameShapeClassName}`}
+          style={frameStyle}
         />
       );
     },
@@ -778,6 +841,8 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       navigationTick,
       pageTransitionClass,
       setImageStatus,
+      viewportHeight,
+      viewportWidth,
     ],
   );
 
@@ -799,8 +864,8 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         }`}
       >
         <div className="bg-gradient-to-b from-deep-black/95 via-deep-black/75 to-transparent">
-          <div className="container py-3 md:py-4 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
-            <div className="min-w-0 justify-self-start">
+          <div className="container relative py-3 md:py-4 flex items-center justify-between gap-3">
+            <div className="min-w-0 flex items-center justify-start">
               <Link
                 href={`/archive/${magazine.slug}`}
                 onClick={(e) => {
@@ -826,19 +891,24 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
               </Link>
             </div>
 
-            <div className="text-center min-w-0 px-1" dir="rtl">
-              <h1 className="text-white font-bold text-sm md:text-base truncate text-center">
-                {magazine.title}
-              </h1>
-              <p className="text-white/78 text-xs md:text-sm truncate text-center">
-                {magazine.subtitle}
-              </p>
-              <p className="text-white/74 text-[11px] md:text-xs text-center">
-                {magazine.publishedAt}
-              </p>
+            <div
+              className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center px-14 sm:px-20 md:px-40 lg:px-56"
+              dir="rtl"
+            >
+              <div className="min-w-0 max-w-full text-center">
+                <h1 className="text-white font-bold text-sm md:text-base truncate text-center">
+                  {magazine.title}
+                </h1>
+                <p className="text-white/78 text-xs md:text-sm truncate text-center">
+                  {magazine.subtitle}
+                </p>
+                <p className="text-white/74 text-[11px] md:text-xs truncate text-center">
+                  {magazine.publishedAt}
+                </p>
+              </div>
             </div>
 
-            <div className="min-w-0 justify-self-end flex items-center gap-1 md:gap-2">
+            <div className="min-w-0 flex items-center gap-1 md:gap-2 justify-end">
               {pdfDownloadUrl && (
                 <button
                   onClick={handlePdfDownload}
@@ -960,19 +1030,31 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         {maxPage > 0 ? (
           <div className="w-full h-full flex items-center justify-center">
             {isSpreadView ? (
-              <div
-                className={`grid grid-cols-2 gap-[0.45rem] md:gap-[0.6rem] w-full h-full max-h-full ${
-                  isFullscreen ? "max-w-[min(96vw,96rem)]" : "max-w-6xl"
-                }`}
-                style={{ direction: "ltr" }}
-              >
-                <div className="h-full min-h-0 flex items-center justify-end">
-                  {renderPageFrame(spreadLeftPage, "spread")}
+              currentPage === 0 ? (
+                <div
+                  className={`w-full h-full max-h-full flex items-center justify-center ${
+                    isFullscreen ? "max-w-[min(96vw,96rem)]" : "max-w-6xl"
+                  }`}
+                >
+                  <div className="h-full min-h-0 w-1/2 px-[0.225rem] md:px-[0.3rem] flex items-center justify-center">
+                    {renderPageFrame(spreadRightPage, "spread")}
+                  </div>
                 </div>
-                <div className="h-full min-h-0 flex items-center justify-start">
-                  {renderPageFrame(spreadRightPage, "spread")}
+              ) : (
+                <div
+                  className={`grid grid-cols-2 gap-[0.45rem] md:gap-[0.6rem] w-full h-full max-h-full ${
+                    isFullscreen ? "max-w-[min(96vw,96rem)]" : "max-w-6xl"
+                  }`}
+                  style={{ direction: "ltr" }}
+                >
+                  <div className="h-full min-h-0 flex items-center justify-end">
+                    {renderPageFrame(spreadLeftPage, "spread")}
+                  </div>
+                  <div className="h-full min-h-0 flex items-center justify-start">
+                    {renderPageFrame(spreadRightPage, "spread")}
+                  </div>
                 </div>
-              </div>
+              )
             ) : (
               <div
                 className={`w-full h-full max-h-full flex items-center justify-center ${
