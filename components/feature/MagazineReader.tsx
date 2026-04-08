@@ -50,14 +50,14 @@ function getReaderVerticalPaddingRem(
   viewportWidth: number,
 ): number {
   if (isFullscreen) {
-    if (viewportWidth >= 1024) return 7;
-    if (viewportWidth >= 768) return 6;
-    return 5;
+    if (viewportWidth >= 1024) return 3.5;
+    if (viewportWidth >= 768) return 3;
+    return 2.5;
   }
 
-  if (viewportWidth >= 1024) return 14;
-  if (viewportWidth >= 768) return 8;
-  return 7;
+  if (viewportWidth >= 1024) return 7;
+  if (viewportWidth >= 768) return 4;
+  return 3.5;
 }
 
 function getFrameMaxWidthRem(
@@ -106,7 +106,10 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   } | null>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
+  const [headerSideInsetPx, setHeaderSideInsetPx] = useState(56);
   const readerRootRef = useRef<HTMLDivElement | null>(null);
+  const headerLeftControlsRef = useRef<HTMLDivElement | null>(null);
+  const headerRightControlsRef = useRef<HTMLDivElement | null>(null);
   const controlsHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -366,6 +369,40 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       document.removeEventListener("fullscreenchange", syncFullscreenState);
     };
   }, []);
+
+  const measureHeaderSideInset = useCallback(() => {
+    const leftWidth = headerLeftControlsRef.current?.offsetWidth ?? 0;
+    const rightWidth = headerRightControlsRef.current?.offsetWidth ?? 0;
+    const nextInset = Math.max(leftWidth, rightWidth) + 12;
+
+    setHeaderSideInsetPx((prev) =>
+      Math.abs(prev - nextInset) < 1 ? prev : nextInset,
+    );
+  }, []);
+
+  useEffect(() => {
+    measureHeaderSideInset();
+
+    const rafId = window.requestAnimationFrame(() => {
+      measureHeaderSideInset();
+    });
+
+    window.addEventListener("resize", measureHeaderSideInset);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", measureHeaderSideInset);
+    };
+  }, [
+    isDownloading,
+    isFullscreen,
+    magazine.publishedAt,
+    magazine.subtitle,
+    magazine.title,
+    measureHeaderSideInset,
+    pdfDownloadUrl,
+    showControls,
+  ]);
 
   useEffect(() => {
     const handleMouseMove = () => {
@@ -865,7 +902,10 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       >
         <div className="bg-gradient-to-b from-deep-black/95 via-deep-black/75 to-transparent">
           <div className="container relative py-3 md:py-4 flex items-center justify-between gap-3">
-            <div className="min-w-0 flex items-center justify-start">
+            <div
+              ref={headerLeftControlsRef}
+              className="min-w-0 flex items-center justify-start z-[1]"
+            >
               <Link
                 href={`/archive/${magazine.slug}`}
                 onClick={(e) => {
@@ -892,23 +932,30 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
             </div>
 
             <div
-              className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center px-14 sm:px-20 md:px-40 lg:px-56"
+              className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center"
+              style={{ paddingInline: `${headerSideInsetPx}px` }}
               dir="rtl"
             >
-              <div className="min-w-0 max-w-full text-center">
+              <div className="min-w-0 w-full max-w-full text-center">
                 <h1 className="text-white font-bold text-sm md:text-base truncate text-center">
                   {magazine.title}
                 </h1>
                 <p className="text-white/78 text-xs md:text-sm truncate text-center">
                   {magazine.subtitle}
                 </p>
-                <p className="text-white/74 text-[11px] md:text-xs truncate text-center">
+                <p
+                  className="text-white/74 text-[11px] md:text-xs truncate text-center"
+                  style={{ unicodeBidi: "plaintext" }}
+                >
                   {magazine.publishedAt}
                 </p>
               </div>
             </div>
 
-            <div className="min-w-0 flex items-center gap-1 md:gap-2 justify-end">
+            <div
+              ref={headerRightControlsRef}
+              className="min-w-0 flex items-center gap-1 md:gap-2 justify-end z-[1]"
+            >
               {pdfDownloadUrl && (
                 <button
                   onClick={handlePdfDownload}
@@ -973,8 +1020,8 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       <main
         className={`relative h-full w-full flex items-center justify-center px-2 md:px-4 ${
           isFullscreen
-            ? "pt-10 md:pt-12 lg:pt-14 pb-10 md:pb-12 lg:pb-14"
-            : "pt-14 md:pt-16 pb-14 md:pb-16 lg:pt-28 lg:pb-28"
+            ? "pt-5 md:pt-6 lg:pt-7 pb-5 md:pb-6 lg:pb-7"
+            : "pt-7 md:pt-8 pb-7 md:pb-8 lg:pt-14 lg:pb-14"
         }`}
       >
         {maxPage > 0 && (
