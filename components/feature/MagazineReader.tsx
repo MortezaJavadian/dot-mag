@@ -38,6 +38,7 @@ const TRACKPAD_NAV_COOLDOWN_MS = 420;
 const TOUCH_CLICK_SUPPRESS_WINDOW_MS = 700;
 const SWIPE_TAP_SUPPRESS_MS = 250;
 const MAGAZINE_PAGE_ASPECT_RATIO = 33 / 47;
+const DESKTOP_READER_VERTICAL_PADDING_REM = 6.65;
 
 type PageMoveDirection = "next" | "prev" | "idle";
 type ImageLoadState = "loading" | "loaded" | "error";
@@ -49,13 +50,15 @@ function getReaderVerticalPaddingRem(
   isFullscreen: boolean,
   viewportWidth: number,
 ): number {
+  if (viewportWidth >= 1024) {
+    return DESKTOP_READER_VERTICAL_PADDING_REM;
+  }
+
   if (isFullscreen) {
-    if (viewportWidth >= 1024) return 3.5;
     if (viewportWidth >= 768) return 3;
     return 2.5;
   }
 
-  if (viewportWidth >= 1024) return 7;
   if (viewportWidth >= 768) return 4;
   return 3.5;
 }
@@ -998,8 +1001,8 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       <main
         className={`relative h-full w-full flex items-center justify-center px-2 md:px-4 ${
           isFullscreen
-            ? "pt-5 md:pt-6 lg:pt-7 pb-5 md:pb-6 lg:pb-7"
-            : "pt-7 md:pt-8 pb-7 md:pb-8 lg:pt-14 lg:pb-14"
+            ? "pt-5 md:pt-6 lg:pt-[3.325rem] pb-5 md:pb-6 lg:pb-[3.325rem]"
+            : "pt-7 md:pt-8 pb-7 md:pb-8 lg:pt-[3.325rem] lg:pb-[3.325rem]"
         }`}
       >
         {maxPage > 0 && (
