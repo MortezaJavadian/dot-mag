@@ -38,7 +38,7 @@ const TRACKPAD_NAV_COOLDOWN_MS = 420;
 const TOUCH_CLICK_SUPPRESS_WINDOW_MS = 700;
 const SWIPE_TAP_SUPPRESS_MS = 250;
 const MAGAZINE_PAGE_ASPECT_RATIO = 33 / 47;
-const DESKTOP_READER_VERTICAL_PADDING_REM = 6.65;
+const DESKTOP_READER_VERTICAL_PADDING_REM = 6.5;
 
 type PageMoveDirection = "next" | "prev" | "idle";
 type ImageLoadState = "loading" | "loaded" | "error";
