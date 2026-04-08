@@ -892,10 +892,13 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
             </div>
 
             <div
-              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-              dir="rtl"
+              className="pointer-events-none absolute left-1/2 top-1/2"
+              style={{ transform: "translate(-50%, -50%)" }}
             >
-              <div className="flex flex-col items-center text-center w-[min(62vw,34rem)] sm:w-[min(58vw,34rem)] md:w-[min(52vw,36rem)]">
+              <div
+                className="flex flex-col items-center text-center w-[min(62vw,34rem)] sm:w-[min(58vw,34rem)] md:w-[min(52vw,36rem)]"
+                style={{ direction: "rtl", textAlign: "center" }}
+              >
                 <h1 className="text-white font-bold text-sm md:text-base text-center leading-tight w-full">
                   {magazine.title}
                 </h1>
