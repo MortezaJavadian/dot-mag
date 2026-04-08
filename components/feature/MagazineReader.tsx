@@ -106,10 +106,7 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
   } | null>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
-  const [headerSideSlotWidthPx, setHeaderSideSlotWidthPx] = useState(56);
   const readerRootRef = useRef<HTMLDivElement | null>(null);
-  const headerLeftControlsRef = useRef<HTMLDivElement | null>(null);
-  const headerRightControlsRef = useRef<HTMLDivElement | null>(null);
   const controlsHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -369,40 +366,6 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
       document.removeEventListener("fullscreenchange", syncFullscreenState);
     };
   }, []);
-
-  const measureHeaderSideInset = useCallback(() => {
-    const leftWidth = headerLeftControlsRef.current?.scrollWidth ?? 0;
-    const rightWidth = headerRightControlsRef.current?.scrollWidth ?? 0;
-    const nextInset = Math.max(leftWidth, rightWidth);
-
-    setHeaderSideSlotWidthPx((prev) =>
-      Math.abs(prev - nextInset) < 1 ? prev : nextInset,
-    );
-  }, []);
-
-  useEffect(() => {
-    measureHeaderSideInset();
-
-    const rafId = window.requestAnimationFrame(() => {
-      measureHeaderSideInset();
-    });
-
-    window.addEventListener("resize", measureHeaderSideInset);
-
-    return () => {
-      window.cancelAnimationFrame(rafId);
-      window.removeEventListener("resize", measureHeaderSideInset);
-    };
-  }, [
-    isDownloading,
-    isFullscreen,
-    magazine.publishedAt,
-    magazine.subtitle,
-    magazine.title,
-    measureHeaderSideInset,
-    pdfDownloadUrl,
-    showControls,
-  ]);
 
   useEffect(() => {
     const handleMouseMove = () => {
@@ -901,12 +864,8 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
         }`}
       >
         <div className="bg-gradient-to-b from-deep-black/95 via-deep-black/75 to-transparent">
-          <div className="container py-3 md:py-4 flex items-center gap-3">
-            <div
-              ref={headerLeftControlsRef}
-              className="shrink-0 flex items-center justify-start"
-              style={{ width: `${headerSideSlotWidthPx}px` }}
-            >
+          <div className="container relative py-3 md:py-4 flex items-center justify-between gap-3">
+            <div className="shrink-0 flex items-center justify-start z-[1]">
               <Link
                 href={`/archive/${magazine.slug}`}
                 onClick={(e) => {
@@ -933,28 +892,26 @@ export function MagazineReader({ magazine }: MagazineReaderProps) {
             </div>
 
             <div
-              className="min-w-0 flex-1 px-1 sm:px-2 md:px-3 text-center"
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
               dir="rtl"
             >
-              <h1 className="text-white font-bold text-sm md:text-base text-center leading-tight">
-                {magazine.title}
-              </h1>
-              <p className="text-white/78 text-xs md:text-sm text-center leading-tight mt-0.5">
-                {magazine.subtitle}
-              </p>
-              <p
-                className="text-white/74 text-[11px] md:text-xs text-center leading-tight mt-0.5"
-                style={{ unicodeBidi: "plaintext" }}
-              >
-                {magazine.publishedAt}
-              </p>
+              <div className="flex flex-col items-center text-center w-[min(62vw,34rem)] sm:w-[min(58vw,34rem)] md:w-[min(52vw,36rem)]">
+                <h1 className="text-white font-bold text-sm md:text-base text-center leading-tight w-full">
+                  {magazine.title}
+                </h1>
+                <p className="text-white/78 text-xs md:text-sm text-center leading-tight mt-0.5 w-full">
+                  {magazine.subtitle}
+                </p>
+                <p
+                  className="text-white/74 text-[11px] md:text-xs text-center leading-tight mt-0.5 w-full"
+                  style={{ unicodeBidi: "plaintext" }}
+                >
+                  {magazine.publishedAt}
+                </p>
+              </div>
             </div>
 
-            <div
-              ref={headerRightControlsRef}
-              className="shrink-0 flex items-center gap-1 md:gap-2 justify-end"
-              style={{ width: `${headerSideSlotWidthPx}px` }}
-            >
+            <div className="shrink-0 flex items-center gap-1 md:gap-2 justify-end z-[1]">
               {pdfDownloadUrl && (
                 <button
                   onClick={handlePdfDownload}
