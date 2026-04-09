@@ -5,22 +5,35 @@ import { useCallback, useEffect, useRef, useState } from "react";
 interface ScrollToTargetFloatingButtonProps {
   targetId: string;
   buttonLabel: string;
+  scrollAlignment?: "center" | "top";
   viewportTopOffset?: number;
   fullyVisibleThreshold?: number;
 }
 
 const INTERSECTION_THRESHOLDS = [0, 0.25, 0.5, 0.75, 0.95, 1];
-const HIDE_DURING_SCROLL_MS = 900;
+const MIN_SCROLL_DURATION_MS = 320;
+const MAX_SCROLL_DURATION_MS = 1280;
+const BASE_SCROLL_PIXELS_PER_MS = 2.4;
+const SCROLL_SLOWDOWN_MULTIPLIER = 1.2;
 
 export function ScrollToTargetFloatingButton({
   targetId,
   buttonLabel,
+  scrollAlignment = "center",
   viewportTopOffset = 84,
   fullyVisibleThreshold = 0.98,
 }: ScrollToTargetFloatingButtonProps) {
   const [shouldShow, setShouldShow] = useState(false);
   const [isProgrammaticScroll, setIsProgrammaticScroll] = useState(false);
   const hideTimerRef = useRef<number | null>(null);
+  const scrollAnimationFrameRef = useRef<number | null>(null);
+
+  const stopAnimatedScroll = useCallback(() => {
+    if (scrollAnimationFrameRef.current !== null) {
+      window.cancelAnimationFrame(scrollAnimationFrameRef.current);
+      scrollAnimationFrameRef.current = null;
+    }
+  }, []);
 
   const evaluateVisibility = useCallback(
     (rect: DOMRectReadOnly, ratio: number) => {
@@ -97,8 +110,64 @@ export function ScrollToTargetFloatingButton({
       if (hideTimerRef.current !== null) {
         window.clearTimeout(hideTimerRef.current);
       }
+
+      stopAnimatedScroll();
     };
-  }, []);
+  }, [stopAnimatedScroll]);
+
+  const animateWindowScrollTo = useCallback(
+    (nextTop: number): number => {
+      stopAnimatedScroll();
+
+      const startTop = window.scrollY;
+      const distance = nextTop - startTop;
+
+      if (Math.abs(distance) < 1) {
+        window.scrollTo(0, nextTop);
+        return 0;
+      }
+
+      const baselineDuration = Math.min(
+        MAX_SCROLL_DURATION_MS,
+        Math.max(
+          MIN_SCROLL_DURATION_MS,
+          Math.abs(distance) / BASE_SCROLL_PIXELS_PER_MS,
+        ),
+      );
+      const durationMs = Math.round(
+        baselineDuration * SCROLL_SLOWDOWN_MULTIPLIER,
+      );
+      const startTime = performance.now();
+
+      const easeInOutCubic = (progress: number): number => {
+        if (progress < 0.5) {
+          return 4 * progress * progress * progress;
+        }
+
+        return 1 - Math.pow(-2 * progress + 2, 3) / 2;
+      };
+
+      const step = (now: number) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / durationMs, 1);
+        const eased = easeInOutCubic(progress);
+        const currentTop = startTop + distance * eased;
+
+        window.scrollTo(0, currentTop);
+
+        if (progress < 1) {
+          scrollAnimationFrameRef.current = window.requestAnimationFrame(step);
+          return;
+        }
+
+        scrollAnimationFrameRef.current = null;
+      };
+
+      scrollAnimationFrameRef.current = window.requestAnimationFrame(step);
+      return durationMs;
+    },
+    [stopAnimatedScroll],
+  );
 
   const handleScrollToTarget = () => {
     const target = document.getElementById(targetId);
@@ -107,19 +176,25 @@ export function ScrollToTargetFloatingButton({
     }
 
     const rect = target.getBoundingClientRect();
-    const targetCenterY = window.scrollY + rect.top + rect.height / 2;
-    const nextTop = Math.max(0, targetCenterY - window.innerHeight / 2);
+    const targetTop = window.scrollY + rect.top;
+    const nextTop =
+      scrollAlignment === "top"
+        ? Math.max(0, targetTop - viewportTopOffset)
+        : Math.max(0, targetTop + rect.height / 2 - window.innerHeight / 2);
 
     setIsProgrammaticScroll(true);
-    window.scrollTo({ top: nextTop, behavior: "smooth" });
+    const animationDurationMs = animateWindowScrollTo(nextTop);
 
     if (hideTimerRef.current !== null) {
       window.clearTimeout(hideTimerRef.current);
     }
 
-    hideTimerRef.current = window.setTimeout(() => {
-      setIsProgrammaticScroll(false);
-    }, HIDE_DURING_SCROLL_MS);
+    hideTimerRef.current = window.setTimeout(
+      () => {
+        setIsProgrammaticScroll(false);
+      },
+      Math.max(animationDurationMs + 120, 360),
+    );
   };
 
   const isVisible = shouldShow && !isProgrammaticScroll;

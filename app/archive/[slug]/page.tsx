@@ -105,7 +105,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
                   href={`/archive/${magazine.slug}/read`}
                   className="inline-flex items-center justify-center rounded-full bg-primary px-7 py-3 text-white font-bold hover:bg-primary/90 transition-colors"
                 >
-                  مطالعه مجله
+                  خواندن مجله
                 </Link>
 
                 {pdfDownloadUrl && (
@@ -125,7 +125,7 @@ export default async function MagazineDetailPage({ params }: PageProps) {
 
       <ScrollToTargetFloatingButton
         targetId="magazine-actions-anchor"
-        buttonLabel="رفتن به دکمه‌های مطالعه و دانلود"
+        buttonLabel="خواندن مجله"
       />
     </article>
   );

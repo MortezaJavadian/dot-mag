@@ -504,7 +504,8 @@ export default async function RadioDetailPage({ params }: PageProps) {
 
       <ScrollToTargetFloatingButton
         targetId="radio-full-episode-anchor"
-        buttonLabel="رفتن به بخش رادیودات"
+        buttonLabel="شنیدن رادیو"
+        scrollAlignment="top"
       />
 
       {related.length > 0 && (

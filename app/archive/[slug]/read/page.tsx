@@ -21,7 +21,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${magazine.title} - مطالعه مجله`,
+    title: `${magazine.title} - خواندن مجله`,
     description: magazine.description || magazine.subtitle,
   };
 }
