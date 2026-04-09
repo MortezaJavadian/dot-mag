@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { AudioPlayer } from "@/components/feature/AudioPlayer";
 import { PersonProfileBlock } from "@/components/feature/PersonProfileBlock";
 import { RadioCard } from "@/components/feature/RadioCard";
+import { ScrollToTargetFloatingButton } from "@/components/shared/ScrollToTargetFloatingButton";
 import { fetchInternalArray } from "@/lib/internalApi";
 import { getUploadOriginalFileName, getUploadUrl } from "@/lib/uploads";
 import { toPlainText, toSafeArticleHtml } from "@/lib/articleContent";
@@ -424,7 +425,12 @@ export default async function RadioDetailPage({ params }: PageProps) {
 
         <section className="py-8 border-b border-card-border">
           <div className="container article-page-container max-w-4xl space-y-4">
-            <h2 className="text-2xl md:text-3xl font-bold">اپیزود کامل</h2>
+            <h2
+              id="radio-full-episode-anchor"
+              className="scroll-mt-28 text-2xl md:text-3xl font-bold"
+            >
+              اپیزود کامل
+            </h2>
 
             {fullAudioUrl ? (
               <AudioPlayer
@@ -495,6 +501,11 @@ export default async function RadioDetailPage({ params }: PageProps) {
           </div>
         </section>
       </article>
+
+      <ScrollToTargetFloatingButton
+        targetId="radio-full-episode-anchor"
+        buttonLabel="رفتن به بخش رادیودات"
+      />
 
       {related.length > 0 && (
         <section className="py-12 md:py-16 bg-background-secondary">

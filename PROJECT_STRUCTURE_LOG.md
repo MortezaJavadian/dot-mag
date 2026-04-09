@@ -183,20 +183,21 @@ dot-mag/
 
 ### Components
 
-| File                                        | Purpose                                                                                                                          |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `components/ui/Logo.tsx`                    | Logo with dark/light variants                                                                                                    |
-| `components/ui/UploadStatus.tsx`            | Unified upload progress/success/error indicator for admin file inputs                                                            |
-| `components/shared/Header.tsx`              | Sticky header, navigation, theme toggle, mobile menu                                                                             |
-| `components/shared/Footer.tsx`              | Footer with links, social, copyright                                                                                             |
-| `components/shared/ThemeProvider.tsx`       | Dark/Light mode context with localStorage                                                                                        |
-| `components/shared/PostsPageSkeleton.tsx`   | Shared posts route skeleton blocks (page + cards-only)                                                                           |
-| `components/feature/ArticleCard.tsx`        | Article cards (default, featured, horizontal)                                                                                    |
-| `components/feature/AudioPlayer.tsx`        | Styled audio player with single unified timeline (buffer + progress), compact mode, and optional multi-quality download selector |
-| `components/feature/MagazineCard.tsx`       | Magazine cover card with stronger visual separation + date/page meta row                                                         |
-| `components/feature/MagazineReader.tsx`     | Full-screen reader with instant page switching, adjacent prefetch, glass skeleton fallback, and page-turn transitions            |
-| `components/feature/PersonProfileBlock.tsx` | Shared person profile presenter for article/radio headers and about team grid                                                    |
-| `components/feature/RadioCard.tsx`          | Radio list card visually unified with article cards, date-left/duration-right metadata row, and minute-up rounding display       |
+| File                                                 | Purpose                                                                                                                          |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `components/ui/Logo.tsx`                             | Logo with dark/light variants                                                                                                    |
+| `components/ui/UploadStatus.tsx`                     | Unified upload progress/success/error indicator for admin file inputs                                                            |
+| `components/shared/Header.tsx`                       | Sticky header, navigation, theme toggle, mobile menu                                                                             |
+| `components/shared/Footer.tsx`                       | Footer with links, social, copyright                                                                                             |
+| `components/shared/ThemeProvider.tsx`                | Dark/Light mode context with localStorage                                                                                        |
+| `components/shared/PostsPageSkeleton.tsx`            | Shared posts route skeleton blocks (page + cards-only)                                                                           |
+| `components/shared/ScrollToTargetFloatingButton.tsx` | Shared floating CTA that appears when a target section is out of view and smoothly scrolls it into the viewport center           |
+| `components/feature/ArticleCard.tsx`                 | Article cards (default, featured, horizontal)                                                                                    |
+| `components/feature/AudioPlayer.tsx`                 | Styled audio player with single unified timeline (buffer + progress), compact mode, and optional multi-quality download selector |
+| `components/feature/MagazineCard.tsx`                | Magazine cover card with stronger visual separation + date/page meta row                                                         |
+| `components/feature/MagazineReader.tsx`              | Full-screen reader with instant page switching, adjacent prefetch, glass skeleton fallback, and page-turn transitions            |
+| `components/feature/PersonProfileBlock.tsx`          | Shared person profile presenter for article/radio headers and about team grid                                                    |
+| `components/feature/RadioCard.tsx`                   | Radio list card visually unified with article cards, date-left/duration-right metadata row, and minute-up rounding display       |
 
 ### PWA Files
 
@@ -357,6 +358,7 @@ dot-mag/
 | 2026-04-08 | PWA update popup + SW version bump                       | Added update-detection flow in `components/shared/AppWrapper.tsx` (detect waiting worker, show high-visibility update popup, send `SKIP_WAITING`, and reload on `controllerchange`) and bumped cache keys in `public/sw.js` (`static/runtime/audio`) so clients receive and apply new builds reliably.                                                                                                                                                                                                                                                                                                                                                 |
 | 2026-04-09 | Reader zoom tuning + mobile PDF icon                     | Added configurable reader zoom scaling in `components/feature/MagazineReader.tsx` (desktop `1.05`, phone `<768` `0.70`, tablet `1.00`) and applied it to frame width calculation; replaced the large mobile PDF text button with a compact download-arrow icon button while preserving the existing desktop text button to prevent subtitle overlap under the header actions on phones.                                                                                                                                                                                                                                                                |
 | 2026-04-09 | Reader unified PDF icon button                           | Removed the legacy desktop text `دانلود PDF` button in `components/feature/MagazineReader.tsx` and kept a single shared download icon button for both mobile and desktop so the control is visually consistent across breakpoints.                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 2026-04-09 | Floating scroll CTA for magazine and radio detail pages  | Added reusable `components/shared/ScrollToTargetFloatingButton.tsx` with IntersectionObserver-based visibility detection and center-aligned smooth scrolling; integrated it into `app/archive/[slug]/page.tsx` (read/download CTA anchor) and `app/radio/[slug]/page.tsx` (full-episode anchor) so users can jump to hidden actions when long intros push them below the fold.                                                                                                                                                                                                                                                                         |
 
 ## Reuse Decisions
 
@@ -369,6 +371,7 @@ dot-mag/
 - **Radio module reuse**: Radio list/detail uses existing card/layout patterns from posts/archive with dedicated audio components
 - **Person UI reuse**: A single `PersonProfileBlock` is reused in post detail, radio detail, and About team section
 - **Messaging reuse**: New chat flow reuses existing admin auth/session (`getAdminUser`) and admin tab orchestration pattern in `Dashboard`
+- **Scroll CTA reuse**: One shared `ScrollToTargetFloatingButton` now serves both magazine detail and radio detail pages to avoid duplicated observer/scroll logic.
 
 ## Architecture Patterns Established
 

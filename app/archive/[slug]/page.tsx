@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getUploadOriginalFileName, getUploadUrl } from "@/lib/uploads";
 import { getMagazineBySlug } from "@/lib/magazines";
 import { toPlainText, toSafeArticleHtml } from "@/lib/articleContent";
+import { ScrollToTargetFloatingButton } from "@/components/shared/ScrollToTargetFloatingButton";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -96,7 +97,10 @@ export default async function MagazineDetailPage({ params }: PageProps) {
                 <span>{magazine.publishedAt}</span>
               </div>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div
+                id="magazine-actions-anchor"
+                className="mt-8 flex flex-wrap gap-3 scroll-mt-28"
+              >
                 <Link
                   href={`/archive/${magazine.slug}/read`}
                   className="inline-flex items-center justify-center rounded-full bg-primary px-7 py-3 text-white font-bold hover:bg-primary/90 transition-colors"
@@ -118,6 +122,11 @@ export default async function MagazineDetailPage({ params }: PageProps) {
           </div>
         </div>
       </header>
+
+      <ScrollToTargetFloatingButton
+        targetId="magazine-actions-anchor"
+        buttonLabel="رفتن به دکمه‌های مطالعه و دانلود"
+      />
     </article>
   );
 }
