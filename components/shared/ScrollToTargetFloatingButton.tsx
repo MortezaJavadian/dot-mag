@@ -12,7 +12,7 @@ interface ScrollToTargetFloatingButtonProps {
 }
 
 const INTERSECTION_THRESHOLDS = [0, 0.25, 0.5, 0.75, 0.95, 1];
-const SCROLL_PIXELS_PER_FRAME = 38;
+const SCROLL_PIXELS_PER_FRAME = 50;
 const FRAME_MS = 1000 / 60;
 
 export function ScrollToTargetFloatingButton({
