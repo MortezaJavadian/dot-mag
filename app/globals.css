@@ -91,12 +91,13 @@
 
 /* Base Styles */
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   scroll-padding-top: 4rem;
 }
 
 @media (min-width: 768px) {
   html {
+    scroll-behavior: smooth;
     scroll-padding-top: 5rem;
   }
 }

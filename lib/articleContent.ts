@@ -54,6 +54,7 @@ export function toSafeArticleHtml(content: string): string {
 
   return sanitizeHtml(source, {
     allowedTags: [
+      "div",
       "p",
       "br",
       "strong",
@@ -81,6 +82,7 @@ export function toSafeArticleHtml(content: string): string {
       a: ["href", "target", "rel"],
       span: ["style"],
       font: ["size", "style"],
+      div: ["style"],
       p: ["style"],
       h1: ["style"],
       h2: ["style"],
@@ -91,6 +93,19 @@ export function toSafeArticleHtml(content: string): string {
     },
     allowedSchemes: ["http", "https", "mailto"],
     transformTags: {
+      div: (_tagName, attribs) => {
+        const nextAttribs: Record<string, string> = {};
+        const style = attribs.style?.trim();
+
+        if (style) {
+          nextAttribs.style = style;
+        }
+
+        return {
+          tagName: "p",
+          attribs: nextAttribs,
+        };
+      },
       a: sanitizeHtml.simpleTransform("a", {
         target: "_blank",
         rel: "noopener noreferrer",

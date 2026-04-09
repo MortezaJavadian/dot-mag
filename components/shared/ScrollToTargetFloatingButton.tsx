@@ -12,8 +12,10 @@ interface ScrollToTargetFloatingButtonProps {
 }
 
 const INTERSECTION_THRESHOLDS = [0, 0.25, 0.5, 0.75, 0.95, 1];
-const SCROLL_PIXELS_PER_FRAME = 50;
-const FRAME_MS = 1000 / 60;
+const DESKTOP_SCROLL_PIXELS_PER_SECOND = 3200;
+const MOBILE_SCROLL_PIXELS_PER_SECOND = 5600;
+const MIN_SCROLL_DURATION_MS = 140;
+const MAX_SCROLL_DURATION_MS = 520;
 
 export function ScrollToTargetFloatingButton({
   targetId,
@@ -47,7 +49,6 @@ export function ScrollToTargetFloatingButton({
   useEffect(() => {
     const target = document.getElementById(targetId);
     if (!target) {
-      setShouldShow(false);
       return;
     }
 
@@ -72,7 +73,12 @@ export function ScrollToTargetFloatingButton({
       return overlapArea / targetArea;
     };
 
-    evaluateVisibility(target.getBoundingClientRect(), getIntersectionRatio());
+    const initialSyncFrame = window.requestAnimationFrame(() => {
+      evaluateVisibility(
+        target.getBoundingClientRect(),
+        getIntersectionRatio(),
+      );
+    });
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -102,6 +108,7 @@ export function ScrollToTargetFloatingButton({
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", handleResize);
+      window.cancelAnimationFrame(initialSyncFrame);
     };
   }, [evaluateVisibility, targetId]);
 
@@ -119,37 +126,49 @@ export function ScrollToTargetFloatingButton({
     (nextTop: number): number => {
       stopAnimatedScroll();
 
-      const initialDistance = nextTop - window.scrollY;
+      const startTop = window.scrollY;
+      const initialDistance = nextTop - startTop;
 
       if (Math.abs(initialDistance) < 1) {
         window.scrollTo(0, nextTop);
         return 0;
       }
 
+      const isCoarsePointer =
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(pointer: coarse)").matches;
+      const pixelsPerSecond = isCoarsePointer
+        ? MOBILE_SCROLL_PIXELS_PER_SECOND
+        : DESKTOP_SCROLL_PIXELS_PER_SECOND;
+
       const estimatedDurationMs = Math.round(
-        Math.ceil(Math.abs(initialDistance) / SCROLL_PIXELS_PER_FRAME) *
-          FRAME_MS,
+        (Math.abs(initialDistance) / pixelsPerSecond) * 1000,
       );
+      const animationDurationMs = Math.max(
+        MIN_SCROLL_DURATION_MS,
+        Math.min(MAX_SCROLL_DURATION_MS, estimatedDurationMs),
+      );
+      const animationStart = window.performance.now();
 
-      const step = () => {
-        const currentTop = window.scrollY;
-        const remaining = nextTop - currentTop;
+      const step = (timestamp: number) => {
+        const elapsed = timestamp - animationStart;
+        const progress = Math.min(elapsed / animationDurationMs, 1);
+        const easedProgress = 1 - (1 - progress) ** 3;
+        const currentTop = startTop + initialDistance * easedProgress;
 
-        if (Math.abs(remaining) <= SCROLL_PIXELS_PER_FRAME) {
+        window.scrollTo(0, currentTop);
+
+        if (progress >= 1) {
           window.scrollTo(0, nextTop);
           scrollAnimationFrameRef.current = null;
           return;
         }
 
-        window.scrollTo(
-          0,
-          currentTop + Math.sign(remaining) * SCROLL_PIXELS_PER_FRAME,
-        );
         scrollAnimationFrameRef.current = window.requestAnimationFrame(step);
       };
 
       scrollAnimationFrameRef.current = window.requestAnimationFrame(step);
-      return estimatedDurationMs;
+      return animationDurationMs;
     },
     [stopAnimatedScroll],
   );
