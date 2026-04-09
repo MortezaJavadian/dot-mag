@@ -6,6 +6,7 @@ interface ScrollToTargetFloatingButtonProps {
   targetId: string;
   buttonLabel: string;
   scrollAlignment?: "center" | "top";
+  scrollDistanceScale?: number;
   viewportTopOffset?: number;
   fullyVisibleThreshold?: number;
 }
@@ -20,6 +21,7 @@ export function ScrollToTargetFloatingButton({
   targetId,
   buttonLabel,
   scrollAlignment = "center",
+  scrollDistanceScale = 1,
   viewportTopOffset = 84,
   fullyVisibleThreshold = 0.98,
 }: ScrollToTargetFloatingButtonProps) {
@@ -139,19 +141,10 @@ export function ScrollToTargetFloatingButton({
       );
       const startTime = performance.now();
 
-      const easeInOutCubic = (progress: number): number => {
-        if (progress < 0.5) {
-          return 4 * progress * progress * progress;
-        }
-
-        return 1 - Math.pow(-2 * progress + 2, 3) / 2;
-      };
-
       const step = (now: number) => {
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / durationMs, 1);
-        const eased = easeInOutCubic(progress);
-        const currentTop = startTop + distance * eased;
+        const currentTop = startTop + distance * progress;
 
         window.scrollTo(0, currentTop);
 
@@ -176,11 +169,17 @@ export function ScrollToTargetFloatingButton({
     }
 
     const rect = target.getBoundingClientRect();
-    const targetTop = window.scrollY + rect.top;
-    const nextTop =
+    const startTop = window.scrollY;
+    const targetTop = startTop + rect.top;
+    const destinationTop =
       scrollAlignment === "top"
         ? Math.max(0, targetTop - viewportTopOffset)
         : Math.max(0, targetTop + rect.height / 2 - window.innerHeight / 2);
+    const normalizedScale = Math.min(Math.max(scrollDistanceScale, 0), 1);
+    const nextTop = Math.max(
+      0,
+      startTop + (destinationTop - startTop) * normalizedScale,
+    );
 
     setIsProgrammaticScroll(true);
     const animationDurationMs = animateWindowScrollTo(nextTop);
