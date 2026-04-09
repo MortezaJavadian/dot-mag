@@ -158,8 +158,30 @@ model HomeHeroConfigStore {
   image              String?  @db.Text
   ctaMode            String   @default("none")
   ctaTargetId        String?
+  autoRotateSeconds  Int      @default(6)
+  banners            HomeHeroBanner[]
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+}
+
+model HomeHeroBanner {
+  id                     String   @id
+  storeId                String
+  store                  HomeHeroConfigStore @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sortOrder              Int      @default(0)
+  badgeText              String
+  heroHtml               String   @db.Text
+  secondLineAsTitle      Boolean  @default(true)
+  image                  String?  @db.Text
+  backgroundMobileImage  String?  @db.Text
+  backgroundDesktopImage String?  @db.Text
+  effectPreset           String   @default("none")
+  ctaMode                String   @default("none")
+  ctaTargetId            String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([storeId, sortOrder])
 }
 
 model Person {

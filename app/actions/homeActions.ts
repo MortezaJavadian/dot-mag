@@ -5,33 +5,54 @@ import { getAdminUser } from "@/lib/auth";
 import {
   getDefaultHomeHeroConfig,
   readHomeHeroConfig,
+  type HomeHeroBannerConfig,
   type HomeHeroConfig,
   type HomeHeroCtaMode,
+  type HomeHeroEffectPreset,
   writeHomeHeroConfig,
 } from "@/lib/homeHero";
 
-export type UpdateHomeHeroInput = {
+export type UpdateHomeHeroBannerInput = {
+  id?: string;
   badgeText?: string;
   heroHtml?: string;
   secondLineAsTitle?: boolean;
-  featuredArticleIds?: string[];
   image?: string | null;
+  backgroundMobileImage?: string | null;
+  backgroundDesktopImage?: string | null;
+  effectPreset?: HomeHeroEffectPreset;
   ctaMode?: HomeHeroCtaMode;
   ctaTargetId?: string | null;
 };
 
-function normalizeInput(
-  input: UpdateHomeHeroInput,
-): Omit<HomeHeroConfig, "updatedAt"> {
-  const fallback = getDefaultHomeHeroConfig();
+export type UpdateHomeHeroInput = {
+  featuredArticleIds?: string[];
+  autoRotateSeconds?: number;
+  banners?: UpdateHomeHeroBannerInput[];
+};
 
+function isValidEffectPreset(value: string): value is HomeHeroEffectPreset {
+  return (
+    value === "none" ||
+    value === "soft-darken" ||
+    value === "soft-lighten" ||
+    value === "warm-film" ||
+    value === "subtle-blur"
+  );
+}
+
+function normalizeBannerInput(
+  input: UpdateHomeHeroBannerInput,
+  index: number,
+  fallback: HomeHeroBannerConfig,
+): HomeHeroBannerConfig {
   const ctaMode: HomeHeroCtaMode =
     input.ctaMode === "article" ||
     input.ctaMode === "radio" ||
     input.ctaMode === "magazine" ||
     input.ctaMode === "none"
       ? input.ctaMode
-      : "none";
+      : fallback.ctaMode;
 
   const ctaTargetId =
     ctaMode === "none"
@@ -39,16 +60,35 @@ function normalizeInput(
       : (typeof input.ctaTargetId === "string" && input.ctaTargetId.trim()) ||
         null;
 
-  const featuredArticleIds = Array.isArray(input.featuredArticleIds)
-    ? input.featuredArticleIds
-        .filter((value): value is string => typeof value === "string")
-        .map((value) => value.trim())
-        .filter(Boolean)
-        .filter((value, index, values) => values.indexOf(value) === index)
-        .slice(0, 3)
-    : fallback.featuredArticleIds;
+  const backgroundMobileImage =
+    typeof input.backgroundMobileImage === "string" &&
+    input.backgroundMobileImage.trim()
+      ? input.backgroundMobileImage.trim()
+      : null;
+
+  const backgroundDesktopImage =
+    typeof input.backgroundDesktopImage === "string" &&
+    input.backgroundDesktopImage.trim()
+      ? input.backgroundDesktopImage.trim()
+      : null;
+
+  if (Boolean(backgroundMobileImage) !== Boolean(backgroundDesktopImage)) {
+    throw new Error(
+      "برای هر بنر باید تصویر پس زمینه موبایل و دسکتاپ با هم تنظیم شوند",
+    );
+  }
+
+  const effectPresetRaw =
+    typeof input.effectPreset === "string" ? input.effectPreset.trim() : "";
+  const effectPreset = isValidEffectPreset(effectPresetRaw)
+    ? effectPresetRaw
+    : fallback.effectPreset;
 
   return {
+    id:
+      (typeof input.id === "string" && input.id.trim()) ||
+      fallback.id ||
+      `home-banner-${index + 1}`,
     badgeText:
       typeof input.badgeText === "string"
         ? input.badgeText.trim()
@@ -61,13 +101,55 @@ function normalizeInput(
       typeof input.secondLineAsTitle === "boolean"
         ? input.secondLineAsTitle
         : fallback.secondLineAsTitle,
-    featuredArticleIds,
     image:
       typeof input.image === "string" && input.image.trim()
         ? input.image.trim()
         : null,
+    backgroundMobileImage,
+    backgroundDesktopImage,
+    effectPreset,
     ctaMode,
     ctaTargetId,
+  };
+}
+
+function normalizeInput(
+  input: UpdateHomeHeroInput,
+): Omit<HomeHeroConfig, "updatedAt"> {
+  const fallback = getDefaultHomeHeroConfig();
+
+  const featuredArticleIds = Array.isArray(input.featuredArticleIds)
+    ? input.featuredArticleIds
+        .filter((value): value is string => typeof value === "string")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .filter((value, index, values) => values.indexOf(value) === index)
+        .slice(0, 3)
+    : fallback.featuredArticleIds;
+
+  const autoRotateSeconds =
+    typeof input.autoRotateSeconds === "number" &&
+    Number.isFinite(input.autoRotateSeconds)
+      ? Math.max(0, Math.floor(input.autoRotateSeconds))
+      : fallback.autoRotateSeconds;
+
+  const fallbackBanner = fallback.banners[0];
+  const rawBanners = Array.isArray(input.banners)
+    ? input.banners
+    : fallback.banners;
+
+  const banners = rawBanners.map((banner, index) =>
+    normalizeBannerInput(banner, index, fallbackBanner),
+  );
+
+  if (!banners.length) {
+    throw new Error("حداقل یک بنر برای هدر صفحه خانه لازم است");
+  }
+
+  return {
+    featuredArticleIds,
+    autoRotateSeconds,
+    banners,
   };
 }
 
@@ -102,6 +184,9 @@ export async function updateHomeHeroContent(input: UpdateHomeHeroInput) {
     return { success: true, data };
   } catch (error) {
     console.error("Error updating home hero content:", error);
+    if (error instanceof Error && error.message.trim()) {
+      return { success: false, error: error.message };
+    }
     return { success: false, error: "Failed to update home hero content" };
   }
 }

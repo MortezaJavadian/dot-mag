@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { ArticleCard } from "@/components/feature/ArticleCard";
+import HomeHeroCarousel, {
+  type HomeHeroCarouselSlide,
+} from "@/components/feature/HomeHeroCarousel";
 import { RadioCard } from "@/components/feature/RadioCard";
 import { fetchInternalArray } from "@/lib/internalApi";
 import { toSafeArticleHtml } from "@/lib/articleContent";
@@ -119,6 +122,16 @@ function stabilizeRtlSentenceEnding(html: string): string {
   return html.replace(/([.!?؟])(?=\s*<\/p>)/g, "$1\u200f");
 }
 
+function getHeroEffectClassName(
+  effectPreset: HomeHeroCarouselSlide["effectPreset"],
+): string {
+  if (effectPreset === "soft-darken") return "hero-bg-effect-soft-darken";
+  if (effectPreset === "soft-lighten") return "hero-bg-effect-soft-lighten";
+  if (effectPreset === "warm-film") return "hero-bg-effect-warm-film";
+  if (effectPreset === "subtle-blur") return "hero-bg-effect-subtle-blur";
+  return "hero-bg-effect-none";
+}
+
 async function getArticles(): Promise<HomeArticle[]> {
   return fetchInternalArray<HomeArticle>("/api/articles?mode=summary", {
     revalidate: 60,
@@ -162,95 +175,141 @@ export default async function HomePage() {
       ? selectedHomeFeaturedArticles
       : articles.slice(0, 3);
   const latestRadios = radios.slice(0, 3);
-  const heroBadge = homeHeroConfig.badgeText.trim();
-  const safeHeroHtml = stabilizeRtlSentenceEnding(
-    applySecondLineMode(
-      toSafeArticleHtml(homeHeroConfig.heroHtml),
-      homeHeroConfig.secondLineAsTitle,
-    ),
+  const heroSlides: HomeHeroCarouselSlide[] = homeHeroConfig.banners.map(
+    (banner) => ({
+      id: banner.id,
+      badgeText: banner.badgeText.trim(),
+      safeHeroHtml: stabilizeRtlSentenceEnding(
+        applySecondLineMode(
+          toSafeArticleHtml(banner.heroHtml),
+          banner.secondLineAsTitle,
+        ),
+      ),
+      frameImage: getUploadUrl(banner.image || ""),
+      backgroundMobileImage: getUploadUrl(banner.backgroundMobileImage || ""),
+      backgroundDesktopImage: getUploadUrl(banner.backgroundDesktopImage || ""),
+      effectPreset: banner.effectPreset,
+      cta: resolveHeroCta(
+        banner.ctaMode,
+        banner.ctaTargetId,
+        articles,
+        magazines,
+        radios,
+      ),
+    }),
   );
-  const heroImage = getUploadUrl(homeHeroConfig.image || "");
-  const heroCta = resolveHeroCta(
-    homeHeroConfig.ctaMode,
-    homeHeroConfig.ctaTargetId,
-    articles,
-    magazines,
-    radios,
-  );
+
+  const heroSlide = heroSlides[0] || null;
+  const hasMultipleHeroSlides = heroSlides.length > 1;
+  const singleHeroBackground =
+    heroSlide?.backgroundMobileImage && heroSlide?.backgroundDesktopImage
+      ? {
+          mobile: heroSlide.backgroundMobileImage,
+          desktop: heroSlide.backgroundDesktopImage,
+        }
+      : null;
 
   return (
     <>
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center bg-gradient-to-bl from-cream/30 via-background to-background">
-        {/* Decorative Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-forest/10 rounded-full blur-3xl" />
-        </div>
+      {hasMultipleHeroSlides ? (
+        <HomeHeroCarousel
+          slides={heroSlides}
+          autoRotateSeconds={homeHeroConfig.autoRotateSeconds}
+        />
+      ) : heroSlide ? (
+        <section className="relative min-h-[90vh] flex items-center bg-gradient-to-bl from-cream/30 via-background to-background">
+          {singleHeroBackground && (
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <picture>
+                <source
+                  media="(min-width: 1024px)"
+                  srcSet={singleHeroBackground.desktop}
+                />
+                <img
+                  src={singleHeroBackground.mobile}
+                  alt=""
+                  aria-hidden="true"
+                  className="hero-bg-media"
+                />
+              </picture>
+              <div
+                className={`hero-bg-effect ${getHeroEffectClassName(
+                  heroSlide.effectPreset,
+                )}`}
+              />
+            </div>
+          )}
 
-        <div className="container relative z-10">
-          <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:items-center lg:gap-5 lg:[direction:ltr]">
-            <div className="order-1 lg:order-1 animate-fade-in">
-              <div className="mx-auto my-[0.375rem] lg:my-2 w-full max-w-sm sm:max-w-md lg:max-w-none lg:w-[80%]">
-                <div className="image-frame-shell">
-                  <div className="image-frame-inner">
-                    {heroImage ? (
-                      <img
-                        src={heroImage}
-                        alt="تصویر هدر خانه"
-                        className="image-frame-media object-cover"
-                      />
-                    ) : (
-                      <div className="min-h-[280px] sm:min-h-[340px] lg:min-h-[460px] flex items-center justify-center bg-cream text-foreground-secondary px-6 text-center">
-                        تصویر هدر از پنل ادمین قابل تنظیم است
-                      </div>
-                    )}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-20 right-10 w-96 h-96 bg-forest/10 rounded-full blur-3xl" />
+          </div>
+
+          <div className="container relative z-10">
+            <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:items-center lg:gap-5 lg:[direction:ltr]">
+              <div className="order-1 lg:order-1 animate-fade-in">
+                <div className="mx-auto my-[0.375rem] lg:my-2 w-full max-w-sm sm:max-w-md lg:max-w-none lg:w-[80%]">
+                  <div className="image-frame-shell">
+                    <div className="image-frame-inner">
+                      {heroSlide.frameImage ? (
+                        <img
+                          src={heroSlide.frameImage}
+                          alt="تصویر هدر خانه"
+                          className="image-frame-media object-cover"
+                        />
+                      ) : (
+                        <div className="min-h-[280px] sm:min-h-[340px] lg:min-h-[460px] flex items-center justify-center bg-cream text-foreground-secondary px-6 text-center">
+                          تصویر هدر از پنل ادمین قابل تنظیم است
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="order-2 lg:order-2 animate-slide-up text-right lg:justify-self-end lg:w-full lg:max-w-none lg:pr-[2.25rem]">
-              {heroBadge && (
-                <span className="inline-block px-4 py-2 bg-primary/10 text-primary text-sm font-medium rounded-full mb-6">
-                  {heroBadge}
-                </span>
-              )}
+              <div className="order-2 lg:order-2 animate-slide-up text-right lg:justify-self-end lg:w-full lg:max-w-none lg:pr-[2.25rem]">
+                {heroSlide.badgeText && (
+                  <span className="inline-block px-4 py-2 bg-primary/10 text-primary text-sm font-medium rounded-full mb-6">
+                    {heroSlide.badgeText}
+                  </span>
+                )}
 
-              <div
-                className="max-w-2xl lg:ml-auto [&_h1]:!text-right [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:!text-right [&_p]:[unicode-bidi:plaintext] [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4 [&_.hero-line-two-strong]:block [&_.hero-line-two-strong]:font-black [&_.hero-line-two-strong]:!text-right [&_.hero-line-two-normal]:block [&_.hero-line-two-normal]:text-lg md:[&_.hero-line-two-normal]:text-xl [&_.hero-line-two-normal]:font-normal [&_.hero-line-two-normal]:leading-relaxed [&_.hero-line-two-normal]:!text-right"
-                dangerouslySetInnerHTML={{ __html: safeHeroHtml }}
-              />
+                <div
+                  className="max-w-2xl lg:ml-auto [&_h1]:!text-right [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:!text-right [&_p]:[unicode-bidi:plaintext] [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4 [&_.hero-line-two-strong]:block [&_.hero-line-two-strong]:font-black [&_.hero-line-two-strong]:!text-right [&_.hero-line-two-normal]:block [&_.hero-line-two-normal]:text-lg md:[&_.hero-line-two-normal]:text-xl [&_.hero-line-two-normal]:font-normal [&_.hero-line-two-normal]:leading-relaxed [&_.hero-line-two-normal]:!text-right"
+                  dangerouslySetInnerHTML={{ __html: heroSlide.safeHeroHtml }}
+                />
 
-              {heroCta && (
-                <div className="mt-8 mb-8 lg:mb-0">
-                  <Link
-                    href={heroCta.href}
-                    scroll={true}
-                    className="inline-flex flex-row-reverse items-center gap-3 lg:flex-row px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-all hover:scale-105"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="rotate-180 shrink-0"
+                {heroSlide.cta && (
+                  <div className="mt-8 mb-8 lg:mb-0">
+                    <Link
+                      href={heroSlide.cta.href}
+                      scroll={true}
+                      className="inline-flex flex-row-reverse items-center gap-3 lg:flex-row px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-all hover:scale-105"
                     >
-                      <path d="m9 18 6-6-6-6" />
-                    </svg>
-                    <span>{heroCta.label}</span>
-                  </Link>
-                </div>
-              )}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="rotate-180 shrink-0"
+                      >
+                        <path d="m9 18 6-6-6-6" />
+                      </svg>
+                      <span>{heroSlide.cta.label}</span>
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       {curatedHomeFeaturedArticles.length > 0 && (
         <section className="section-spacing bg-background-secondary">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import { updateHomeHeroContent } from "@/app/actions/homeActions";
 import UploadStatus from "@/components/ui/UploadStatus";
 import Button from "@/components/ui/Button";
@@ -10,7 +9,12 @@ import {
   uploadAssetWithProgress,
 } from "@/lib/clientUpload";
 import { getUploadUrl } from "@/lib/uploads";
-import type { HomeHeroConfig, HomeHeroCtaMode } from "@/lib/homeHero";
+import type {
+  HomeHeroBannerConfig,
+  HomeHeroConfig,
+  HomeHeroCtaMode,
+  HomeHeroEffectPreset,
+} from "@/lib/homeHero";
 import RichTextEditor from "./RichTextEditor";
 
 type HeroTargetOption = {
@@ -26,33 +30,87 @@ type HomeEditorProps = {
   onSave: () => void;
 };
 
+type HomeBannerFormState = HomeHeroBannerConfig;
+
 type HomeFormState = {
-  badgeText: string;
-  heroHtml: string;
-  secondLineAsTitle: boolean;
   featuredArticleIds: string[];
-  image: string | null;
-  ctaMode: HomeHeroCtaMode;
-  ctaTargetId: string | null;
+  autoRotateSeconds: number;
+  banners: HomeBannerFormState[];
 };
 
+const DEFAULT_BANNER_TEMPLATE: Omit<HomeBannerFormState, "id"> = {
+  badgeText: "",
+  heroHtml: "",
+  secondLineAsTitle: true,
+  image: null,
+  backgroundMobileImage: null,
+  backgroundDesktopImage: null,
+  effectPreset: "none",
+  ctaMode: "none",
+  ctaTargetId: null,
+};
+
+const EFFECT_PRESET_OPTIONS: Array<{
+  value: HomeHeroEffectPreset;
+  label: string;
+}> = [
+  { value: "none", label: "بدون افکت" },
+  { value: "soft-darken", label: "تیره ملایم" },
+  { value: "soft-lighten", label: "روشن ملایم" },
+  { value: "warm-film", label: "گرم و سینمایی" },
+  { value: "subtle-blur", label: "بلور بسیار ملایم" },
+];
+
+function createBannerId(): string {
+  if (
+    typeof globalThis.crypto !== "undefined" &&
+    typeof globalThis.crypto.randomUUID === "function"
+  ) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  return `home-banner-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+}
+
 function toInitialForm(config: HomeHeroConfig): HomeFormState {
+  const mappedBanners =
+    config.banners?.map((banner) => ({
+      id: banner.id || createBannerId(),
+      badgeText: banner.badgeText || "",
+      heroHtml: banner.heroHtml || "",
+      secondLineAsTitle: banner.secondLineAsTitle,
+      image: banner.image || null,
+      backgroundMobileImage: banner.backgroundMobileImage || null,
+      backgroundDesktopImage: banner.backgroundDesktopImage || null,
+      effectPreset: banner.effectPreset || "none",
+      ctaMode: banner.ctaMode || "none",
+      ctaTargetId: banner.ctaTargetId || null,
+    })) || [];
+
   return {
-    badgeText: config.badgeText || "",
-    heroHtml: config.heroHtml || "",
-    secondLineAsTitle: config.secondLineAsTitle,
     featuredArticleIds: config.featuredArticleIds || [],
-    image: config.image || null,
-    ctaMode: config.ctaMode || "none",
-    ctaTargetId: config.ctaTargetId || null,
+    autoRotateSeconds:
+      typeof config.autoRotateSeconds === "number" &&
+      Number.isFinite(config.autoRotateSeconds)
+        ? Math.max(0, Math.floor(config.autoRotateSeconds))
+        : 0,
+    banners:
+      mappedBanners.length > 0
+        ? mappedBanners
+        : [
+            {
+              id: createBannerId(),
+              ...DEFAULT_BANNER_TEMPLATE,
+            },
+          ],
   };
 }
 
-function moveItemInArray(
-  items: string[],
+function moveItemInArray<T>(
+  items: T[],
   index: number,
   direction: "up" | "down",
-): string[] {
+): T[] {
   const targetIndex = direction === "up" ? index - 1 : index + 1;
   if (targetIndex < 0 || targetIndex >= items.length) return items;
 
@@ -60,6 +118,26 @@ function moveItemInArray(
   const [moved] = next.splice(index, 1);
   next.splice(targetIndex, 0, moved);
   return next;
+}
+
+function createBannerFromTemplate(
+  template: HomeBannerFormState | undefined,
+): HomeBannerFormState {
+  return {
+    id: createBannerId(),
+    badgeText: template?.badgeText || DEFAULT_BANNER_TEMPLATE.badgeText,
+    heroHtml: template?.heroHtml || DEFAULT_BANNER_TEMPLATE.heroHtml,
+    secondLineAsTitle:
+      typeof template?.secondLineAsTitle === "boolean"
+        ? template.secondLineAsTitle
+        : DEFAULT_BANNER_TEMPLATE.secondLineAsTitle,
+    image: template?.image || null,
+    backgroundMobileImage: null,
+    backgroundDesktopImage: null,
+    effectPreset: template?.effectPreset || "none",
+    ctaMode: template?.ctaMode || "none",
+    ctaTargetId: template?.ctaTargetId || null,
+  };
 }
 
 export default function HomeEditor({
@@ -72,24 +150,53 @@ export default function HomeEditor({
   const [formData, setFormData] = useState<HomeFormState>(() =>
     toInitialForm(config),
   );
+  const [activeBannerId, setActiveBannerId] = useState(
+    config.banners[0]?.id || "",
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [uploadStatus, setUploadStatus] = useState(createIdleUploadTaskState);
+  const [frameUploadStatus, setFrameUploadStatus] = useState(
+    createIdleUploadTaskState,
+  );
+  const [mobileBackgroundUploadStatus, setMobileBackgroundUploadStatus] =
+    useState(createIdleUploadTaskState);
+  const [desktopBackgroundUploadStatus, setDesktopBackgroundUploadStatus] =
+    useState(createIdleUploadTaskState);
   const [nextFeaturedArticleId, setNextFeaturedArticleId] = useState("");
 
   useEffect(() => {
-    setFormData(toInitialForm(config));
+    const next = toInitialForm(config);
+    setFormData(next);
+    setActiveBannerId(next.banners[0]?.id || "");
   }, [config]);
 
-  const currentImage = getUploadUrl(formData.image || "");
+  useEffect(() => {
+    if (!formData.banners.length) {
+      setActiveBannerId("");
+      return;
+    }
 
-  const currentTargetOptions = useMemo(() => {
-    if (formData.ctaMode === "article") return articleOptions;
-    if (formData.ctaMode === "radio") return radioOptions;
-    if (formData.ctaMode === "magazine") return magazineOptions;
-    return [];
-  }, [articleOptions, formData.ctaMode, magazineOptions, radioOptions]);
+    if (formData.banners.some((banner) => banner.id === activeBannerId)) {
+      return;
+    }
+
+    setActiveBannerId(formData.banners[0].id);
+  }, [activeBannerId, formData.banners]);
+
+  useEffect(() => {
+    setFrameUploadStatus(createIdleUploadTaskState());
+    setMobileBackgroundUploadStatus(createIdleUploadTaskState());
+    setDesktopBackgroundUploadStatus(createIdleUploadTaskState());
+  }, [activeBannerId]);
+
+  const activeBannerIndex = useMemo(
+    () => formData.banners.findIndex((banner) => banner.id === activeBannerId),
+    [activeBannerId, formData.banners],
+  );
+
+  const activeBanner =
+    activeBannerIndex >= 0 ? formData.banners[activeBannerIndex] : null;
 
   const selectedFeaturedArticles = useMemo(
     () =>
@@ -119,6 +226,87 @@ export default function HomeEditor({
 
     setNextFeaturedArticleId(availableFeaturedArticles[0]?.id || "");
   }, [availableFeaturedArticles, nextFeaturedArticleId]);
+
+  const currentTargetOptions = useMemo(() => {
+    if (!activeBanner) return [];
+    if (activeBanner.ctaMode === "article") return articleOptions;
+    if (activeBanner.ctaMode === "radio") return radioOptions;
+    if (activeBanner.ctaMode === "magazine") return magazineOptions;
+    return [];
+  }, [activeBanner, articleOptions, magazineOptions, radioOptions]);
+
+  const activeFrameImage = getUploadUrl(activeBanner?.image || "");
+  const activeMobileBackgroundImage = getUploadUrl(
+    activeBanner?.backgroundMobileImage || "",
+  );
+  const activeDesktopBackgroundImage = getUploadUrl(
+    activeBanner?.backgroundDesktopImage || "",
+  );
+
+  const updateActiveBanner = (
+    updater: (banner: HomeBannerFormState) => HomeBannerFormState,
+  ) => {
+    if (!activeBanner) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      banners: prev.banners.map((banner) =>
+        banner.id === activeBanner.id ? updater(banner) : banner,
+      ),
+    }));
+  };
+
+  const addBanner = () => {
+    setError("");
+    setSuccess("");
+
+    const template = formData.banners[formData.banners.length - 1];
+    const nextBanner = createBannerFromTemplate(template);
+
+    setFormData((prev) => ({
+      ...prev,
+      banners: [...prev.banners, nextBanner],
+    }));
+    setActiveBannerId(nextBanner.id);
+  };
+
+  const moveBanner = (index: number, direction: "up" | "down") => {
+    setFormData((prev) => ({
+      ...prev,
+      banners: moveItemInArray(prev.banners, index, direction),
+    }));
+  };
+
+  const removeBanner = (bannerId: string) => {
+    setError("");
+    setSuccess("");
+
+    if (formData.banners.length <= 1) {
+      setError("آخرین بنر قابل حذف نیست");
+      return;
+    }
+
+    let nextActiveId: string | null = null;
+
+    setFormData((prev) => {
+      const nextBanners = prev.banners.filter(
+        (banner) => banner.id !== bannerId,
+      );
+
+      if (bannerId === activeBannerId) {
+        nextActiveId = nextBanners[0]?.id || "";
+      }
+
+      return {
+        ...prev,
+        banners: nextBanners,
+      };
+    });
+
+    if (nextActiveId !== null) {
+      setActiveBannerId(nextActiveId);
+    }
+  };
 
   const addFeaturedArticle = () => {
     if (!nextFeaturedArticleId) return;
@@ -154,35 +342,68 @@ export default function HomeEditor({
     }));
   };
 
-  const handleImageUpload = async (
+  const uploadBannerAsset = async (
     event: React.ChangeEvent<HTMLInputElement>,
+    field: "image" | "backgroundMobileImage" | "backgroundDesktopImage",
+    setStatus: React.Dispatch<
+      React.SetStateAction<ReturnType<typeof createIdleUploadTaskState>>
+    >,
+    uploadErrorLabel: string,
   ) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !activeBanner) return;
 
     setError("");
     setSuccess("");
-    setUploadStatus({ phase: "uploading", progress: 0, error: "" });
+    setStatus({ phase: "uploading", progress: 0, error: "" });
 
     try {
       const uploaded = await uploadAssetWithProgress(file, {
         retries: 4,
         onProgress: (progress) =>
-          setUploadStatus({ phase: "uploading", progress, error: "" }),
+          setStatus({ phase: "uploading", progress, error: "" }),
       });
 
-      setFormData((prev) => ({ ...prev, image: uploaded.url }));
-      setUploadStatus({ phase: "success", progress: 100, error: "" });
+      updateActiveBanner((banner) => ({
+        ...banner,
+        [field]: uploaded.url,
+      }));
+
+      setStatus({ phase: "success", progress: 100, error: "" });
     } catch (uploadError) {
       const message =
         uploadError instanceof Error && uploadError.message
           ? uploadError.message
-          : "آپلود تصویر انجام نشد";
+          : uploadErrorLabel;
       setError(message);
-      setUploadStatus({ phase: "error", progress: 0, error: message });
+      setStatus({ phase: "error", progress: 0, error: message });
     } finally {
       event.target.value = "";
     }
+  };
+
+  const removeBackgroundImages = () => {
+    if (!activeBanner) return;
+
+    updateActiveBanner((banner) => ({
+      ...banner,
+      backgroundMobileImage: null,
+      backgroundDesktopImage: null,
+    }));
+
+    setMobileBackgroundUploadStatus(createIdleUploadTaskState());
+    setDesktopBackgroundUploadStatus(createIdleUploadTaskState());
+  };
+
+  const removeFrameImage = () => {
+    if (!activeBanner) return;
+
+    updateActiveBanner((banner) => ({
+      ...banner,
+      image: null,
+    }));
+
+    setFrameUploadStatus(createIdleUploadTaskState());
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -192,14 +413,45 @@ export default function HomeEditor({
     setSuccess("");
 
     try {
+      if (!formData.banners.length) {
+        setError("حداقل یک بنر باید وجود داشته باشد");
+        return;
+      }
+
+      const invalidBackgroundBannerIndex = formData.banners.findIndex(
+        (banner) => {
+          const hasMobile = Boolean(banner.backgroundMobileImage);
+          const hasDesktop = Boolean(banner.backgroundDesktopImage);
+          return hasMobile !== hasDesktop;
+        },
+      );
+
+      if (invalidBackgroundBannerIndex >= 0) {
+        setError(
+          `بنر شماره ${invalidBackgroundBannerIndex + 1} باید تصویر پس زمینه موبایل و دسکتاپ را با هم داشته باشد`,
+        );
+        return;
+      }
+
       const result = await updateHomeHeroContent({
-        badgeText: formData.badgeText,
-        heroHtml: formData.heroHtml,
-        secondLineAsTitle: formData.secondLineAsTitle,
         featuredArticleIds: formData.featuredArticleIds,
-        image: formData.image,
-        ctaMode: formData.ctaMode,
-        ctaTargetId: formData.ctaMode === "none" ? null : formData.ctaTargetId,
+        autoRotateSeconds: Math.max(
+          0,
+          Math.floor(formData.autoRotateSeconds || 0),
+        ),
+        banners: formData.banners.map((banner) => ({
+          id: banner.id,
+          badgeText: banner.badgeText,
+          heroHtml: banner.heroHtml,
+          secondLineAsTitle: banner.secondLineAsTitle,
+          image: banner.image,
+          backgroundMobileImage: banner.backgroundMobileImage,
+          backgroundDesktopImage: banner.backgroundDesktopImage,
+          effectPreset: banner.effectPreset,
+          ctaMode: banner.ctaMode,
+          ctaTargetId:
+            banner.ctaMode === "none" ? null : banner.ctaTargetId || null,
+        })),
       });
 
       if (!result.success) {
@@ -220,7 +472,7 @@ export default function HomeEditor({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 max-w-3xl text-slate-900 dark:text-slate-100"
+      className="space-y-6 max-w-4xl text-slate-900 dark:text-slate-100"
     >
       <h2 className="text-2xl font-bold">تنظیمات صفحه خانه</h2>
 
@@ -237,136 +489,383 @@ export default function HomeEditor({
       )}
 
       <div className="space-y-6 rounded-xl border border-slate-300 dark:border-slate-700 p-4 sm:p-5">
-        <div>
-          <label className="block text-sm font-medium mb-1">متن برچسب</label>
-          <input
-            type="text"
-            value={formData.badgeText}
-            onChange={(event) =>
-              setFormData((prev) => ({
-                ...prev,
-                badgeText: event.target.value,
-              }))
-            }
-            placeholder="مثل: شماره جدید منتشر شد"
-            className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            اگر این فیلد خالی باشد، برچسب در صفحه خانه نمایش داده نمی شود.
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            محتوای متنی هدر
-          </label>
-          <RichTextEditor
-            value={formData.heroHtml}
-            onChange={(nextContent) =>
-              setFormData((prev) => ({ ...prev, heroHtml: nextContent }))
-            }
-          />
-          <div className="mt-2 space-y-2">
-            <label className="inline-flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={formData.secondLineAsTitle}
-                onChange={(event) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    secondLineAsTitle: event.target.checked,
-                  }))
-                }
-                className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
-              />
-              <span>خط دوم تیتر هم درشت و بلد نمایش داده شود</span>
+        <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              زمان جابه جایی خودکار بنرها (ثانیه)
             </label>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              خط اول همیشه به صورت تیتر درشت نمایش داده می شود. می توانید خط دوم
-              را هم درشت نگه دارید یا آن را مثل متن عادی نمایش دهید.
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">تصویر هدر</label>
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            onChange={handleImageUpload}
-            disabled={uploadStatus.phase === "uploading"}
-            className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          <UploadStatus
-            status={uploadStatus}
-            uploadingLabel="در حال آپلود تصویر هدر..."
-            successLabel="تصویر هدر با موفقیت آپلود شد"
-            errorLabel="آپلود تصویر هدر انجام نشد"
-          />
-
-          {currentImage ? (
-            <div className="mt-3 w-full max-w-xs sm:max-w-sm">
-              <Image
-                src={currentImage}
-                alt="پیش نمایش تصویر هدر"
-                width={640}
-                height={420}
-                className="w-full h-auto max-h-64 rounded-xl border border-slate-300 dark:border-slate-700 object-cover"
-                unoptimized
-              />
-            </div>
-          ) : (
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              هنوز تصویری برای هدر صفحه خانه انتخاب نشده است.
-            </p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">وضعیت دکمه اصلی</label>
-          <select
-            value={formData.ctaMode}
-            onChange={(event) => {
-              const nextMode = event.target.value as HomeHeroCtaMode;
-              setFormData((prev) => ({
-                ...prev,
-                ctaMode: nextMode,
-                ctaTargetId: nextMode === "none" ? null : prev.ctaTargetId,
-              }));
-            }}
-            className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="none">عدم نمایش دکمه</option>
-            <option value="article">نمایش دکمه نوشته</option>
-            <option value="radio">نمایش دکمه رادیو</option>
-            <option value="magazine">نمایش دکمه مجله</option>
-          </select>
-        </div>
-
-        {formData.ctaMode !== "none" && (
-          <div className="space-y-2">
-            <label className="block text-sm font-medium">مقصد دکمه</label>
-            <select
-              value={formData.ctaTargetId || ""}
+            <input
+              type="number"
+              min={0}
+              step={1}
+              value={formData.autoRotateSeconds}
               onChange={(event) =>
                 setFormData((prev) => ({
                   ...prev,
-                  ctaTargetId: event.target.value || null,
+                  autoRotateSeconds: Math.max(
+                    0,
+                    Number.isFinite(Number(event.target.value))
+                      ? Math.floor(Number(event.target.value))
+                      : 0,
+                  ),
                 }))
               }
               className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">انتخاب مقصد</option>
-              {currentTargetOptions.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.title}
-                </option>
-              ))}
-            </select>
-            {!currentTargetOptions.length && (
-              <p className="text-xs text-amber-600 dark:text-amber-300">
-                برای این نوع دکمه هنوز محتوایی ثبت نشده است.
+            />
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              اگر مقدار را روی 0 بگذارید، چرخش خودکار خاموش می شود.
+            </p>
+          </div>
+
+          <Button type="button" onClick={addBanner} className="sm:w-auto">
+            افزودن بنر جدید
+          </Button>
+        </div>
+
+        <div>
+          <p className="text-sm font-medium mb-2">ترتیب بنرها</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+            اولین بنر این لیست، اولین بنر نمایشی در صفحه خانه خواهد بود.
+          </p>
+
+          <div className="space-y-2">
+            {formData.banners.map((banner, index) => {
+              const isActive = banner.id === activeBannerId;
+              return (
+                <div
+                  key={banner.id}
+                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${
+                    isActive
+                      ? "border-primary/70 bg-primary/5"
+                      : "border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setActiveBannerId(banner.id)}
+                    className="flex-1 text-right"
+                  >
+                    <span className="text-sm font-medium block truncate">
+                      {index + 1}. {banner.badgeText || "بنر بدون برچسب"}
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      {banner.ctaMode === "none"
+                        ? "بدون دکمه"
+                        : `دکمه: ${banner.ctaMode}`}
+                    </span>
+                  </button>
+
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => moveBanner(index, "up")}
+                      disabled={index === 0}
+                      className="px-2 py-1 text-xs rounded bg-slate-200 hover:bg-slate-300 disabled:opacity-40 dark:bg-slate-700 dark:hover:bg-slate-600"
+                    >
+                      بالا
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveBanner(index, "down")}
+                      disabled={index === formData.banners.length - 1}
+                      className="px-2 py-1 text-xs rounded bg-slate-200 hover:bg-slate-300 disabled:opacity-40 dark:bg-slate-700 dark:hover:bg-slate-600"
+                    >
+                      پایین
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeBanner(banner.id)}
+                      disabled={formData.banners.length <= 1}
+                      className="px-2 py-1 text-xs rounded bg-red-500 text-white hover:bg-red-600 disabled:opacity-40"
+                    >
+                      حذف
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {activeBanner && (
+          <div className="space-y-6 rounded-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5">
+            <h3 className="text-lg font-bold">
+              ویرایش بنر شماره {activeBannerIndex + 1}
+            </h3>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                متن برچسب
+              </label>
+              <input
+                type="text"
+                value={activeBanner.badgeText}
+                onChange={(event) =>
+                  updateActiveBanner((banner) => ({
+                    ...banner,
+                    badgeText: event.target.value,
+                  }))
+                }
+                placeholder="مثل: شماره جدید منتشر شد"
+                className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                اگر این فیلد خالی باشد، برچسب در صفحه خانه نمایش داده نمی شود.
               </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                محتوای متنی هدر
+              </label>
+              <RichTextEditor
+                value={activeBanner.heroHtml}
+                onChange={(nextContent) =>
+                  updateActiveBanner((banner) => ({
+                    ...banner,
+                    heroHtml: nextContent,
+                  }))
+                }
+              />
+              <div className="mt-2 space-y-2">
+                <label className="inline-flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={activeBanner.secondLineAsTitle}
+                    onChange={(event) =>
+                      updateActiveBanner((banner) => ({
+                        ...banner,
+                        secondLineAsTitle: event.target.checked,
+                      }))
+                    }
+                    className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                  />
+                  <span>خط دوم تیتر هم درشت و بلد نمایش داده شود</span>
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  خط اول همیشه به صورت تیتر درشت نمایش داده می شود. می توانید خط
+                  دوم را هم درشت نگه دارید یا آن را مثل متن عادی نمایش دهید.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">تصویر قاب بنر</label>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={(event) =>
+                  uploadBannerAsset(
+                    event,
+                    "image",
+                    setFrameUploadStatus,
+                    "آپلود تصویر قاب انجام نشد",
+                  )
+                }
+                disabled={frameUploadStatus.phase === "uploading"}
+                className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <UploadStatus
+                status={frameUploadStatus}
+                uploadingLabel="در حال آپلود تصویر قاب..."
+                successLabel="تصویر قاب با موفقیت آپلود شد"
+                errorLabel="آپلود تصویر قاب انجام نشد"
+              />
+
+              {activeFrameImage ? (
+                <div className="space-y-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={activeFrameImage}
+                    alt="پیش نمایش تصویر قاب"
+                    className="w-full max-w-sm h-auto max-h-64 rounded-xl border border-slate-300 dark:border-slate-700 object-cover"
+                    loading="lazy"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeFrameImage}
+                    className="px-3 py-1.5 text-xs rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600"
+                  >
+                    حذف تصویر قاب
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  هنوز تصویری برای قاب بنر انتخاب نشده است.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  افکت تصویر پس زمینه
+                </label>
+                <select
+                  value={activeBanner.effectPreset}
+                  onChange={(event) =>
+                    updateActiveBanner((banner) => ({
+                      ...banner,
+                      effectPreset: event.target.value as HomeHeroEffectPreset,
+                    }))
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  {EFFECT_PRESET_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  شدت افکت ها ملایم است تا هویت اصلی تصویر حفظ شود.
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    تصویر پس زمینه موبایل
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={(event) =>
+                      uploadBannerAsset(
+                        event,
+                        "backgroundMobileImage",
+                        setMobileBackgroundUploadStatus,
+                        "آپلود پس زمینه موبایل انجام نشد",
+                      )
+                    }
+                    disabled={
+                      mobileBackgroundUploadStatus.phase === "uploading"
+                    }
+                    className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <UploadStatus
+                    status={mobileBackgroundUploadStatus}
+                    uploadingLabel="در حال آپلود پس زمینه موبایل..."
+                    successLabel="پس زمینه موبایل آپلود شد"
+                    errorLabel="آپلود پس زمینه موبایل انجام نشد"
+                  />
+                  {activeMobileBackgroundImage && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={activeMobileBackgroundImage}
+                      alt="پیش نمایش پس زمینه موبایل"
+                      className="mt-2 w-full max-w-xs h-auto max-h-52 rounded-lg border border-slate-300 dark:border-slate-700 object-cover"
+                      loading="lazy"
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    تصویر پس زمینه دسکتاپ
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={(event) =>
+                      uploadBannerAsset(
+                        event,
+                        "backgroundDesktopImage",
+                        setDesktopBackgroundUploadStatus,
+                        "آپلود پس زمینه دسکتاپ انجام نشد",
+                      )
+                    }
+                    disabled={
+                      desktopBackgroundUploadStatus.phase === "uploading"
+                    }
+                    className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <UploadStatus
+                    status={desktopBackgroundUploadStatus}
+                    uploadingLabel="در حال آپلود پس زمینه دسکتاپ..."
+                    successLabel="پس زمینه دسکتاپ آپلود شد"
+                    errorLabel="آپلود پس زمینه دسکتاپ انجام نشد"
+                  />
+                  {activeDesktopBackgroundImage && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={activeDesktopBackgroundImage}
+                      alt="پیش نمایش پس زمینه دسکتاپ"
+                      className="mt-2 w-full max-w-sm h-auto max-h-52 rounded-lg border border-slate-300 dark:border-slate-700 object-cover"
+                      loading="lazy"
+                    />
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={removeBackgroundImages}
+                    disabled={
+                      !activeBanner.backgroundMobileImage &&
+                      !activeBanner.backgroundDesktopImage
+                    }
+                    className="px-3 py-1.5 text-xs rounded bg-slate-200 hover:bg-slate-300 disabled:opacity-40 dark:bg-slate-700 dark:hover:bg-slate-600"
+                  >
+                    پاک کردن پس زمینه بنر
+                  </button>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    تصویر پس زمینه باید برای موبایل و دسکتاپ با هم تنظیم شود.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">
+                وضعیت دکمه اصلی
+              </label>
+              <select
+                value={activeBanner.ctaMode}
+                onChange={(event) => {
+                  const nextMode = event.target.value as HomeHeroCtaMode;
+                  updateActiveBanner((banner) => ({
+                    ...banner,
+                    ctaMode: nextMode,
+                    ctaTargetId:
+                      nextMode === "none" ? null : banner.ctaTargetId,
+                  }));
+                }}
+                className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="none">عدم نمایش دکمه</option>
+                <option value="article">نمایش دکمه نوشته</option>
+                <option value="radio">نمایش دکمه رادیو</option>
+                <option value="magazine">نمایش دکمه مجله</option>
+              </select>
+            </div>
+
+            {activeBanner.ctaMode !== "none" && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">مقصد دکمه</label>
+                <select
+                  value={activeBanner.ctaTargetId || ""}
+                  onChange={(event) =>
+                    updateActiveBanner((banner) => ({
+                      ...banner,
+                      ctaTargetId: event.target.value || null,
+                    }))
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">انتخاب مقصد</option>
+                  {currentTargetOptions.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.title}
+                    </option>
+                  ))}
+                </select>
+                {!currentTargetOptions.length && (
+                  <p className="text-xs text-amber-600 dark:text-amber-300">
+                    برای این نوع دکمه هنوز محتوایی ثبت نشده است.
+                  </p>
+                )}
+              </div>
             )}
           </div>
         )}

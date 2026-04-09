@@ -109,16 +109,17 @@ type TagItem = {
   _count?: { articles?: number };
 };
 
+type DashboardTabKey =
+  | "home"
+  | "messaging"
+  | "articles"
+  | "magazines"
+  | "radios"
+  | "people"
+  | "tags";
+
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<
-    | "home"
-    | "messaging"
-    | "articles"
-    | "magazines"
-    | "radios"
-    | "people"
-    | "tags"
-  >("home");
+  const [activeTab, setActiveTab] = useState<DashboardTabKey>("home");
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [magazines, setMagazines] = useState<MagazineItem[]>([]);
   const [radios, setRadios] = useState<RadioItem[]>([]);
@@ -294,79 +295,57 @@ export default function Dashboard() {
     );
   }
 
+  const dashboardTabs: Array<{ key: DashboardTabKey; label: string }> = [
+    { key: "home", label: "خانه" },
+    { key: "articles", label: `نوشته‌ها (${articles.length})` },
+    { key: "radios", label: `رادیودات (${radios.length})` },
+    { key: "magazines", label: `مجلات (${magazines.length})` },
+    { key: "tags", label: `برچسب‌ها (${tags.length})` },
+    { key: "people", label: `افراد (${people.length})` },
+    { key: "messaging", label: "پیام‌رسان" },
+  ];
+
   return (
     <div className="space-y-6 text-slate-900 dark:text-slate-100">
-      <div className="flex gap-2 border-b">
-        <button
-          onClick={() => setActiveTab("home")}
-          className={`px-4 py-2 font-medium ${
-            activeTab === "home"
-              ? "border-b-2 border-primary text-primary"
-              : "text-slate-600 dark:text-slate-400"
-          }`}
-        >
-          خانه
-        </button>
-        <button
-          onClick={() => setActiveTab("articles")}
-          className={`px-4 py-2 font-medium ${
-            activeTab === "articles"
-              ? "border-b-2 border-primary text-primary"
-              : "text-slate-600 dark:text-slate-400"
-          }`}
-        >
-          نوشته‌ها ({articles.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("radios")}
-          className={`px-4 py-2 font-medium ${
-            activeTab === "radios"
-              ? "border-b-2 border-primary text-primary"
-              : "text-slate-600 dark:text-slate-400"
-          }`}
-        >
-          رادیودات ({radios.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("magazines")}
-          className={`px-4 py-2 font-medium ${
-            activeTab === "magazines"
-              ? "border-b-2 border-primary text-primary"
-              : "text-slate-600 dark:text-slate-400"
-          }`}
-        >
-          مجلات ({magazines.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("tags")}
-          className={`px-4 py-2 font-medium ${
-            activeTab === "tags"
-              ? "border-b-2 border-primary text-primary"
-              : "text-slate-600 dark:text-slate-400"
-          }`}
-        >
-          برچسب‌ها ({tags.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("people")}
-          className={`px-4 py-2 font-medium ${
-            activeTab === "people"
-              ? "border-b-2 border-primary text-primary"
-              : "text-slate-600 dark:text-slate-400"
-          }`}
-        >
-          افراد ({people.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("messaging")}
-          className={`px-4 py-2 font-medium ${
-            activeTab === "messaging"
-              ? "border-b-2 border-primary text-primary"
-              : "text-slate-600 dark:text-slate-400"
-          }`}
-        >
-          پیام‌رسان
-        </button>
+      <div className="border-b border-slate-200 pb-3 dark:border-slate-700">
+        <div className="md:hidden">
+          <label
+            htmlFor="admin-tab-select"
+            className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400"
+          >
+            انتخاب بخش مدیریت
+          </label>
+          <select
+            id="admin-tab-select"
+            value={activeTab}
+            onChange={(event) =>
+              setActiveTab(event.target.value as DashboardTabKey)
+            }
+            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          >
+            {dashboardTabs.map((tab) => (
+              <option key={tab.key} value={tab.key}>
+                {tab.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="hidden gap-2 md:flex md:flex-wrap">
+          {dashboardTabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tab.key
+                  ? "border-primary text-primary"
+                  : "border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {activeTab === "home" && (

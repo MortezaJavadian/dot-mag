@@ -364,6 +364,127 @@ a {
   border-radius: inherit;
 }
 
+.hero-bg-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-bg-effect {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero-bg-effect-none {
+  background: transparent;
+}
+
+.hero-bg-effect-soft-darken {
+  background:
+    linear-gradient(180deg, rgba(10, 12, 14, 0.16), rgba(10, 12, 14, 0.24)),
+    radial-gradient(
+      circle at 50% 25%,
+      rgba(255, 255, 255, 0.08),
+      transparent 60%
+    );
+}
+
+.hero-bg-effect-soft-lighten {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.16),
+      rgba(255, 255, 255, 0.12)
+    ),
+    radial-gradient(
+      circle at 50% 25%,
+      rgba(255, 255, 255, 0.2),
+      transparent 60%
+    );
+}
+
+.hero-bg-effect-warm-film {
+  background:
+    linear-gradient(180deg, rgba(84, 47, 24, 0.15), rgba(20, 14, 8, 0.16)),
+    radial-gradient(
+      circle at 78% 20%,
+      rgba(255, 210, 138, 0.18),
+      transparent 56%
+    );
+}
+
+.hero-bg-effect-subtle-blur {
+  background: rgba(10, 12, 14, 0.1);
+  backdrop-filter: blur(1.6px);
+  -webkit-backdrop-filter: blur(1.6px);
+}
+
+.hero-carousel-shell {
+  border-radius: 1.25rem;
+}
+
+.hero-carousel-nav-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(25, 29, 33, 0.22);
+  color: var(--foreground);
+  background: rgba(255, 255, 255, 0.84);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.hero-carousel-nav-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(25, 29, 33, 0.36);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.hero-carousel-nav-btn:active {
+  transform: translateY(0);
+}
+
+[data-theme="dark"] .hero-carousel-nav-btn {
+  border-color: rgba(230, 236, 242, 0.26);
+  color: #e8edf3;
+  background: rgba(24, 29, 35, 0.72);
+}
+
+[data-theme="dark"] .hero-carousel-nav-btn:hover {
+  border-color: rgba(230, 236, 242, 0.45);
+  background: rgba(33, 39, 47, 0.82);
+}
+
+.hero-carousel-dot {
+  width: 0.58rem;
+  height: 0.58rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background: rgba(82, 88, 96, 0.34);
+  transition:
+    width 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.hero-carousel-dot-active {
+  width: 1.55rem;
+  border-color: rgba(215, 59, 58, 0.35);
+  background: var(--color-primary);
+}
+
+[data-theme="dark"] .hero-carousel-dot {
+  background: rgba(232, 237, 243, 0.42);
+}
+
 /* Prose Styles for Articles */
 .prose {
   max-width: 72ch;
