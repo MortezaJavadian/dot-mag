@@ -12,10 +12,8 @@ interface ScrollToTargetFloatingButtonProps {
 }
 
 const INTERSECTION_THRESHOLDS = [0, 0.25, 0.5, 0.75, 0.95, 1];
-const MIN_SCROLL_DURATION_MS = 320;
-const MAX_SCROLL_DURATION_MS = 1280;
-const BASE_SCROLL_PIXELS_PER_MS = 2.4;
-const SCROLL_SLOWDOWN_MULTIPLIER = 1.2;
+const SCROLL_PIXELS_PER_FRAME = 38;
+const FRAME_MS = 1000 / 60;
 
 export function ScrollToTargetFloatingButton({
   targetId,
@@ -121,43 +119,37 @@ export function ScrollToTargetFloatingButton({
     (nextTop: number): number => {
       stopAnimatedScroll();
 
-      const startTop = window.scrollY;
-      const distance = nextTop - startTop;
+      const initialDistance = nextTop - window.scrollY;
 
-      if (Math.abs(distance) < 1) {
+      if (Math.abs(initialDistance) < 1) {
         window.scrollTo(0, nextTop);
         return 0;
       }
 
-      const baselineDuration = Math.min(
-        MAX_SCROLL_DURATION_MS,
-        Math.max(
-          MIN_SCROLL_DURATION_MS,
-          Math.abs(distance) / BASE_SCROLL_PIXELS_PER_MS,
-        ),
+      const estimatedDurationMs = Math.round(
+        Math.ceil(Math.abs(initialDistance) / SCROLL_PIXELS_PER_FRAME) *
+          FRAME_MS,
       );
-      const durationMs = Math.round(
-        baselineDuration * SCROLL_SLOWDOWN_MULTIPLIER,
-      );
-      const startTime = performance.now();
 
-      const step = (now: number) => {
-        const elapsed = now - startTime;
-        const progress = Math.min(elapsed / durationMs, 1);
-        const currentTop = startTop + distance * progress;
+      const step = () => {
+        const currentTop = window.scrollY;
+        const remaining = nextTop - currentTop;
 
-        window.scrollTo(0, currentTop);
-
-        if (progress < 1) {
-          scrollAnimationFrameRef.current = window.requestAnimationFrame(step);
+        if (Math.abs(remaining) <= SCROLL_PIXELS_PER_FRAME) {
+          window.scrollTo(0, nextTop);
+          scrollAnimationFrameRef.current = null;
           return;
         }
 
-        scrollAnimationFrameRef.current = null;
+        window.scrollTo(
+          0,
+          currentTop + Math.sign(remaining) * SCROLL_PIXELS_PER_FRAME,
+        );
+        scrollAnimationFrameRef.current = window.requestAnimationFrame(step);
       };
 
       scrollAnimationFrameRef.current = window.requestAnimationFrame(step);
-      return durationMs;
+      return estimatedDurationMs;
     },
     [stopAnimatedScroll],
   );

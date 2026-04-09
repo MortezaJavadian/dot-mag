@@ -506,7 +506,7 @@ export default async function RadioDetailPage({ params }: PageProps) {
         targetId="radio-full-episode-anchor"
         buttonLabel="شنیدن رادیو"
         scrollAlignment="top"
-        scrollDistanceScale={0.9}
+        scrollDistanceScale={0.95}
       />
 
       {related.length > 0 && (
