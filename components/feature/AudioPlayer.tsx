@@ -649,6 +649,26 @@ export function AudioPlayer({
     return Math.min((bufferedUntil / duration) * 100, 100);
   }, [bufferedUntil, duration]);
 
+  const playbackStatusLabel = isBuffering
+    ? "در حال بافر..."
+    : isReady
+      ? isPlaying
+        ? "در حال پخش"
+        : "آماده پخش"
+      : "در حال آماده‌سازی";
+
+  const cyclePlaybackRate = () => {
+    setPlaybackRate((prevRate) => {
+      const currentIndex = PLAYBACK_RATE_OPTIONS.indexOf(prevRate);
+      const nextIndex =
+        currentIndex >= 0
+          ? (currentIndex + 1) % PLAYBACK_RATE_OPTIONS.length
+          : 0;
+
+      return PLAYBACK_RATE_OPTIONS[nextIndex];
+    });
+  };
+
   const togglePlay = async () => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -793,15 +813,22 @@ export function AudioPlayer({
           >
             {title}
           </h3>
-          <p className="mt-1 text-xs md:text-sm text-foreground-secondary">
-            {isBuffering
-              ? "در حال بافر..."
-              : isReady
-                ? isPlaying
-                  ? "در حال پخش"
-                  : "آماده پخش"
-                : "در حال آماده‌سازی"}
-          </p>
+
+          <div className="mt-1 flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={cyclePlaybackRate}
+              className="shrink-0 rounded-full bg-foreground/8 px-3 py-1 text-xs md:text-sm font-semibold text-foreground transition-colors hover:bg-foreground/14"
+              aria-label="تغییر سرعت پخش"
+              title="تغییر سرعت پخش"
+            >
+              {playbackRate}x
+            </button>
+
+            <span className="inline-flex w-[8.75rem] md:w-[9.5rem] text-xs md:text-sm text-foreground-secondary whitespace-nowrap">
+              {playbackStatusLabel}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -832,34 +859,6 @@ export function AudioPlayer({
           )}
         </div>
       )}
-
-      <div className="flex items-center gap-2 md:gap-3">
-        <span className="text-xs md:text-sm text-foreground-secondary">
-          سرعت پخش:
-        </span>
-
-        <div className="flex flex-wrap gap-2">
-          {PLAYBACK_RATE_OPTIONS.map((rate) => {
-            const isActive = playbackRate === rate;
-
-            return (
-              <button
-                key={rate}
-                type="button"
-                onClick={() => setPlaybackRate(rate)}
-                className={`rounded-full px-3 py-1 text-xs md:text-sm transition-colors ${
-                  isActive
-                    ? "bg-primary text-white"
-                    : "bg-foreground/5 hover:bg-foreground/10"
-                }`}
-                aria-pressed={isActive}
-              >
-                {rate}x
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       <div className="space-y-2">
         <div className="relative h-3">
