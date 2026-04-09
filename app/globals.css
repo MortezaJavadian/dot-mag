@@ -120,9 +120,9 @@ body {
 p,
 article,
 .prose {
-  text-align: justify;
-  text-justify: inter-word;
-  hyphens: auto;
+  text-align: start;
+  text-justify: auto;
+  hyphens: none;
 }
 
 /* Selection */

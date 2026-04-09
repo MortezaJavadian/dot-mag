@@ -1,13 +1,21 @@
-const STATIC_CACHE_NAME = "dotmag-static-v3";
-const RUNTIME_CACHE_NAME = "dotmag-runtime-v3";
-const AUDIO_CACHE_NAME = "dotmag-audio-v3";
+const STATIC_CACHE_NAME = "dotmag-static-v4";
+const RUNTIME_CACHE_NAME = "dotmag-runtime-v4";
+const AUDIO_CACHE_NAME = "dotmag-audio-v4";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_URLS = [
   "/",
   "/radio",
   "/offline.html",
-  "/assets/fonts/webfonts/Vazirmatn[wght].woff2",
+  "/assets/fonts/webfonts/Vazirmatn-FD-Thin.woff2",
+  "/assets/fonts/webfonts/Vazirmatn-FD-ExtraLight.woff2",
+  "/assets/fonts/webfonts/Vazirmatn-FD-Light.woff2",
+  "/assets/fonts/webfonts/Vazirmatn-FD-Regular.woff2",
+  "/assets/fonts/webfonts/Vazirmatn-FD-Medium.woff2",
+  "/assets/fonts/webfonts/Vazirmatn-FD-SemiBold.woff2",
+  "/assets/fonts/webfonts/Vazirmatn-FD-Bold.woff2",
+  "/assets/fonts/webfonts/Vazirmatn-FD-ExtraBold.woff2",
+  "/assets/fonts/webfonts/Vazirmatn-FD-Black.woff2",
   "/assets/images/dot-logo.png",
 ];
 

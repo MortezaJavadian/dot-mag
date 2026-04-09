@@ -83,7 +83,7 @@ dot-mag/
 │   ├── assets/
 │   │   ├── fonts/
 │   │   │   └── webfonts/
-│   │   │       └── Vazirmatn[wght].woff2
+│   │   │       └── Vazirmatn-FD-*.woff2   # Static FD weights (100..900)
 │   │   ├── images/
 │   │   │   └── dot-logo.png
 │   │   └── icons/              # PWA icons
@@ -365,6 +365,8 @@ dot-mag/
 | 2026-04-09 | Radio size recovery + highlighted size fallback          | Updated `components/feature/AudioPlayer.tsx` to auto-resolve missing download sizes via HEAD/Range header probing (fixes highlighted segments showing `حجم نامشخص`), removed duplicate active-quality size text under quality tabs, changed selected-quality download CTA to `دانلود این کیفیت`, and added admin recovery flow with `refreshRadioAudioSizes` in `app/actions/radioActions.ts` plus `بازخوانی حجم فایل‌ها` button in `RadioEditor` for resyncing full-episode size metadata.                                                                                                                                                            |
 | 2026-04-09 | Audio progressive buffering + speed controls             | Changed `AudioPlayer` preload to `metadata` to prevent eager full-file download before play, added playback-speed controls (`1x`, `1.5x`, `2x`), and implemented playing-only one-minute range prefetch from the current playback position (including seek-based mid-file starts). Updated `public/sw.js` audio cache strategy (v3) to reuse cached partial range responses for subsequent overlapping range reads, reducing repeated downloads on replay/quality reuse.                                                                                                                                                                               |
 | 2026-04-09 | Audio speed bubble UX refinement                         | Replaced multi-button speed controls in `components/feature/AudioPlayer.tsx` with a single bubble that cycles `1x -> 1.5x -> 2x -> 1x` on tap, moved it inline with the playback status row, and fixed status-slot width so status text changes do not shift the speed bubble position.                                                                                                                                                                                                                                                                                                                                                                |
+| 2026-04-09 | Vazirmatn FD Persian-digit migration                     | Replaced root variable font with static `Vazirmatn-FD` weights (100..900), updated `public/sw.js` precache plus cache version keys, and removed runtime usage of `Vazirmatn[wght].woff2` to enforce Persian-digit typography while preserving the previous visual style.                                                                                                                                                                                                                                                                                                                                                                               |
+| 2026-04-10 | RTL text alignment de-justify fix                        | Updated global typography rules in `app/globals.css` from forced `justify` to logical-start alignment so Persian titles and one-line card summaries no longer show stretched inter-word gaps in mobile and desktop views.                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 ## Reuse Decisions
 
@@ -447,6 +449,8 @@ dot-mag/
 - Radio full-episode audio now supports optional `low` / `medium` / `high` quality sources. Admin can upload any subset (1 to 3), choose internal player quality, and public download options are rendered from available uploaded qualities only.
 
 - Radio and highlighted segment durations are auto-extracted from uploaded audio metadata in admin workflows; duration fields remain editable as fallback when metadata extraction fails or needs correction.
+
+- Typography now uses local static `Vazirmatn-FD` webfonts (weights 100..900); runtime no longer depends on `Vazirmatn[wght].woff2` variable source.
 
 - **API calls from public pages use short revalidation windows**: 60s default for list fetches
   - Balance between freshness and performance
@@ -688,7 +692,7 @@ See DEPLOYMENT_GUIDE.md for detailed deployment instructions.
 - **No Auth**: No login/signup pages
 - **No E-commerce**: No store section
 - **Images**: Using placeholders until actual images provided
-- **Font**: Using local Vazirmatn variable font
+- **Font**: Using local static Vazirmatn FD webfonts (100..900)
 
 ## Color Palette Reference
 
