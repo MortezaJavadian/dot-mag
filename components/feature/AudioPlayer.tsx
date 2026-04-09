@@ -22,6 +22,10 @@ type QualityOption = {
   sizeBytes?: number | null;
 };
 
+const PLAYBACK_RATE_OPTIONS = [1, 1.5, 2] as const;
+const PREFETCH_AHEAD_SECONDS = 60;
+const PREFETCH_BUCKET_SECONDS = 15;
+
 interface AudioPlayerProps {
   src: string;
   title: string;
@@ -227,8 +231,11 @@ export function AudioPlayer({
   const [resolvedSizeByUrl, setResolvedSizeByUrl] = useState<
     Record<string, number | null>
   >({});
+  const [playbackRate, setPlaybackRate] =
+    useState<(typeof PLAYBACK_RATE_OPTIONS)[number]>(1);
   const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
+  const prefetchedRangesRef = useRef<Set<string>>(new Set());
 
   const normalizedQualityOptions = useMemo(() => {
     const byKey = new Map<PlayerAudioQuality, QualityOption>();
@@ -292,6 +299,15 @@ export function AudioPlayer({
   }, [activeQuality, normalizedQualityOptions]);
 
   const effectiveSrc = activeQualityOption?.url || src;
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) {
+      return;
+    }
+
+    audio.playbackRate = playbackRate;
+  }, [playbackRate, effectiveSrc]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -438,6 +454,7 @@ export function AudioPlayer({
     const onLoadedMetadata = () => {
       setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
       updateBuffered();
+      audio.playbackRate = playbackRate;
 
       const pendingResume = sourceChangeResumeRef.current;
       if (!pendingResume) {
@@ -522,7 +539,105 @@ export function AudioPlayer({
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("error", onError);
     };
+  }, [effectiveSrc, playbackRate]);
+
+  const effectiveSourceSize = useMemo(() => {
+    const explicitSize = normalizeOptionalSize(activeQualityOption?.sizeBytes);
+    if (explicitSize !== null) {
+      return explicitSize;
+    }
+
+    if (!effectiveSrc) {
+      return null;
+    }
+
+    return normalizeOptionalSize(resolvedSizeByUrl[effectiveSrc]);
+  }, [activeQualityOption?.sizeBytes, effectiveSrc, resolvedSizeByUrl]);
+
+  useEffect(() => {
+    prefetchedRangesRef.current.clear();
   }, [effectiveSrc]);
+
+  useEffect(() => {
+    if (!isPlaying) {
+      return;
+    }
+
+    if (!effectiveSrc || !duration || duration <= 0) {
+      return;
+    }
+
+    if (!effectiveSourceSize || effectiveSourceSize <= 0) {
+      return;
+    }
+
+    const bucketStartSec =
+      Math.floor(Math.max(currentTime, 0) / PREFETCH_BUCKET_SECONDS) *
+      PREFETCH_BUCKET_SECONDS;
+    const prefetchStartSec = Math.min(bucketStartSec, duration);
+    const prefetchEndSec = Math.min(
+      duration,
+      prefetchStartSec + PREFETCH_AHEAD_SECONDS,
+    );
+
+    if (prefetchEndSec <= prefetchStartSec) {
+      return;
+    }
+
+    const bytesPerSecond = effectiveSourceSize / duration;
+    const rangeStart = Math.max(
+      0,
+      Math.floor(prefetchStartSec * bytesPerSecond),
+    );
+    const rangeEnd = Math.min(
+      effectiveSourceSize - 1,
+      Math.max(rangeStart, Math.ceil(prefetchEndSec * bytesPerSecond) - 1),
+    );
+
+    const rangeKey = `${effectiveSrc}|${rangeStart}-${rangeEnd}`;
+    if (prefetchedRangesRef.current.has(rangeKey)) {
+      return;
+    }
+
+    prefetchedRangesRef.current.add(rangeKey);
+
+    const controller = new AbortController();
+    let isDisposed = false;
+
+    const prefetchRange = async () => {
+      try {
+        const absoluteUrl = new URL(effectiveSrc, window.location.origin);
+        const response = await fetch(absoluteUrl.toString(), {
+          method: "GET",
+          headers: {
+            Range: `bytes=${rangeStart}-${rangeEnd}`,
+          },
+          cache: "default",
+          signal: controller.signal,
+        });
+
+        if (!response.ok && response.status !== 206) {
+          if (!isDisposed) {
+            prefetchedRangesRef.current.delete(rangeKey);
+          }
+          return;
+        }
+
+        await response.arrayBuffer();
+      } catch {
+        if (!isDisposed) {
+          prefetchedRangesRef.current.delete(rangeKey);
+        }
+      }
+    };
+
+    void prefetchRange();
+
+    return () => {
+      isDisposed = true;
+      controller.abort();
+    };
+  }, [currentTime, duration, effectiveSourceSize, effectiveSrc, isPlaying]);
 
   const progressPercent = useMemo(() => {
     if (!duration) return 0;
@@ -637,7 +752,7 @@ export function AudioPlayer({
         compact ? "space-y-3" : "space-y-4"
       }`}
     >
-      <audio ref={audioRef} src={effectiveSrc} preload="auto" />
+      <audio ref={audioRef} src={effectiveSrc} preload="metadata" />
 
       <div className="flex items-center gap-3 md:gap-4">
         <button
@@ -717,6 +832,34 @@ export function AudioPlayer({
           )}
         </div>
       )}
+
+      <div className="flex items-center gap-2 md:gap-3">
+        <span className="text-xs md:text-sm text-foreground-secondary">
+          سرعت پخش:
+        </span>
+
+        <div className="flex flex-wrap gap-2">
+          {PLAYBACK_RATE_OPTIONS.map((rate) => {
+            const isActive = playbackRate === rate;
+
+            return (
+              <button
+                key={rate}
+                type="button"
+                onClick={() => setPlaybackRate(rate)}
+                className={`rounded-full px-3 py-1 text-xs md:text-sm transition-colors ${
+                  isActive
+                    ? "bg-primary text-white"
+                    : "bg-foreground/5 hover:bg-foreground/10"
+                }`}
+                aria-pressed={isActive}
+              >
+                {rate}x
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="space-y-2">
         <div className="relative h-3">
