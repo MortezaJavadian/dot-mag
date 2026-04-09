@@ -6,6 +6,7 @@ import {
   createRadio,
   deleteRadio,
   deleteRadioSegment,
+  refreshRadioAudioSizes,
   reorderRadioSegments,
   updateRadio,
   updateRadioSegment,
@@ -381,6 +382,7 @@ export default function RadioEditor({
     useState<Record<string, UploadTaskState>>({});
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
   const [syncingMainDuration, setSyncingMainDuration] = useState(false);
+  const [syncingAudioSizes, setSyncingAudioSizes] = useState(false);
   const [error, setError] = useState("");
 
   const isExistingRadio = Boolean(radio?.id);
@@ -615,6 +617,34 @@ export default function RadioEditor({
       setError(getErrorMessage(durationError, "خطا در محاسبه زمان فایل صوتی"));
     } finally {
       setSyncingMainDuration(false);
+    }
+  };
+
+  const handleRefreshAudioSizes = async () => {
+    if (!isExistingRadio || !radioId) {
+      setError("ابتدا رادیودات را ذخیره کنید");
+      return;
+    }
+
+    setSyncingAudioSizes(true);
+    setError("");
+
+    try {
+      const result = await refreshRadioAudioSizes(radioId);
+      if (!result.success || !result.data) {
+        throw new Error(result.error || "خطا در بازخوانی حجم فایل‌ها");
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        audioSizeLow: normalizeOptionalSize(result.data.audioSizeLow),
+        audioSizeMedium: normalizeOptionalSize(result.data.audioSizeMedium),
+        audioSizeHigh: normalizeOptionalSize(result.data.audioSizeHigh),
+      }));
+    } catch (refreshError: unknown) {
+      setError(getErrorMessage(refreshError, "خطا در بازخوانی حجم فایل‌ها"));
+    } finally {
+      setSyncingAudioSizes(false);
     }
   };
 
@@ -1047,14 +1077,27 @@ export default function RadioEditor({
         </div>
 
         <div className="rounded-xl border border-slate-300 dark:border-slate-700 p-4 md:p-5 space-y-4">
-          <div>
-            <h3 className="text-base md:text-lg font-semibold">
-              فایل اپیزود کامل
-            </h3>
-            <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-1">
-              می‌توانید یک، دو یا سه کیفیت آپلود کنید. دانلودهای صفحه رادیودات
-              فقط بر اساس کیفیت‌های آپلود شده نمایش داده می‌شوند.
-            </p>
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h3 className="text-base md:text-lg font-semibold">
+                فایل اپیزود کامل
+              </h3>
+              <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-1">
+                می‌توانید یک، دو یا سه کیفیت آپلود کنید. دانلودهای صفحه رادیودات
+                فقط بر اساس کیفیت‌های آپلود شده نمایش داده می‌شوند.
+              </p>
+            </div>
+
+            <Button
+              type="button"
+              onClick={handleRefreshAudioSizes}
+              disabled={!isExistingRadio || syncingAudioSizes}
+              className="w-fit bg-slate-700 hover:bg-slate-800 md:shrink-0"
+            >
+              {syncingAudioSizes
+                ? "در حال بازخوانی حجم..."
+                : "بازخوانی حجم فایل‌ها"}
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

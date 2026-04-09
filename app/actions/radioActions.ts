@@ -3,7 +3,10 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { getAdminUser } from "@/lib/auth";
+import { getUploadUrl } from "@/lib/uploads";
 import { revalidateTag } from "next/cache";
+import { stat } from "fs/promises";
+import { join } from "path";
 
 function generateSlug(title: string): string {
   return title
@@ -104,6 +107,48 @@ function normalizeOptionalSize(value?: number | null): number | null {
   }
 
   return Math.floor(value);
+}
+
+function extractStoredUploadFileName(input?: string | null): string | null {
+  const normalizedUrl = getUploadUrl(input);
+  if (!normalizedUrl) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(normalizedUrl, "http://localhost");
+    const rawName = parsed.pathname.split("/").pop();
+    if (!rawName) {
+      return null;
+    }
+
+    const decodedName = decodeURIComponent(rawName);
+    if (!/^[\w.-]+$/u.test(decodedName)) {
+      return null;
+    }
+
+    return decodedName;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveUploadedFileSize(
+  input?: string | null,
+): Promise<number | null> {
+  const storedFileName = extractStoredUploadFileName(input);
+  if (!storedFileName) {
+    return null;
+  }
+
+  const filePath = join(process.cwd(), "public", "uploads", storedFileName);
+
+  try {
+    const fileStats = await stat(filePath);
+    return normalizeOptionalSize(fileStats.size);
+  } catch {
+    return null;
+  }
 }
 
 function normalizePlayerAudioQuality(
@@ -336,6 +381,65 @@ export async function updateRadio(id: string, data: UpdateRadioInput) {
   } catch (error) {
     console.error("Update radio error:", error);
     return { success: false, error: "Failed to update radio" };
+  }
+}
+
+export async function refreshRadioAudioSizes(radioId: string) {
+  const authResult = await requireAdmin();
+  if (!authResult.success) {
+    return authResult;
+  }
+
+  try {
+    const existingRadio = await prisma.radio.findUnique({
+      where: { id: radioId },
+      select: {
+        audioUrl: true,
+        audioUrlLow: true,
+        audioUrlMedium: true,
+        audioUrlHigh: true,
+      },
+    });
+
+    if (!existingRadio) {
+      return { success: false, error: "Radio not found" };
+    }
+
+    const [audioSizeLow, audioSizeMedium, audioSizeHigh] = await Promise.all([
+      resolveUploadedFileSize(existingRadio.audioUrlLow),
+      resolveUploadedFileSize(existingRadio.audioUrlMedium),
+      resolveUploadedFileSize(
+        existingRadio.audioUrlHigh || existingRadio.audioUrl,
+      ),
+    ]);
+
+    const radio = await prisma.radio.update({
+      where: { id: radioId },
+      data: {
+        audioSizeLow,
+        audioSizeMedium,
+        audioSizeHigh,
+      },
+      include: {
+        segments: { orderBy: { number: "asc" } },
+        person: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            bio: true,
+            isDotTeamMember: true,
+          },
+        },
+      },
+    });
+
+    revalidateRadiosCache();
+
+    return { success: true, data: radio };
+  } catch (error) {
+    console.error("Refresh radio audio sizes error:", error);
+    return { success: false, error: "Failed to refresh audio sizes" };
   }
 }
 

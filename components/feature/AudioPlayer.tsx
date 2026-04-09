@@ -87,6 +87,89 @@ function formatFileSize(sizeBytes?: number | null): string {
   return `${size} B`;
 }
 
+function parsePositiveSizeHeader(value: string | null): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return Math.floor(parsed);
+}
+
+function parseContentRangeTotalSize(value: string | null): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const match = /\/(\d+)\s*$/u.exec(value);
+  if (!match) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(match[1], 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return Math.floor(parsed);
+}
+
+async function resolveRemoteFileSize(rawUrl: string): Promise<number | null> {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const absoluteUrl = new URL(rawUrl, window.location.origin).toString();
+
+    try {
+      const headResponse = await fetch(absoluteUrl, {
+        method: "HEAD",
+        cache: "no-store",
+      });
+
+      if (headResponse.ok) {
+        const sizeFromHead = parsePositiveSizeHeader(
+          headResponse.headers.get("content-length"),
+        );
+        if (sizeFromHead !== null) {
+          return sizeFromHead;
+        }
+      }
+    } catch {
+      // Fallback to range request.
+    }
+
+    const rangeResponse = await fetch(absoluteUrl, {
+      method: "GET",
+      headers: {
+        Range: "bytes=0-0",
+      },
+      cache: "no-store",
+    });
+
+    const sizeFromContentRange = parseContentRangeTotalSize(
+      rangeResponse.headers.get("content-range"),
+    );
+    if (sizeFromContentRange !== null) {
+      rangeResponse.body?.cancel();
+      return sizeFromContentRange;
+    }
+
+    const sizeFromContentLength = parsePositiveSizeHeader(
+      rangeResponse.headers.get("content-length"),
+    );
+    rangeResponse.body?.cancel();
+    return sizeFromContentLength;
+  } catch {
+    return null;
+  }
+}
+
 function buildDownloadHref(rawUrl: string): string {
   if (typeof window === "undefined") {
     return rawUrl;
@@ -141,6 +224,9 @@ export function AudioPlayer({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [bufferedUntil, setBufferedUntil] = useState(0);
+  const [resolvedSizeByUrl, setResolvedSizeByUrl] = useState<
+    Record<string, number | null>
+  >({});
   const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
 
@@ -266,6 +352,56 @@ export function AudioPlayer({
   const [selectedDownloadUrl, setSelectedDownloadUrl] = useState(
     normalizedDownloadOptions[0]?.url || "",
   );
+
+  useEffect(() => {
+    let isDisposed = false;
+
+    const unresolvedOptions = normalizedDownloadOptions.filter((option) => {
+      if (!option.url) {
+        return false;
+      }
+
+      if (normalizeOptionalSize(option.sizeBytes) !== null) {
+        return false;
+      }
+
+      return !Object.prototype.hasOwnProperty.call(
+        resolvedSizeByUrl,
+        option.url,
+      );
+    });
+
+    if (unresolvedOptions.length === 0) {
+      return;
+    }
+
+    const resolveMissingSizes = async () => {
+      for (const option of unresolvedOptions) {
+        const resolvedSize = await resolveRemoteFileSize(option.url);
+
+        if (isDisposed) {
+          return;
+        }
+
+        setResolvedSizeByUrl((current) => {
+          if (Object.prototype.hasOwnProperty.call(current, option.url)) {
+            return current;
+          }
+
+          return {
+            ...current,
+            [option.url]: resolvedSize,
+          };
+        });
+      }
+    };
+
+    void resolveMissingSizes();
+
+    return () => {
+      isDisposed = true;
+    };
+  }, [normalizedDownloadOptions, resolvedSizeByUrl]);
 
   useEffect(() => {
     if (activeQualityOption?.url) {
@@ -433,6 +569,34 @@ export function AudioPlayer({
         (option) => option.url === selectedDownloadUrl,
       ) || normalizedDownloadOptions[0];
 
+  const resolveOptionSizeForDisplay = (option: {
+    url: string;
+    sizeBytes?: number | null;
+  }): number | null | undefined => {
+    const explicitSize = normalizeOptionalSize(option.sizeBytes);
+    if (explicitSize !== null) {
+      return explicitSize;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(resolvedSizeByUrl, option.url)) {
+      return resolvedSizeByUrl[option.url];
+    }
+
+    return undefined;
+  };
+
+  const resolveOptionSizeText = (option: {
+    url: string;
+    sizeBytes?: number | null;
+  }): string => {
+    const resolvedSize = resolveOptionSizeForDisplay(option);
+    if (resolvedSize === undefined) {
+      return "در حال محاسبه...";
+    }
+
+    return formatFileSize(resolvedSize);
+  };
+
   const handleDownload = () => {
     if (!selectedDownloadOption?.url || downloading) {
       return;
@@ -545,18 +709,11 @@ export function AudioPlayer({
                     }`}
                     aria-pressed={isActive}
                   >
-                    {option.label} ({formatFileSize(option.sizeBytes)})
+                    {option.label} ({resolveOptionSizeText(option)})
                   </button>
                 );
               })}
             </div>
-          )}
-
-          {activeQualityOption && (
-            <p className="text-xs md:text-sm text-foreground-secondary">
-              حجم {activeQualityOption.label}:{" "}
-              {formatFileSize(activeQualityOption.sizeBytes)}
-            </p>
           )}
         </div>
       )}
@@ -600,7 +757,7 @@ export function AudioPlayer({
             size="sm"
             className="w-fit bg-slate-700 hover:bg-slate-800"
           >
-            {downloading ? "در حال دانلود..." : "دانلود کیفیت انتخابی"}
+            {downloading ? "در حال دانلود..." : "دانلود این کیفیت"}
           </Button>
         ) : normalizedDownloadOptions.length > 1 ? (
           <div className="flex items-center gap-2">
@@ -615,9 +772,7 @@ export function AudioPlayer({
                   value={option.url}
                 >
                   {option.label}
-                  {option.sizeBytes
-                    ? ` (${formatFileSize(option.sizeBytes)})`
-                    : ""}
+                  {` (${resolveOptionSizeText(option)})`}
                 </option>
               ))}
             </select>
@@ -646,7 +801,7 @@ export function AudioPlayer({
 
         {normalizedQualityOptions.length === 0 && selectedDownloadOption && (
           <span className="text-xs md:text-sm text-foreground-secondary">
-            حجم فایل: {formatFileSize(selectedDownloadOption.sizeBytes)}
+            حجم فایل: {resolveOptionSizeText(selectedDownloadOption)}
           </span>
         )}
       </div>
