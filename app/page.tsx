@@ -92,18 +92,14 @@ function applySecondLineMode(html: string, secondLineAsTitle: boolean): string {
   const match = html.match(headingPattern);
   if (!match) return html;
 
+  const headingAttributes = match[1] || "";
   const headingInner = match[2] || "";
-  const stripInlineStyles = (value: string) =>
-    value
-      .replace(/\sstyle="[^"]*"/gi, "")
-      .replace(/\sstyle='[^']*'/gi, "")
-      .trim();
 
   const buildSingleLineHeading = (lineContent: string) => {
-    const normalizedLine = stripInlineStyles(lineContent);
+    const normalizedLine = lineContent.trim();
     if (!normalizedLine) return html;
 
-    const rebuiltHeading = `<h1><span class="hero-line-one-strong">${normalizedLine}</span></h1>`;
+    const rebuiltHeading = `<h1${headingAttributes}><span class="hero-line-one-strong">${normalizedLine}</span></h1>`;
     return html.replace(headingPattern, rebuiltHeading);
   };
 
@@ -132,7 +128,7 @@ function applySecondLineMode(html: string, secondLineAsTitle: boolean): string {
     ? "hero-line-two-strong"
     : "hero-line-two-normal";
 
-  const rebuiltHeading = `<h1><span class="hero-line-one-strong">${stripInlineStyles(firstLine)}</span><span class="${secondLineClass}">${stripInlineStyles(secondLineRaw)}</span></h1>`;
+  const rebuiltHeading = `<h1${headingAttributes}><span class="hero-line-one-strong">${firstLine.trim()}</span><span class="${secondLineClass}">${secondLineRaw}</span></h1>`;
 
   return html.replace(headingPattern, rebuiltHeading);
 }
