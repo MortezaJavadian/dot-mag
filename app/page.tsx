@@ -95,47 +95,78 @@ function applySecondLineMode(html: string, secondLineAsTitle: boolean): string {
   const headingAttributes = match[1] || "";
   const headingInner = match[2] || "";
 
-  const buildSingleLineHeading = (lineContent: string) => {
-    const normalizedLine = lineContent.trim();
-    if (!normalizedLine) return html;
+  const headingLines = extractNormalizedHeroLines(headingInner);
+  const firstLine = headingLines[0] || "";
+  const secondLineRaw = headingLines[1] || "";
+  const overflowLines = headingLines.slice(2);
 
-    const rebuiltHeading = `<h1${headingAttributes}><span class="hero-line-one-strong">${normalizedLine}</span></h1>`;
-    return html.replace(headingPattern, rebuiltHeading);
-  };
-
-  const brMatch = headingInner.match(/<br\s*\/?\s*>/i);
-  if (!brMatch || brMatch.index === undefined) {
-    return buildSingleLineHeading(headingInner);
-  }
-
-  const splitIndex = brMatch.index + brMatch[0].length;
-  const firstLine = headingInner
-    .slice(0, splitIndex)
-    .replace(/<br\s*\/?\s*>\s*$/i, "");
-  const secondLineRaw = headingInner
-    .slice(splitIndex)
-    .replace(
-      /<span class="hero-line-two-(strong|normal)">([\s\S]*?)<\/span>/gi,
-      "$2",
-    )
-    .trim();
-
-  if (!secondLineRaw) {
-    return buildSingleLineHeading(firstLine);
-  }
+  if (!firstLine) return html;
 
   const secondLineClass = secondLineAsTitle
     ? "hero-line-two-strong"
     : "hero-line-two-normal";
 
-  const rebuiltHeading = `<h1${headingAttributes}><span class="hero-line-one-strong">${firstLine.trim()}</span><span class="${secondLineClass}">${secondLineRaw}</span></h1>`;
+  const rebuiltHeading = `<h1${headingAttributes}><span class="hero-line-one-strong">${firstLine}</span>${
+    secondLineRaw
+      ? `<span class="${secondLineClass}">${secondLineRaw}</span>`
+      : ""
+  }</h1>`;
 
-  return html.replace(headingPattern, rebuiltHeading);
+  const overflowParagraph = overflowLines.length
+    ? `<p>${overflowLines.join("<br />")}</p>`
+    : "";
+
+  return html.replace(headingPattern, `${rebuiltHeading}${overflowParagraph}`);
+}
+
+function stripHeroLineClassWrappers(value: string): string {
+  return value.replace(
+    /<span class="hero-line-(one-strong|two-strong|two-normal)">([\s\S]*?)<\/span>/gi,
+    "$2",
+  );
+}
+
+function stripOuterBlockTag(value: string): string {
+  let next = value.trim();
+  let previous = "";
+
+  while (next !== previous) {
+    previous = next;
+    next = next
+      .replace(/^<(p|h1|h2|h3|h4|h5|h6)([^>]*)>\s*/i, "")
+      .replace(/\s*<\/(p|h1|h2|h3|h4|h5|h6)>$/i, "")
+      .trim();
+  }
+
+  return next;
+}
+
+function isMeaningfulHtmlLine(value: string): boolean {
+  const plain = value
+    .replace(/<br\s*\/?\s*>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\u200c/g, "")
+    .trim();
+
+  return plain.length > 0;
+}
+
+function extractNormalizedHeroLines(value: string): string[] {
+  return stripHeroLineClassWrappers(value)
+    .split(/<br\s*\/?\s*>/gi)
+    .map((line) => stripOuterBlockTag(line))
+    .map((line) => line.trim())
+    .filter((line) => isMeaningfulHtmlLine(line));
 }
 
 function normalizeHeroHeadingStructure(html: string): string {
   const trimmed = html.trim();
   if (!trimmed) return "";
+
+  if (!/<[^>]+>/.test(trimmed)) {
+    return `<h1>${trimmed}</h1>`;
+  }
 
   const blockPattern = /<(h1|p)([^>]*)>([\s\S]*?)<\/\1>/gi;
   const blocks: Array<{
@@ -144,60 +175,76 @@ function normalizeHeroHeadingStructure(html: string): string {
     inner: string;
     start: number;
     end: number;
+    lines: string[];
+    blockIndex: number;
   }> = [];
 
   let match: RegExpExecArray | null;
   while ((match = blockPattern.exec(trimmed)) !== null) {
+    const lines = extractNormalizedHeroLines(match[3] || "");
     blocks.push({
       tag: match[1] as "h1" | "p",
       attrs: match[2] || "",
       inner: match[3] || "",
       start: match.index,
       end: match.index + match[0].length,
+      lines,
+      blockIndex: blocks.length,
     });
 
-    if (blocks.length >= 3) break;
+    if (blocks.length >= 8) break;
   }
 
   if (!blocks.length) {
     return `<h1>${trimmed}</h1>`;
   }
 
-  const first = blocks[0];
-  const second = blocks[1];
-  const firstInner = first.inner.trim();
-  const secondInner = second?.inner.trim() || "";
-
-  if (first.tag === "h1" && /<br\s*\/?>/i.test(firstInner)) {
+  const meaningfulBlocks = blocks.filter((block) => block.lines.length > 0);
+  if (!meaningfulBlocks.length) {
     return trimmed;
   }
 
-  let headingInner = firstInner;
-  let consumeSecond = false;
-
-  if (!headingInner && second?.tag === "p" && secondInner) {
-    headingInner = secondInner;
-    consumeSecond = true;
-  } else if (second?.tag === "p" && secondInner) {
-    headingInner = `${headingInner}<br />${secondInner}`;
-    consumeSecond = true;
-  }
-
-  if (!headingInner) {
+  const first = meaningfulBlocks[0];
+  const firstLine = first.lines[0] || "";
+  if (!firstLine) {
     return trimmed;
   }
 
-  const mergedHeading = `<h1${first.attrs}>${headingInner}</h1>`;
-
-  if (!consumeSecond || !second) {
-    return `${trimmed.slice(0, first.start)}${mergedHeading}${trimmed.slice(first.end)}`.trim();
+  let secondLine = first.lines[1] || "";
+  const overflowLines: string[] = [];
+  if (first.lines.length > 2) {
+    overflowLines.push(...first.lines.slice(2));
   }
 
-  const prefix = trimmed.slice(0, first.start);
-  const between = trimmed.slice(first.end, second.start);
-  const suffix = trimmed.slice(second.end);
+  let consumedSecondBlock: (typeof meaningfulBlocks)[number] | null = null;
+  if (!secondLine) {
+    const secondCandidate = meaningfulBlocks.find(
+      (block) => block.blockIndex > first.blockIndex,
+    );
 
-  return `${prefix}${mergedHeading}${between}${suffix}`.trim();
+    if (secondCandidate) {
+      secondLine = secondCandidate.lines[0] || "";
+      if (secondCandidate.lines.length > 1) {
+        overflowLines.push(...secondCandidate.lines.slice(1));
+      }
+      consumedSecondBlock = secondCandidate;
+    }
+  }
+
+  const headingAttrs = first.tag === "h1" ? first.attrs : "";
+  const mergedHeading = `<h1${headingAttrs}>${firstLine}${
+    secondLine ? `<br />${secondLine}` : ""
+  }</h1>`;
+  const overflowParagraph = overflowLines.length
+    ? `<p>${overflowLines.join("<br />")}</p>`
+    : "";
+  const replacement = `${mergedHeading}${overflowParagraph}`;
+
+  if (!consumedSecondBlock) {
+    return `${trimmed.slice(0, first.start)}${replacement}${trimmed.slice(first.end)}`.trim();
+  }
+
+  return `${trimmed.slice(0, first.start)}${replacement}${trimmed.slice(first.end, consumedSecondBlock.start)}${trimmed.slice(consumedSecondBlock.end)}`.trim();
 }
 
 function stabilizeRtlSentenceEnding(html: string): string {
