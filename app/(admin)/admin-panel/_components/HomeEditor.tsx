@@ -120,10 +120,27 @@ function moveItemInArray<T>(
   return next;
 }
 
-function createEmptyBanner(): HomeBannerFormState {
+function createBannerFromTemplate(
+  template?: HomeBannerFormState | null,
+): HomeBannerFormState {
+  if (!template) {
+    return {
+      id: createBannerId(),
+      ...DEFAULT_BANNER_TEMPLATE,
+    };
+  }
+
   return {
     id: createBannerId(),
-    ...DEFAULT_BANNER_TEMPLATE,
+    badgeText: template.badgeText || "",
+    heroHtml: template.heroHtml || "",
+    secondLineAsTitle: template.secondLineAsTitle,
+    image: template.image || null,
+    backgroundMobileImage: template.backgroundMobileImage || null,
+    backgroundDesktopImage: template.backgroundDesktopImage || null,
+    effectPreset: template.effectPreset || "none",
+    ctaMode: template.ctaMode || "none",
+    ctaTargetId: template.ctaTargetId || null,
   };
 }
 
@@ -247,11 +264,11 @@ export default function HomeEditor({
     setError("");
     setSuccess("");
 
-    const nextBanner = createEmptyBanner();
+    const nextBanner = createBannerFromTemplate(formData.banners[0] || null);
 
     setFormData((prev) => ({
       ...prev,
-      banners: [nextBanner, ...prev.banners],
+      banners: [...prev.banners, nextBanner],
     }));
     setActiveBannerId(nextBanner.id);
   };

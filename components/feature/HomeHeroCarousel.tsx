@@ -70,10 +70,6 @@ export default function HomeHeroCarousel({
   const safeActiveIndex = normalizeIndex(activeIndex, slides.length);
 
   useEffect(() => {
-    setActiveIndex((prev) => normalizeIndex(prev, slides.length));
-  }, [slides.length]);
-
-  useEffect(() => {
     if (slides.length <= 1 || autoRotateSeconds <= 0) return;
 
     const delayMs = Math.max(1000, Math.floor(autoRotateSeconds * 1000));
@@ -150,6 +146,7 @@ export default function HomeHeroCarousel({
           <div
             className="flex transition-transform duration-700 ease-out"
             style={slideStyle}
+            dir="ltr"
           >
             {slides.map((slide, index) => {
               return (
