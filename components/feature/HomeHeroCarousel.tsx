@@ -203,7 +203,7 @@ export default function HomeHeroCarousel({
                       )}
 
                       <div
-                        className="max-w-2xl lg:ml-auto [&_h1]:!text-right [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:!text-right [&_p]:[unicode-bidi:plaintext] [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4 [&_.hero-line-two-strong]:block [&_.hero-line-two-strong]:font-black [&_.hero-line-two-strong]:!text-right [&_.hero-line-two-normal]:block [&_.hero-line-two-normal]:text-lg md:[&_.hero-line-two-normal]:text-xl [&_.hero-line-two-normal]:font-normal [&_.hero-line-two-normal]:leading-relaxed [&_.hero-line-two-normal]:!text-right"
+                        className="max-w-2xl lg:ml-auto [&_h1]:!text-right [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:!text-right [&_p]:[unicode-bidi:plaintext] [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4 [&_.hero-line-one-strong]:block [&_.hero-line-one-strong]:font-black [&_.hero-line-one-strong]:!text-right [&_.hero-line-two-strong]:block [&_.hero-line-two-strong]:font-black [&_.hero-line-two-strong]:!text-right [&_.hero-line-two-normal]:block [&_.hero-line-two-normal]:text-lg md:[&_.hero-line-two-normal]:text-xl [&_.hero-line-two-normal]:font-normal [&_.hero-line-two-normal]:leading-relaxed [&_.hero-line-two-normal]:!text-right"
                         dangerouslySetInnerHTML={{ __html: slide.safeHeroHtml }}
                       />
 

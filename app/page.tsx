@@ -92,13 +92,30 @@ function applySecondLineMode(html: string, secondLineAsTitle: boolean): string {
   const match = html.match(headingPattern);
   if (!match) return html;
 
-  const headingAttributes = match[1] || "";
   const headingInner = match[2] || "";
+  const stripInlineStyles = (value: string) =>
+    value
+      .replace(/\sstyle="[^"]*"/gi, "")
+      .replace(/\sstyle='[^']*'/gi, "")
+      .trim();
+
+  const buildSingleLineHeading = (lineContent: string) => {
+    const normalizedLine = stripInlineStyles(lineContent);
+    if (!normalizedLine) return html;
+
+    const rebuiltHeading = `<h1><span class="hero-line-one-strong">${normalizedLine}</span></h1>`;
+    return html.replace(headingPattern, rebuiltHeading);
+  };
+
   const brMatch = headingInner.match(/<br\s*\/?\s*>/i);
-  if (!brMatch || brMatch.index === undefined) return html;
+  if (!brMatch || brMatch.index === undefined) {
+    return buildSingleLineHeading(headingInner);
+  }
 
   const splitIndex = brMatch.index + brMatch[0].length;
-  const firstLine = headingInner.slice(0, splitIndex);
+  const firstLine = headingInner
+    .slice(0, splitIndex)
+    .replace(/<br\s*\/?\s*>\s*$/i, "");
   const secondLineRaw = headingInner
     .slice(splitIndex)
     .replace(
@@ -107,13 +124,15 @@ function applySecondLineMode(html: string, secondLineAsTitle: boolean): string {
     )
     .trim();
 
-  if (!secondLineRaw) return html;
+  if (!secondLineRaw) {
+    return buildSingleLineHeading(firstLine);
+  }
 
   const secondLineClass = secondLineAsTitle
     ? "hero-line-two-strong"
     : "hero-line-two-normal";
 
-  const rebuiltHeading = `<h1${headingAttributes}>${firstLine}<span class="${secondLineClass}">${secondLineRaw}</span></h1>`;
+  const rebuiltHeading = `<h1><span class="hero-line-one-strong">${stripInlineStyles(firstLine)}</span><span class="${secondLineClass}">${stripInlineStyles(secondLineRaw)}</span></h1>`;
 
   return html.replace(headingPattern, rebuiltHeading);
 }
@@ -348,7 +367,7 @@ export default async function HomePage() {
                 )}
 
                 <div
-                  className="max-w-2xl lg:ml-auto [&_h1]:!text-right [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:!text-right [&_p]:[unicode-bidi:plaintext] [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4 [&_.hero-line-two-strong]:block [&_.hero-line-two-strong]:font-black [&_.hero-line-two-strong]:!text-right [&_.hero-line-two-normal]:block [&_.hero-line-two-normal]:text-lg md:[&_.hero-line-two-normal]:text-xl [&_.hero-line-two-normal]:font-normal [&_.hero-line-two-normal]:leading-relaxed [&_.hero-line-two-normal]:!text-right"
+                  className="max-w-2xl lg:ml-auto [&_h1]:!text-right [&_h1]:text-4xl md:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_h1]:font-black [&_h1]:leading-tight [&_h1]:mb-6 [&_p]:!text-right [&_p]:[unicode-bidi:plaintext] [&_p]:text-lg md:[&_p]:text-xl [&_p]:text-foreground-secondary [&_p]:leading-relaxed [&_p]:mb-4 [&_.hero-line-one-strong]:block [&_.hero-line-one-strong]:font-black [&_.hero-line-one-strong]:!text-right [&_.hero-line-two-strong]:block [&_.hero-line-two-strong]:font-black [&_.hero-line-two-strong]:!text-right [&_.hero-line-two-normal]:block [&_.hero-line-two-normal]:text-lg md:[&_.hero-line-two-normal]:text-xl [&_.hero-line-two-normal]:font-normal [&_.hero-line-two-normal]:leading-relaxed [&_.hero-line-two-normal]:!text-right"
                   dangerouslySetInnerHTML={{ __html: heroSlide.safeHeroHtml }}
                 />
 
