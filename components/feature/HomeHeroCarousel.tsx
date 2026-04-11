@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { HomeHeroEffectPreset } from "@/lib/homeHero";
 
@@ -65,38 +65,26 @@ export default function HomeHeroCarousel({
   autoRotateSeconds,
 }: HomeHeroCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [hoverPaused, setHoverPaused] = useState(false);
-  const [touchPaused, setTouchPaused] = useState(false);
-  const [focusPaused, setFocusPaused] = useState(false);
-  const [interactionTick, setInteractionTick] = useState(0);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const safeActiveIndex = normalizeIndex(activeIndex, slides.length);
 
-  const shouldAutoRotate =
-    slides.length > 1 &&
-    autoRotateSeconds > 0 &&
-    !hoverPaused &&
-    !touchPaused &&
-    !focusPaused;
+  useEffect(() => {
+    setActiveIndex((prev) => normalizeIndex(prev, slides.length));
+  }, [slides.length]);
 
   useEffect(() => {
-    if (!shouldAutoRotate) return;
+    if (slides.length <= 1 || autoRotateSeconds <= 0) return;
 
     const delayMs = Math.max(1000, Math.floor(autoRotateSeconds * 1000));
-    const timer = window.setTimeout(() => {
+    const timer = window.setInterval(() => {
       setActiveIndex((prev) => normalizeIndex(prev + 1, slides.length));
     }, delayMs);
 
     return () => {
-      window.clearTimeout(timer);
+      window.clearInterval(timer);
     };
-  }, [
-    safeActiveIndex,
-    autoRotateSeconds,
-    interactionTick,
-    shouldAutoRotate,
-    slides.length,
-  ]);
+  }, [autoRotateSeconds, slides.length]);
 
   const slideStyle = useMemo(
     () => ({ transform: `translateX(-${safeActiveIndex * 100}%)` }),
@@ -105,31 +93,51 @@ export default function HomeHeroCarousel({
 
   const goToSlide = (index: number) => {
     setActiveIndex(normalizeIndex(index, slides.length));
-    setInteractionTick((tick) => tick + 1);
   };
 
-  const goNext = () => {
+  const goLeft = () => {
     goToSlide(safeActiveIndex + 1);
   };
 
-  const goPrev = () => {
+  const goRight = () => {
     goToSlide(safeActiveIndex - 1);
+  };
+
+  const handleTouchStart = (event: React.TouchEvent<HTMLElement>) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLElement>) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+
+    const touch = event.changedTouches[0];
+    if (!start || !touch) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    const isHorizontalSwipe =
+      Math.abs(deltaX) >= 42 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2;
+
+    if (!isHorizontalSwipe) return;
+
+    if (deltaX < 0) {
+      goLeft();
+      return;
+    }
+
+    goRight();
   };
 
   return (
     <section
       className="relative min-h-[90vh] flex items-center bg-gradient-to-bl from-cream/30 via-background to-background"
-      onMouseEnter={() => setHoverPaused(true)}
-      onMouseLeave={() => setHoverPaused(false)}
-      onTouchStart={() => setTouchPaused(true)}
-      onTouchEnd={() => setTouchPaused(false)}
-      onTouchCancel={() => setTouchPaused(false)}
-      onFocusCapture={() => setFocusPaused(true)}
-      onBlurCapture={(event) => {
-        const relatedTarget = event.relatedTarget;
-        if (!relatedTarget || !event.currentTarget.contains(relatedTarget)) {
-          setFocusPaused(false);
-        }
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={() => {
+        touchStartRef.current = null;
       }}
     >
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -241,15 +249,15 @@ export default function HomeHeroCarousel({
         </div>
 
         <div
-          className="mt-5 flex items-center justify-center gap-3"
+          className="mt-5 flex items-center justify-center gap-3 [direction:ltr]"
           role="group"
           aria-label="کنترل بنرهای خانه"
         >
           <button
             type="button"
-            onClick={goPrev}
+            onClick={goLeft}
             className="hero-carousel-nav-btn"
-            aria-label="بنر قبلی"
+            aria-label="بنر بعدی"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -267,7 +275,7 @@ export default function HomeHeroCarousel({
           </button>
 
           <div
-            className="flex items-center gap-2"
+            className="flex flex-row-reverse items-center gap-2"
             role="tablist"
             aria-label="انتخاب بنر خانه"
           >
@@ -288,9 +296,9 @@ export default function HomeHeroCarousel({
 
           <button
             type="button"
-            onClick={goNext}
+            onClick={goRight}
             className="hero-carousel-nav-btn"
-            aria-label="بنر بعدی"
+            aria-label="بنر قبلی"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

@@ -120,23 +120,10 @@ function moveItemInArray<T>(
   return next;
 }
 
-function createBannerFromTemplate(
-  template: HomeBannerFormState | undefined,
-): HomeBannerFormState {
+function createEmptyBanner(): HomeBannerFormState {
   return {
     id: createBannerId(),
-    badgeText: template?.badgeText || DEFAULT_BANNER_TEMPLATE.badgeText,
-    heroHtml: template?.heroHtml || DEFAULT_BANNER_TEMPLATE.heroHtml,
-    secondLineAsTitle:
-      typeof template?.secondLineAsTitle === "boolean"
-        ? template.secondLineAsTitle
-        : DEFAULT_BANNER_TEMPLATE.secondLineAsTitle,
-    image: template?.image || null,
-    backgroundMobileImage: null,
-    backgroundDesktopImage: null,
-    effectPreset: template?.effectPreset || "none",
-    ctaMode: template?.ctaMode || "none",
-    ctaTargetId: template?.ctaTargetId || null,
+    ...DEFAULT_BANNER_TEMPLATE,
   };
 }
 
@@ -260,12 +247,11 @@ export default function HomeEditor({
     setError("");
     setSuccess("");
 
-    const template = formData.banners[formData.banners.length - 1];
-    const nextBanner = createBannerFromTemplate(template);
+    const nextBanner = createEmptyBanner();
 
     setFormData((prev) => ({
       ...prev,
-      banners: [...prev.banners, nextBanner],
+      banners: [nextBanner, ...prev.banners],
     }));
     setActiveBannerId(nextBanner.id);
   };

@@ -284,6 +284,8 @@ export default function RichTextEditor({
   minHeightClass = "min-h-[260px]",
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const isFocusedRef = useRef(false);
+  const lastEmittedHtmlRef = useRef("");
   const [activeFontSize, setActiveFontSize] = useState("3");
   const [activeMarks, setActiveMarks] = useState<MarkState>({
     bold: false,
@@ -299,14 +301,31 @@ export default function RichTextEditor({
   }, [value]);
 
   useEffect(() => {
-    if (!editorRef.current) return;
-    if (editorRef.current.innerHTML !== normalizedValue) {
-      editorRef.current.innerHTML = normalizedValue;
+    const editorEl = editorRef.current;
+    if (!editorEl) return;
+
+    if (isFocusedRef.current || document.activeElement === editorEl) {
+      return;
     }
+
+    if (editorEl.innerHTML !== normalizedValue) {
+      editorEl.innerHTML = normalizedValue;
+    }
+
+    lastEmittedHtmlRef.current = normalizedValue;
   }, [normalizedValue]);
 
-  const emitChange = () => {
-    onChange(editorRef.current?.innerHTML || "");
+  const emitChange = useCallback(() => {
+    const nextHtml = editorRef.current?.innerHTML || "";
+    if (nextHtml === lastEmittedHtmlRef.current) return;
+
+    lastEmittedHtmlRef.current = nextHtml;
+    onChange(nextHtml);
+  }, [onChange]);
+
+  const handleBlur = () => {
+    isFocusedRef.current = false;
+    emitChange();
   };
 
   const syncToolbarStateFromSelection = useCallback(() => {
@@ -452,8 +471,11 @@ export default function RichTextEditor({
         suppressContentEditableWarning
         dir="rtl"
         data-placeholder={placeholder}
+        onFocus={() => {
+          isFocusedRef.current = true;
+        }}
         onInput={emitChange}
-        onBlur={emitChange}
+        onBlur={handleBlur}
         onMouseUp={syncToolbarStateFromSelection}
         onKeyUp={syncToolbarStateFromSelection}
         className={`${minHeightClass} p-3 outline-none bg-white dark:bg-slate-800 dark:text-white`}

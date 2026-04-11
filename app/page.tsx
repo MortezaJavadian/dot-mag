@@ -257,7 +257,7 @@ export default async function HomePage() {
       ? selectedHomeFeaturedArticles
       : articles.slice(0, 3);
   const latestRadios = radios.slice(0, 3);
-  const heroSlides: HomeHeroCarouselSlide[] = homeHeroConfig.banners.map(
+  const rawHeroSlides: HomeHeroCarouselSlide[] = homeHeroConfig.banners.map(
     (banner) => {
       const normalizedHeroHtml = normalizeHeroHeadingStructure(
         toSafeArticleHtml(banner.heroHtml),
@@ -285,6 +285,15 @@ export default async function HomePage() {
       };
     },
   );
+
+  const fallbackHeroHtml =
+    rawHeroSlides.find((slide) => slide.safeHeroHtml.trim())?.safeHeroHtml ||
+    "";
+
+  const heroSlides: HomeHeroCarouselSlide[] = rawHeroSlides.map((slide) => ({
+    ...slide,
+    safeHeroHtml: slide.safeHeroHtml.trim() || fallbackHeroHtml,
+  }));
 
   const heroSlide = heroSlides[0] || null;
   const hasMultipleHeroSlides = heroSlides.length > 1;

@@ -87,14 +87,13 @@ function normalizeBannerInput(
   return {
     id:
       (typeof input.id === "string" && input.id.trim()) ||
-      fallback.id ||
       `home-banner-${index + 1}`,
     badgeText:
       typeof input.badgeText === "string"
         ? input.badgeText.trim()
         : fallback.badgeText,
     heroHtml:
-      typeof input.heroHtml === "string" && input.heroHtml.trim()
+      typeof input.heroHtml === "string"
         ? input.heroHtml.trim()
         : fallback.heroHtml,
     secondLineAsTitle:
