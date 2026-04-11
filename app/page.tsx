@@ -286,14 +286,44 @@ export default async function HomePage() {
     },
   );
 
-  const fallbackHeroHtml =
-    rawHeroSlides.find((slide) => slide.safeHeroHtml.trim())?.safeHeroHtml ||
-    "";
+  const fallbackHeroSlide =
+    rawHeroSlides.find(
+      (slide) =>
+        Boolean(slide.badgeText.trim()) ||
+        Boolean(slide.safeHeroHtml.trim()) ||
+        Boolean(slide.frameImage) ||
+        Boolean(slide.cta) ||
+        Boolean(slide.backgroundMobileImage && slide.backgroundDesktopImage),
+    ) || rawHeroSlides[0];
 
-  const heroSlides: HomeHeroCarouselSlide[] = rawHeroSlides.map((slide) => ({
-    ...slide,
-    safeHeroHtml: slide.safeHeroHtml.trim() || fallbackHeroHtml,
-  }));
+  const heroSlides: HomeHeroCarouselSlide[] = rawHeroSlides.map((slide) => {
+    const isUnconfiguredSlide =
+      !slide.badgeText.trim() &&
+      !slide.safeHeroHtml.trim() &&
+      !slide.frameImage &&
+      !slide.backgroundMobileImage &&
+      !slide.backgroundDesktopImage &&
+      !slide.cta;
+
+    if (isUnconfiguredSlide && fallbackHeroSlide) {
+      return {
+        ...slide,
+        badgeText: fallbackHeroSlide.badgeText,
+        safeHeroHtml: fallbackHeroSlide.safeHeroHtml,
+        frameImage: fallbackHeroSlide.frameImage,
+        backgroundMobileImage: fallbackHeroSlide.backgroundMobileImage,
+        backgroundDesktopImage: fallbackHeroSlide.backgroundDesktopImage,
+        effectPreset: fallbackHeroSlide.effectPreset,
+        cta: fallbackHeroSlide.cta,
+      };
+    }
+
+    return {
+      ...slide,
+      safeHeroHtml:
+        slide.safeHeroHtml.trim() || fallbackHeroSlide?.safeHeroHtml || "",
+    };
+  });
 
   const heroSlide = heroSlides[0] || null;
   const hasMultipleHeroSlides = heroSlides.length > 1;
