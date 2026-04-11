@@ -118,6 +118,73 @@ function applySecondLineMode(html: string, secondLineAsTitle: boolean): string {
   return html.replace(headingPattern, rebuiltHeading);
 }
 
+function normalizeHeroHeadingStructure(html: string): string {
+  const trimmed = html.trim();
+  if (!trimmed) return "";
+
+  const blockPattern = /<(h1|p)([^>]*)>([\s\S]*?)<\/\1>/gi;
+  const blocks: Array<{
+    tag: "h1" | "p";
+    attrs: string;
+    inner: string;
+    start: number;
+    end: number;
+  }> = [];
+
+  let match: RegExpExecArray | null;
+  while ((match = blockPattern.exec(trimmed)) !== null) {
+    blocks.push({
+      tag: match[1] as "h1" | "p",
+      attrs: match[2] || "",
+      inner: match[3] || "",
+      start: match.index,
+      end: match.index + match[0].length,
+    });
+
+    if (blocks.length >= 3) break;
+  }
+
+  if (!blocks.length) {
+    return `<h1>${trimmed}</h1>`;
+  }
+
+  const first = blocks[0];
+  const second = blocks[1];
+  const firstInner = first.inner.trim();
+  const secondInner = second?.inner.trim() || "";
+
+  if (first.tag === "h1" && /<br\s*\/?>/i.test(firstInner)) {
+    return trimmed;
+  }
+
+  let headingInner = firstInner;
+  let consumeSecond = false;
+
+  if (!headingInner && second?.tag === "p" && secondInner) {
+    headingInner = secondInner;
+    consumeSecond = true;
+  } else if (second?.tag === "p" && secondInner) {
+    headingInner = `${headingInner}<br />${secondInner}`;
+    consumeSecond = true;
+  }
+
+  if (!headingInner) {
+    return trimmed;
+  }
+
+  const mergedHeading = `<h1${first.attrs}>${headingInner}</h1>`;
+
+  if (!consumeSecond || !second) {
+    return `${trimmed.slice(0, first.start)}${mergedHeading}${trimmed.slice(first.end)}`.trim();
+  }
+
+  const prefix = trimmed.slice(0, first.start);
+  const between = trimmed.slice(first.end, second.start);
+  const suffix = trimmed.slice(second.end);
+
+  return `${prefix}${mergedHeading}${between}${suffix}`.trim();
+}
+
 function stabilizeRtlSentenceEnding(html: string): string {
   return html.replace(/([.!?؟])(?=\s*<\/p>)/g, "$1\u200f");
 }
@@ -176,27 +243,32 @@ export default async function HomePage() {
       : articles.slice(0, 3);
   const latestRadios = radios.slice(0, 3);
   const heroSlides: HomeHeroCarouselSlide[] = homeHeroConfig.banners.map(
-    (banner) => ({
-      id: banner.id,
-      badgeText: banner.badgeText.trim(),
-      safeHeroHtml: stabilizeRtlSentenceEnding(
-        applySecondLineMode(
-          toSafeArticleHtml(banner.heroHtml),
-          banner.secondLineAsTitle,
+    (banner) => {
+      const normalizedHeroHtml = normalizeHeroHeadingStructure(
+        toSafeArticleHtml(banner.heroHtml),
+      );
+
+      return {
+        id: banner.id,
+        badgeText: banner.badgeText.trim(),
+        safeHeroHtml: stabilizeRtlSentenceEnding(
+          applySecondLineMode(normalizedHeroHtml, banner.secondLineAsTitle),
         ),
-      ),
-      frameImage: getUploadUrl(banner.image || ""),
-      backgroundMobileImage: getUploadUrl(banner.backgroundMobileImage || ""),
-      backgroundDesktopImage: getUploadUrl(banner.backgroundDesktopImage || ""),
-      effectPreset: banner.effectPreset,
-      cta: resolveHeroCta(
-        banner.ctaMode,
-        banner.ctaTargetId,
-        articles,
-        magazines,
-        radios,
-      ),
-    }),
+        frameImage: getUploadUrl(banner.image || ""),
+        backgroundMobileImage: getUploadUrl(banner.backgroundMobileImage || ""),
+        backgroundDesktopImage: getUploadUrl(
+          banner.backgroundDesktopImage || "",
+        ),
+        effectPreset: banner.effectPreset,
+        cta: resolveHeroCta(
+          banner.ctaMode,
+          banner.ctaTargetId,
+          articles,
+          magazines,
+          radios,
+        ),
+      };
+    },
   );
 
   const heroSlide = heroSlides[0] || null;
