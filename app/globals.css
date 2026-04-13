@@ -546,6 +546,18 @@ a {
   margin-bottom: 0.52em;
 }
 
+.prose.article-content-prose a,
+.prose.article-content-prose a:visited {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.prose.article-content-prose a:hover {
+  color: var(--color-primary);
+  text-decoration-color: var(--color-primary);
+}
+
 .prose img {
   border-radius: 0.5rem;
   margin-block: 2em;
