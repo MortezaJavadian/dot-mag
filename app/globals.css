@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Twemoji";
+  src: url("/assets/fonts/webfonts/twemoji.ttf") format("truetype");
+  font-display: swap;
+  unicode-range:
+    U+00A9, U+00AE, U+203C, U+2049, U+2122, U+2139, U+2194-2199, U+21A9-21AA,
+    U+231A-231B, U+2328, U+23CF, U+23E9-23FA, U+24C2, U+25AA-25AB, U+25B6,
+    U+25C0, U+25FB-25FE, U+2600-27BF, U+2934-2935, U+2B05-2B55, U+3030, U+303D,
+    U+3297, U+3299, U+1F000-1FAFF, U+1FC00-1FFFD, U+200D, U+20E3, U+FE0F;
+}
+
 /* Custom Color Palette */
 :root {
   /* Brand Colors */
@@ -105,7 +116,9 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-vazir);
+  font-family:
+    "Twemoji", var(--font-vazir), "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol";
   line-height: 1.8;
   transition:
     background-color 0.3s ease,

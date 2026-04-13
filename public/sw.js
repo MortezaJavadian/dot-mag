@@ -1,6 +1,6 @@
-const STATIC_CACHE_NAME = "dotmag-static-v4";
-const RUNTIME_CACHE_NAME = "dotmag-runtime-v4";
-const AUDIO_CACHE_NAME = "dotmag-audio-v4";
+const STATIC_CACHE_NAME = "dotmag-static-v5";
+const RUNTIME_CACHE_NAME = "dotmag-runtime-v5";
+const AUDIO_CACHE_NAME = "dotmag-audio-v5";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_URLS = [
@@ -16,6 +16,7 @@ const PRECACHE_URLS = [
   "/assets/fonts/webfonts/Vazirmatn-FD-Bold.woff2",
   "/assets/fonts/webfonts/Vazirmatn-FD-ExtraBold.woff2",
   "/assets/fonts/webfonts/Vazirmatn-FD-Black.woff2",
+  "/assets/fonts/webfonts/twemoji.ttf",
   "/assets/images/dot-logo.png",
 ];
 
