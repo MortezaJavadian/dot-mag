@@ -180,18 +180,18 @@ export default function HomeHeroCarousel({
                   <div className="relative z-10 flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:items-center lg:gap-5 lg:[direction:ltr]">
                     <div className="order-1 lg:order-1 animate-fade-in">
                       <div className="mx-auto my-[0.375rem] lg:my-2 w-full max-w-sm sm:max-w-md lg:max-w-none lg:w-[80%]">
-                        <div className="image-frame-shell">
+                        <div className="image-frame-shell home-hero-frame-shell">
                           <div className="image-frame-inner">
                             {slide.frameImage ? (
                               /* eslint-disable-next-line @next/next/no-img-element */
                               <img
                                 src={slide.frameImage}
                                 alt="تصویر هدر خانه"
-                                className="image-frame-media object-cover"
+                                className="image-frame-media home-hero-frame-media object-cover"
                                 loading="lazy"
                               />
                             ) : (
-                              <div className="min-h-[280px] sm:min-h-[340px] lg:min-h-[460px] flex items-center justify-center bg-cream text-foreground-secondary px-6 text-center">
+                              <div className="h-full min-h-[280px] sm:min-h-[340px] lg:min-h-[460px] flex items-center justify-center bg-cream text-foreground-secondary px-6 text-center">
                                 تصویر هدر از پنل ادمین قابل تنظیم است
                               </div>
                             )}
@@ -217,7 +217,7 @@ export default function HomeHeroCarousel({
                           <Link
                             href={slide.cta.href}
                             scroll={true}
-                            className="inline-flex flex-row-reverse items-center gap-3 lg:flex-row px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-all hover:scale-105"
+                            className="inline-flex flex-row items-center gap-3 px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-all hover:scale-105 [direction:ltr]"
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -233,7 +233,9 @@ export default function HomeHeroCarousel({
                             >
                               <path d="m9 18 6-6-6-6" />
                             </svg>
-                            <span>{slide.cta.label}</span>
+                            <span className="[direction:rtl]">
+                              {slide.cta.label}
+                            </span>
                           </Link>
                         </div>
                       )}

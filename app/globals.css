@@ -377,6 +377,28 @@ a {
   border-radius: inherit;
 }
 
+.home-hero-frame-shell {
+  aspect-ratio: 3 / 4;
+}
+
+.home-hero-frame-shell .image-frame-inner {
+  height: 100%;
+}
+
+.home-hero-frame-media {
+  height: 100%;
+}
+
+@media (min-width: 768px) {
+  .home-hero-frame-shell {
+    aspect-ratio: auto;
+  }
+
+  .home-hero-frame-media {
+    height: auto;
+  }
+}
+
 .hero-bg-media {
   position: absolute;
   inset: 0;
