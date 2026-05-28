@@ -15,6 +15,7 @@ type MarkState = {
   italic: boolean;
   underline: boolean;
   strikeThrough: boolean;
+  blockquote: boolean;
   primaryColor: boolean;
 };
 
@@ -147,6 +148,7 @@ function getActiveMarks(editorEl: HTMLDivElement): MarkState | null {
       italic: false,
       underline: false,
       strikeThrough: false,
+      blockquote: false,
       primaryColor: false,
     };
   }
@@ -156,6 +158,7 @@ function getActiveMarks(editorEl: HTMLDivElement): MarkState | null {
     italic: false,
     underline: false,
     strikeThrough: false,
+    blockquote: false,
     primaryColor: false,
   };
 
@@ -177,6 +180,10 @@ function getActiveMarks(editorEl: HTMLDivElement): MarkState | null {
 
     if (tagName === "s" || tagName === "strike") {
       marks.strikeThrough = true;
+    }
+
+    if (tagName === "blockquote") {
+      marks.blockquote = true;
     }
 
     if (current.style.fontStyle.trim().toLowerCase() === "italic") {
@@ -237,6 +244,12 @@ function getActiveMarks(editorEl: HTMLDivElement): MarkState | null {
 
   try {
     const commandColor = String(document.queryCommandValue("foreColor") || "");
+    const commandFormatBlock = String(
+      document.queryCommandValue("formatBlock") || "",
+    )
+      .replace(/[<>]/g, "")
+      .trim()
+      .toLowerCase();
 
     marks = {
       bold: marks.bold || document.queryCommandState("bold"),
@@ -244,6 +257,7 @@ function getActiveMarks(editorEl: HTMLDivElement): MarkState | null {
       underline: marks.underline || document.queryCommandState("underline"),
       strikeThrough:
         marks.strikeThrough || document.queryCommandState("strikeThrough"),
+      blockquote: marks.blockquote || commandFormatBlock === "blockquote",
       primaryColor: marks.primaryColor || isPrimaryColorToken(commandColor),
     };
   } catch {
@@ -292,6 +306,7 @@ export default function RichTextEditor({
     italic: false,
     underline: false,
     strikeThrough: false,
+    blockquote: false,
     primaryColor: false,
   });
 
@@ -388,6 +403,38 @@ export default function RichTextEditor({
     syncToolbarStateFromSelection();
   };
 
+  const toggleBlockquote = () => {
+    if (disabled) return;
+
+    const editorEl = editorRef.current;
+    if (!editorEl) return;
+
+    editorEl.focus();
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const anchorNode = selection.anchorNode;
+    const anchorElement =
+      anchorNode?.nodeType === Node.TEXT_NODE
+        ? anchorNode.parentElement
+        : (anchorNode as Element | null);
+
+    const isInsideBlockquote =
+      !!anchorElement &&
+      editorEl.contains(anchorElement) &&
+      !!anchorElement.closest("blockquote");
+
+    const nextFormatTag = isInsideBlockquote ? "p" : "blockquote";
+    const didApply = document.execCommand("formatBlock", false, nextFormatTag);
+    if (!didApply) {
+      document.execCommand("formatBlock", false, `<${nextFormatTag}>`);
+    }
+
+    emitChange();
+    syncToolbarStateFromSelection();
+  };
+
   const getToolbarButtonClass = (isActive: boolean) =>
     [
       "px-2.5 py-1 rounded border text-sm disabled:opacity-50 transition-colors",
@@ -441,6 +488,16 @@ export default function RichTextEditor({
         </button>
         <button
           type="button"
+          onClick={toggleBlockquote}
+          disabled={disabled}
+          className={`${getToolbarButtonClass(activeMarks.blockquote)} font-medium`}
+          aria-label="Quote"
+          title="Quote"
+        >
+          &quot;
+        </button>
+        <button
+          type="button"
           onClick={() => runCommand("foreColor", PRIMARY_COLOR_HEX)}
           disabled={disabled}
           className={`${getToolbarButtonClass(activeMarks.primaryColor)} font-bold text-primary`}
@@ -478,7 +535,7 @@ export default function RichTextEditor({
         onBlur={handleBlur}
         onMouseUp={syncToolbarStateFromSelection}
         onKeyUp={syncToolbarStateFromSelection}
-        className={`${minHeightClass} p-3 outline-none bg-white dark:bg-slate-800 dark:text-white`}
+        className={`rich-text-editor-surface ${minHeightClass} p-3 outline-none bg-white dark:bg-slate-800 dark:text-white`}
       />
     </div>
   );

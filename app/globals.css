@@ -590,8 +590,25 @@ a {
   padding-right: 1.5rem;
   padding-left: 0;
   margin-right: 0;
-  font-style: italic;
-  color: var(--foreground-secondary);
+  font-style: normal;
+  color: inherit;
+}
+
+.rich-text-editor-surface blockquote {
+  border-right: 3px solid var(--color-primary);
+  padding-right: 0.9rem;
+  padding-left: 0;
+  margin: 0;
+  font-style: normal;
+  color: inherit;
+}
+
+.rich-text-editor-surface blockquote p {
+  margin-bottom: 0;
+}
+
+.rich-text-editor-surface blockquote p + p {
+  margin-top: 0.4rem;
 }
 
 .prose ul,
