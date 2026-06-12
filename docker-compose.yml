@@ -16,6 +16,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - nginx-net
 
   web:
     build:
@@ -43,9 +45,15 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - nginx-net
 
 volumes:
   postgres_data:
     driver: local
   web_uploads:
     driver: local
+
+networks:
+  nginx-net:
+    external: true
