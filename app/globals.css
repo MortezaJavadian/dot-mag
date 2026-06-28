@@ -524,7 +524,7 @@ a {
 .prose {
   max-width: 72ch;
   font-size: 1.125rem;
-  line-height: 2;
+  line-height: 1.75;
 }
 
 .prose h1,
@@ -556,16 +556,29 @@ a {
 
 /* Keep article words and lines at natural Persian spacing */
 .prose.article-content-prose {
-  text-align: right;
-  text-justify: auto;
+  font-size: 0.9rem;
+  text-align: start; /* start = right edge in RTL — correct for Persian */
   hyphens: none;
-  word-spacing: -0.025em;
+  word-spacing: normal;
   letter-spacing: normal;
-  line-height: 1.58;
+  line-height: 1.7;
+  overflow-wrap: break-word;
+}
+
+@media (min-width: 768px) {
+  .prose.article-content-prose {
+    font-size: 1rem;
+    text-align: justify;
+    /* start = right edge in RTL — avoids stretched/left-shifted last line */
+    text-align-last: start;
+    /* Reduce base word spacing so justify adds less extra per line */
+    word-spacing: -0.03em;
+    line-height: 1.75;
+  }
 }
 
 .prose.article-content-prose p {
-  margin-bottom: 0.52em;
+  margin-bottom: 0.85em;
 }
 
 .prose.article-content-prose a,
@@ -587,28 +600,29 @@ a {
 
 .prose blockquote {
   border-right: 4px solid var(--color-primary);
+  border-left: none;
   padding-right: 1.5rem;
   padding-left: 0;
   margin-right: 0;
   font-style: normal;
-  color: color-mix(in srgb, var(--foreground-secondary) 80%, transparent);
+  color: var(--foreground-secondary);
+  opacity: 1;
 }
 
-.rich-text-editor-surface blockquote {
+/* Blockquote inside rich text editor (contenteditable) */
+.rich-text-editor-input blockquote {
   border-right: 3px solid var(--color-primary);
-  padding-right: 0.9rem;
+  border-left: none;
+  padding-right: 1rem;
   padding-left: 0;
-  margin: 0;
+  margin: 0.35em 0;
+  opacity: 1;
   font-style: normal;
-  color: color-mix(in srgb, var(--foreground-secondary) 80%, transparent);
+  color: var(--foreground-secondary);
 }
 
-.rich-text-editor-surface blockquote p {
-  margin-bottom: 0;
-}
-
-.rich-text-editor-surface blockquote p + p {
-  margin-top: 0.4rem;
+.rich-text-editor-input br {
+  line-height: inherit;
 }
 
 .prose ul,
