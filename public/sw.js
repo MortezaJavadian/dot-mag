@@ -1,21 +1,21 @@
-const STATIC_CACHE_NAME = "dotmag-static-v5";
-const RUNTIME_CACHE_NAME = "dotmag-runtime-v5";
-const AUDIO_CACHE_NAME = "dotmag-audio-v5";
+const STATIC_CACHE_NAME = "dotmag-static-v6";
+const RUNTIME_CACHE_NAME = "dotmag-runtime-v6";
+const AUDIO_CACHE_NAME = "dotmag-audio-v6";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_URLS = [
   "/",
   "/radio",
   "/offline.html",
-  "/assets/fonts/webfonts/Vazirmatn-FD-Thin.woff2",
-  "/assets/fonts/webfonts/Vazirmatn-FD-ExtraLight.woff2",
-  "/assets/fonts/webfonts/Vazirmatn-FD-Light.woff2",
-  "/assets/fonts/webfonts/Vazirmatn-FD-Regular.woff2",
-  "/assets/fonts/webfonts/Vazirmatn-FD-Medium.woff2",
-  "/assets/fonts/webfonts/Vazirmatn-FD-SemiBold.woff2",
-  "/assets/fonts/webfonts/Vazirmatn-FD-Bold.woff2",
-  "/assets/fonts/webfonts/Vazirmatn-FD-ExtraBold.woff2",
-  "/assets/fonts/webfonts/Vazirmatn-FD-Black.woff2",
+  "/assets/fonts/webfonts/Arad-Thin.woff2",
+  "/assets/fonts/webfonts/Arad-ExtraLight.woff2",
+  "/assets/fonts/webfonts/Arad-Light.woff2",
+  "/assets/fonts/webfonts/Arad-Regular.woff2",
+  "/assets/fonts/webfonts/Arad-Medium.woff2",
+  "/assets/fonts/webfonts/Arad-SemiBold.woff2",
+  "/assets/fonts/webfonts/Arad-Bold.woff2",
+  "/assets/fonts/webfonts/Arad-ExtraBold.woff2",
+  "/assets/fonts/webfonts/Arad-Black.woff2",
   "/assets/fonts/webfonts/twemoji.ttf",
   "/assets/images/dot-logo.png",
 ];

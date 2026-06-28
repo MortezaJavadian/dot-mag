@@ -1,7 +1,7 @@
 {
-  "name": "Dot",
-  "short_name": "Dot",
-  "description": "Dot",
+  "name": "مجله دات",
+  "short_name": "دات",
+  "description": "مجله دات - رسانه فرهنگی، اجتماعی و صوتی دانشجویان دانشگاه علم و صنعت ایران",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",

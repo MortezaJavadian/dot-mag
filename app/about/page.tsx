@@ -5,8 +5,10 @@ import { fetchInternalArray } from "@/lib/internalApi";
 
 export const metadata: Metadata = {
   title: "درباره ما",
-  description:
-    "معرفی دات و مسیری که برای روایت صداها و همراهی در مسیر درست برگزیده‌ایم",
+  description: "درباره مجله دات، رسانه دانشجویی دانشگاه علم و صنعت ایران، و اهداف و رسالت‌های ما در انعکاس صداهای دانشجویی",
+  alternates: {
+    canonical: `${process.env.NEXT_PUBLIC_API_BASE_URL}/about`,
+  },
 };
 
 type TeamMemberItem = {
@@ -31,8 +33,31 @@ async function getTeamMembers(): Promise<TeamMemberItem[]> {
 export default async function AboutPage() {
   const teamMembers = await getTeamMembers();
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "خانه",
+        "item": process.env.NEXT_PUBLIC_API_BASE_URL
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "درباره ما",
+        "item": `${process.env.NEXT_PUBLIC_API_BASE_URL}/about`
+      }
+    ]
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <section className="pt-12 pb-8 md:pt-16 md:pb-12 bg-background-secondary">
         <div className="container">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-black">

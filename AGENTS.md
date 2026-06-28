@@ -185,6 +185,14 @@ Start from smallest screens, then scale up.
 5. Test each feature in all four ranges before considering task complete.
 6. Keep responsive logic inside approved structure (`components/*`, `app/*`), not ad-hoc files.
 
+## SEO Rules & Guidelines (Mandatory)
+
+1. **Metadata Export**: Every layout and page component MUST export a static or dynamic `metadata` object using Next.js app router standards.
+2. **Canonical Links**: Ensure every metadata object includes `alternates: { canonical: "https://dotmag.ir/..." }` pointing to the exact normalized route.
+3. **Structured Data (JSON-LD)**: Inject the appropriate Schema.org structured data in `<script type="application/ld+json">` tags on every page (e.g., `Organization`, `WebSite`, `BreadcrumbList`, `BlogPosting`, `PublicationIssue`, `PodcastEpisode`). 
+4. **Keywords Consistency**: Use consistent brand naming ("مجله دات", "دات مگ", "نشریه دات", "دانشگاه علم و صنعت ایران").
+5. **Crawler Config**: Make sure `app/robots.ts` and `app/sitemap.ts` are kept up to date with new routing features.
+
 ## File Responsibility Rules
 
 - app/: routing, layouts, pages, route-level composition only.

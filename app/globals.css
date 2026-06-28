@@ -70,7 +70,7 @@
   --color-muted: var(--muted);
 
   /* Typography */
-  --font-vazir: "Vazirmatn", system-ui, sans-serif;
+  --font-arad: "Arad", system-ui, sans-serif;
 
   /* Spacing */
   --container-padding: 0.35rem;
@@ -117,7 +117,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family:
-    "Twemoji", var(--font-vazir), "Apple Color Emoji", "Segoe UI Emoji",
+    "Twemoji", var(--font-arad), "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol";
   line-height: 1.8;
   transition:

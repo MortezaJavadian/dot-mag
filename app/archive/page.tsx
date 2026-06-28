@@ -7,14 +7,40 @@ export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "آرشیو مجله",
-  description: "تمام شماره‌های مجله دات را به صورت آنلاین مطالعه کنید",
+  description: "آرشیو کامل و خواندن آنلاین تمام شماره‌های منتشر شده از نشریه و مجله دات دانشگاه علم و صنعت ایران",
+  alternates: {
+    canonical: `${process.env.NEXT_PUBLIC_API_BASE_URL}/archive`,
+  },
 };
 
 export default async function ArchivePage() {
   const magazines = await getPublicMagazines();
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "خانه",
+        "item": process.env.NEXT_PUBLIC_API_BASE_URL
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "آرشیو مجله",
+        "item": `${process.env.NEXT_PUBLIC_API_BASE_URL}/archive`
+      }
+    ]
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <section className="pt-12 pb-8 md:pt-16 md:pb-12 bg-background-secondary">
         <div className="container">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-black">

@@ -1,6 +1,13 @@
 import { getAdminUser } from "@/lib/auth";
 import { ReactNode } from "react";
 import { logoutAction } from "@/app/actions/authActions";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "پنل مدیریت",
+  robots: "noindex, nofollow",
+};
+
 
 export default async function AdminLayout({
   children,

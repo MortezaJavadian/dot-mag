@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Metadata } from "next";
 import { ArticleCard } from "@/components/feature/ArticleCard";
 import HomeHeroCarousel, {
   type HomeHeroCarouselSlide,
@@ -10,6 +11,15 @@ import { getHomeHeroCtaLabel, readHomeHeroConfig } from "@/lib/homeHero";
 import { getUploadUrl } from "@/lib/uploads";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "خانه",
+  description: "مجله دات - رسانه فرهنگی، اجتماعی و صوتی دانشجویان دانشگاه علم و صنعت ایران (IUST) - پادکست، یادداشت‌ها و آرشیو نشریات",
+  alternates: {
+    canonical: process.env.NEXT_PUBLIC_API_BASE_URL,
+  },
+};
+
 
 type HomeArticle = {
   id: string;
@@ -382,8 +392,47 @@ export default async function HomePage() {
         }
       : null;
 
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${process.env.NEXT_PUBLIC_API_BASE_URL}/#website`,
+    "url": process.env.NEXT_PUBLIC_API_BASE_URL,
+    "name": "مجله دات",
+    "alternateName": "Dot Mag",
+    "description": "مجله دات - رسانه فرهنگی، اجتماعی و صوتی دانشجویان دانشگاه علم و صنعت ایران",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": `${process.env.NEXT_PUBLIC_API_BASE_URL}/posts?tag={search_term_string}`
+      },
+      "query-input": "required name=search_term_string"
+    }
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "خانه",
+        "item": process.env.NEXT_PUBLIC_API_BASE_URL
+      }
+    ]
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       {/* Hero Section */}
       {hasMultipleHeroSlides ? (
         <HomeHeroCarousel

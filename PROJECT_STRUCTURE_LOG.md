@@ -704,6 +704,14 @@ See DEPLOYMENT_GUIDE.md for detailed deployment instructions.
 | `app/page.tsx`                                       | Added single-mode vs carousel-mode hero rendering so one banner keeps current behavior and 2+ banners enable slider UX                                                   |
 | `app/globals.css`                                    | Added subtle hero background effect classes and magazine-style carousel navigation controls                                                                              |
 | `app/(admin)/admin-panel/_components/Dashboard.tsx`  | Made admin tab navigation responsive by replacing phone tab row with selector dropdown and keeping desktop wrapped tab buttons                                           |
+### Latest Touchpoints (2026-06-28 - SEO & Typography Optimization)
+
+| File / Component                                     | Purpose                                                                                                                                                                  |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `app/layout.tsx`                                     | Migrated global typography from Vazirmatn to Arad font (100-900 weights) for a more professional magazine look. Added Organization schema and normalized Canonical URLs. |
+| `app/sitemap.ts` & `robots.ts`                       | Implemented dynamic Prisma-based sitemap for instant indexing of new magazines, posts, and podcasts. Configured crawler access.                                          |
+| `app/posts`, `app/archive`, `app/radio`              | Injected rich JSON-LD schemas (BlogPosting, PublicationIssue, PodcastEpisode, Breadcrumbs) into dynamic pages. Truncated descriptions for OpenGraph standards.           |
+| `public/sw.js`                                       | Updated precache manifest with new Arad font paths and incremented cache version to invalidate old client caches.                                                        |
 
 ## Reuse Decisions
 
@@ -733,7 +741,7 @@ See DEPLOYMENT_GUIDE.md for detailed deployment instructions.
 - **No Auth**: No login/signup pages
 - **No E-commerce**: No store section
 - **Images**: Using placeholders until actual images provided
-- **Font**: Using local static Vazirmatn FD webfonts (100..900)
+- **Font**: Using local static Arad webfonts (100..900) replacing Vazirmatn FD
 
 ## Color Palette Reference
 

@@ -1,5 +1,15 @@
+import { Metadata } from "next";
 import { RadioCard } from "@/components/feature/RadioCard";
 import { fetchInternalArray } from "@/lib/internalApi";
+
+export const metadata: Metadata = {
+  title: "رادیودات",
+  description: "شنیدن پادکست‌ها، گفتگوها و رادیودات‌های صوتی دانشجویان دانشگاه علم و صنعت ایران در موضوعات مختلف",
+  alternates: {
+    canonical: `${process.env.NEXT_PUBLIC_API_BASE_URL}/radio`,
+  },
+};
+
 
 type RadioListItem = {
   id: string;
@@ -23,8 +33,31 @@ async function getRadios(): Promise<RadioListItem[]> {
 export default async function RadioPage() {
   const radios = await getRadios();
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "خانه",
+        "item": process.env.NEXT_PUBLIC_API_BASE_URL
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "رادیودات",
+        "item": `${process.env.NEXT_PUBLIC_API_BASE_URL}/radio`
+      }
+    ]
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <section className="pt-12 pb-8 md:pt-16 md:pb-12 bg-background-secondary">
         <div className="container">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">

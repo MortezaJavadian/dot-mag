@@ -306,17 +306,39 @@ export async function generateMetadata({
     };
   }
 
-  const description =
-    toPlainText(radio.summary || radio.intro || "") || radio.title;
+  const plainDescription = toPlainText(radio.summary || radio.intro || "");
+  const cleanDescription = plainDescription.length > 150 ? plainDescription.slice(0, 150) + "..." : plainDescription;
+
+  const imageUrl = getUploadUrl(radio.cover);
+  const absoluteImageUrl = imageUrl ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${imageUrl}` : `${process.env.NEXT_PUBLIC_API_BASE_URL}/assets/images/dot-logo.png`;
 
   return {
     title: radio.title,
-    description,
+    description: cleanDescription || radio.title,
+    alternates: {
+      canonical: `${process.env.NEXT_PUBLIC_API_BASE_URL}/radio/${encodeURIComponent(radio.slug)}`,
+    },
     openGraph: {
       title: radio.title,
-      description,
+      description: cleanDescription || radio.title,
       type: "article",
+      url: `${process.env.NEXT_PUBLIC_API_BASE_URL}/radio/${encodeURIComponent(radio.slug)}`,
+      siteName: "مجله دات",
       publishedTime: new Date(radio.sortDate).toISOString(),
+      images: [
+        {
+          url: absoluteImageUrl,
+          width: 800,
+          height: 600,
+          alt: radio.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: radio.title,
+      description: cleanDescription || radio.title,
+      images: [absoluteImageUrl],
     },
   };
 }
@@ -343,8 +365,90 @@ export default async function RadioDetailPage({ params }: PageProps) {
     qualityOptions,
   );
 
+  const plainDescription = toPlainText(radio.summary || radio.intro || "");
+  const cleanDescription = plainDescription.length > 150 ? plainDescription.slice(0, 150) + "..." : plainDescription;
+  const absoluteImageUrl = coverUrl ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${coverUrl}` : `${process.env.NEXT_PUBLIC_API_BASE_URL}/assets/images/dot-logo.png`;
+  const absoluteAudioUrl = fullAudioUrl ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${fullAudioUrl}` : undefined;
+
+  const getIsoDuration = (seconds?: number | null) => {
+    if (!seconds) return undefined;
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    let duration = "PT";
+    if (hours > 0) duration += `${hours}H`;
+    if (minutes > 0) duration += `${minutes}M`;
+    if (secs > 0) duration += `${secs}S`;
+    return duration === "PT" ? undefined : duration;
+  };
+
+  const podcastSchema = {
+    "@context": "https://schema.org",
+    "@type": "PodcastEpisode",
+    "@id": `${process.env.NEXT_PUBLIC_API_BASE_URL}/radio/${encodeURIComponent(radio.slug)}#podcastepisode`,
+    "name": radio.title,
+    "description": cleanDescription || radio.title,
+    "datePublished": new Date(radio.sortDate).toISOString(),
+    "url": `${process.env.NEXT_PUBLIC_API_BASE_URL}/radio/${encodeURIComponent(radio.slug)}`,
+    "image": absoluteImageUrl,
+    "associatedMedia": absoluteAudioUrl ? {
+      "@type": "AudioObject",
+      "contentUrl": absoluteAudioUrl,
+      "duration": getIsoDuration(radio.durationSec)
+    } : undefined,
+    "actor": radio.person ? {
+      "@type": "Person",
+      "name": radio.person.name
+    } : {
+      "@type": "Organization",
+      "@id": `${process.env.NEXT_PUBLIC_API_BASE_URL}/#organization`
+    },
+    "partOfSeries": {
+      "@type": "PodcastSeries",
+      "name": "رادیودات",
+      "url": `${process.env.NEXT_PUBLIC_API_BASE_URL}/radio`
+    },
+    "publisher": {
+      "@type": "Organization",
+      "@id": `${process.env.NEXT_PUBLIC_API_BASE_URL}/#organization`
+    }
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "خانه",
+        "item": process.env.NEXT_PUBLIC_API_BASE_URL
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "رادیودات",
+        "item": `${process.env.NEXT_PUBLIC_API_BASE_URL}/radio`
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": radio.title,
+        "item": `${process.env.NEXT_PUBLIC_API_BASE_URL}/radio/${encodeURIComponent(radio.slug)}`
+      }
+    ]
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(podcastSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <article>
         <header className="pt-8 pb-12 md:pt-12 md:pb-16">
           <div className="container article-page-container max-w-6xl">

@@ -94,15 +94,38 @@ export async function generateMetadata({
   }
 
   const plainExcerpt = toPlainText(article.excerpt);
+  const cleanExcerpt = plainExcerpt.length > 150 ? plainExcerpt.slice(0, 150) + "..." : plainExcerpt;
+
+  const imageUrl = getUploadUrl(article.image);
+  const absoluteImageUrl = imageUrl ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${imageUrl}` : `${process.env.NEXT_PUBLIC_API_BASE_URL}/assets/images/dot-logo.png`;
 
   return {
     title: article.title,
-    description: plainExcerpt || article.title,
+    description: cleanExcerpt || article.title,
+    alternates: {
+      canonical: `${process.env.NEXT_PUBLIC_API_BASE_URL}/posts/${encodeURIComponent(article.slug)}`,
+    },
     openGraph: {
       title: article.title,
-      description: plainExcerpt || article.title,
+      description: cleanExcerpt || article.title,
       type: "article",
+      url: `${process.env.NEXT_PUBLIC_API_BASE_URL}/posts/${encodeURIComponent(article.slug)}`,
+      siteName: "مجله دات",
       publishedTime: article.sortDate.toISOString(),
+      images: [
+        {
+          url: absoluteImageUrl,
+          width: 800,
+          height: 600,
+          alt: article.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description: cleanExcerpt || article.title,
+      images: [absoluteImageUrl],
     },
   };
 }
@@ -139,8 +162,72 @@ export default async function ArticlePage({ params }: PageProps) {
     })
     .slice(0, 3);
 
+  const cleanExcerpt = plainExcerpt.length > 150 ? plainExcerpt.slice(0, 150) + "..." : plainExcerpt;
+  const imageUrl = getUploadUrl(article.image);
+  const absoluteImageUrl = imageUrl ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${imageUrl}` : `${process.env.NEXT_PUBLIC_API_BASE_URL}/assets/images/dot-logo.png`;
+  
+  const authorImage = article.person ? getUploadUrl(article.person.image) : null;
+  const absoluteAuthorImageUrl = authorImage ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${authorImage}` : undefined;
+
+  const blogSchema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "@id": `${process.env.NEXT_PUBLIC_API_BASE_URL}/posts/${encodeURIComponent(article.slug)}#blogposting`,
+    "headline": article.title,
+    "description": cleanExcerpt || article.title,
+    "datePublished": article.sortDate.toISOString(),
+    "mainEntityOfPage": `${process.env.NEXT_PUBLIC_API_BASE_URL}/posts/${encodeURIComponent(article.slug)}`,
+    "image": absoluteImageUrl,
+    "author": article.person ? {
+      "@type": "Person",
+      "name": article.person.name,
+      "image": absoluteAuthorImageUrl,
+      "description": article.person.bio
+    } : {
+      "@type": "Organization",
+      "@id": `${process.env.NEXT_PUBLIC_API_BASE_URL}/#organization`
+    },
+    "publisher": {
+      "@type": "Organization",
+      "@id": `${process.env.NEXT_PUBLIC_API_BASE_URL}/#organization`
+    }
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "خانه",
+        "item": process.env.NEXT_PUBLIC_API_BASE_URL
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "نوشته‌ها",
+        "item": `${process.env.NEXT_PUBLIC_API_BASE_URL}/posts`
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": article.title,
+        "item": `${process.env.NEXT_PUBLIC_API_BASE_URL}/posts/${encodeURIComponent(article.slug)}`
+      }
+    ]
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <article>
         <header className="pt-8 pb-12 md:pt-12 md:pb-16">
           <div className="container article-page-container max-w-6xl">
