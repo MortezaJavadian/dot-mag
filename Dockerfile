@@ -6,8 +6,11 @@ COPY offline-pkgs/apk/ /tmp/offline-pkgs/
 RUN apk add --no-cache --no-network --allow-untrusted /tmp/offline-pkgs/*.apk && \
     rm -rf /tmp/offline-pkgs
 
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN npm install --legacy-peer-deps --registry=https://hub.megan.ir/npm/ --strict-ssl=false
+# ENV NPM_CONFIG_REGISTRY=https://hub.megan.ir/npm/
+
+COPY package.json package-lock.json ./
+RUN --mount=type=cache,id=gomnam-npm-cache,target=/root/.npm,sharing=locked \
+	npm ci --legacy-peer-deps --prefer-offline --no-audit --fund=false
 
 COPY . .
 
