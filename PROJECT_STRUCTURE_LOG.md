@@ -712,6 +712,7 @@ See DEPLOYMENT_GUIDE.md for detailed deployment instructions.
 | `app/sitemap.ts` & `robots.ts`                       | Implemented dynamic Prisma-based sitemap for instant indexing of new magazines, posts, and podcasts. Configured crawler access.                                          |
 | `app/posts`, `app/archive`, `app/radio`              | Injected rich JSON-LD schemas (BlogPosting, PublicationIssue, PodcastEpisode, Breadcrumbs) into dynamic pages. Truncated descriptions for OpenGraph standards.           |
 | `public/sw.js`                                       | Updated precache manifest with new Arad font paths and incremented cache version to invalidate old client caches.                                                        |
+| `app/(admin)/admin-panel/_components/RichTextEditor.tsx` | Added a "Medium" (size 4) font size option to the admin panel's rich text editor to provide more flexibility in text formatting across the magazine ecosystem.             |
 
 ## Reuse Decisions
 

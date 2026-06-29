@@ -46,6 +46,7 @@ const PRIMARY_COLOR_RGB = "rgb(215, 59, 58)";
 const FONT_SIZE_OPTIONS = [
   { label: "کوچک", value: "2" },
   { label: "عادی", value: "3" },
+  { label: "متوسط", value: "4" },
   { label: "بزرگ", value: "5" },
   { label: "خیلی بزرگ", value: "7" },
 ];
@@ -83,7 +84,8 @@ function mapFontSizeTokenToOption(token?: string): string {
 
   if (/^[1-7]$/.test(normalized)) {
     if (normalized === "1" || normalized === "2") return "2";
-    if (normalized === "3" || normalized === "4") return "3";
+    if (normalized === "3") return "3";
+    if (normalized === "4") return "4";
     if (normalized === "5" || normalized === "6") return "5";
     return "7";
   }
@@ -92,7 +94,8 @@ function mapFontSizeTokenToOption(token?: string): string {
   if (pxMatch) {
     const px = Number(pxMatch[1]);
     if (px <= 14) return "2";
-    if (px <= 19) return "3";
+    if (px <= 17) return "3";
+    if (px <= 20) return "4";
     if (px <= 30) return "5";
     return "7";
   }
