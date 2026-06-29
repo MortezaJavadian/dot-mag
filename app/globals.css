@@ -651,6 +651,12 @@ a {
   text-align: left;
 }
 
+/* Force Medium (size 4) to 20px */
+.prose font[size="4"],
+.rich-text-editor-input font[size="4"] {
+  font-size: 20px !important;
+}
+
 /* Glass Effect */
 .glass {
   background: rgba(255, 255, 255, 0.8);
