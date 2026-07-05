@@ -90,7 +90,7 @@ export async function Footer() {
     <footer className="bg-deep-black text-white">
       <div className="container py-12 md:py-16">
         {/* Main Footer */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
           {/* Brand */}
           <div className="lg:col-span-2">
             <Logo variant="white" className="mb-4" />
@@ -112,22 +112,28 @@ export async function Footer() {
                 </a>
               ))}
             </div>
+          </div>
 
-            {/* Font License Badge */}
-            {/*
-              This font is considered a proprietary software. To gain information about the laws regarding the use of these fonts, please visit www.fontiran.com
-              --------------------------------------------------------------------------------------
-              This set of fonts are used in this project under the license: (MBTG7KVQ)
-              --------------------------------------------------------------------------------------
-            */}
-            <a target="_blank" href="https://fontiran.com/license/MBTG7KVQ" className="inline-block hover:opacity-80 transition-opacity">
-              <div style={{ width: "123px", fontSize: "10px" }} className="bg-white/5 p-2 rounded-lg text-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="https://fontiran.com/storage/uploads/images/2025/11/badge2-minjcHOH8rKPv7J.png" width="100" height="100" alt="فونت گرامافون" className="mx-auto" />
-                <br />
-                <span style={{ textAlign: "justify" }} className="text-white/70 inline-block leading-tight mt-1">این وبسایت به صورت قانونی از فونت گرامافون استفاده میکند.</span>
-              </div>
-            </a>
+          {/* Links */}
+          <div>
+            <h4 className="font-bold text-lg mb-4">پیوندها</h4>
+            <div className="flex flex-col gap-4">
+              {/* Font License Badge */}
+              {/*
+                This font is considered a proprietary software. To gain information about the laws regarding the use of these fonts, please visit www.fontiran.com
+                --------------------------------------------------------------------------------------
+                This set of fonts are used in this project under the license: (MBTG7KVQ)
+                --------------------------------------------------------------------------------------
+              */}
+              <a target="_blank" href="https://fontiran.com/license/MBTG7KVQ" className="inline-block hover:opacity-80 transition-opacity">
+                <div style={{ width: "123px", fontSize: "10px" }} className="bg-white/5 p-2 rounded-lg text-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="https://fontiran.com/storage/uploads/images/2025/11/badge2-minjcHOH8rKPv7J.png" width="100" height="100" alt="فونت گرامافون" className="mx-auto" />
+                  <br />
+                  <span style={{ textAlign: "justify" }} className="text-white/70 inline-block leading-tight mt-1">مجله دات به صورت قانونی از فونت گرامافون استفاده میکند.</span>
+                </div>
+              </a>
+            </div>
           </div>
 
           {/* Pages */}
