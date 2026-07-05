@@ -120,6 +120,8 @@ body {
     "Twemoji", var(--font-arad), "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol";
   line-height: 1.8;
+  font-feature-settings: "ss01";
+  font-variant-alternates: stylistic(ss01);
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
@@ -525,6 +527,8 @@ a {
   max-width: 72ch;
   font-size: 1.125rem;
   line-height: 1.75;
+  font-feature-settings: "ss01";
+  font-variant-alternates: stylistic(ss01);
 }
 
 .prose h1,
@@ -610,6 +614,11 @@ a {
 }
 
 /* Blockquote inside rich text editor (contenteditable) */
+.rich-text-editor-input {
+  font-feature-settings: "ss01";
+  font-variant-alternates: stylistic(ss01);
+}
+
 .rich-text-editor-input blockquote {
   border-right: 3px solid var(--color-primary);
   border-left: none;

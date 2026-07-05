@@ -10,47 +10,22 @@ import "./globals.css";
 const aradFont = localFont({
   src: [
     {
-      path: "../public/assets/fonts/webfonts/Arad-Thin.woff2",
-      weight: "100",
-      style: "normal",
-    },
-    {
-      path: "../public/assets/fonts/webfonts/Arad-ExtraLight.woff2",
+      path: "../public/assets/fonts/webfonts/GramophoneDotStyle2FaNum-ExtraLight.woff2",
       weight: "200",
       style: "normal",
     },
     {
-      path: "../public/assets/fonts/webfonts/Arad-Light.woff2",
-      weight: "300",
-      style: "normal",
-    },
-    {
-      path: "../public/assets/fonts/webfonts/Arad-Regular.woff2",
+      path: "../public/assets/fonts/webfonts/GramophoneDotStyle2FaNum-Regular.woff2",
       weight: "400",
       style: "normal",
     },
     {
-      path: "../public/assets/fonts/webfonts/Arad-Medium.woff2",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "../public/assets/fonts/webfonts/Arad-SemiBold.woff2",
-      weight: "600",
-      style: "normal",
-    },
-    {
-      path: "../public/assets/fonts/webfonts/Arad-Bold.woff2",
+      path: "../public/assets/fonts/webfonts/GramophoneDotStyle2FaNum-Bold.woff2",
       weight: "700",
       style: "normal",
     },
     {
-      path: "../public/assets/fonts/webfonts/Arad-ExtraBold.woff2",
-      weight: "800",
-      style: "normal",
-    },
-    {
-      path: "../public/assets/fonts/webfonts/Arad-Black.woff2",
+      path: "../public/assets/fonts/webfonts/GramophoneDotStyle2FaNum-Black.woff2",
       weight: "900",
       style: "normal",
     },
