@@ -130,7 +130,7 @@ export async function Footer() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="https://fontiran.com/storage/uploads/images/2025/11/badge2-minjcHOH8rKPv7J.png" width="100" height="100" alt="فونت گرامافون" className="mx-auto" />
                   <br />
-                  <span style={{ textAlign: "justify" }} className="text-white/70 inline-block leading-tight mt-1">مجله دات به صورت قانونی از فونت گرامافون استفاده میکند.</span>
+                  <span className="text-white/70 inline-block leading-tight mt-1">مجله دات به صورت قانونی از فونت گرامافون استفاده میکند.</span>
                 </div>
               </a>
             </div>
