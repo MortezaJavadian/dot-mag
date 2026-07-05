@@ -126,11 +126,10 @@ export async function Footer() {
                 --------------------------------------------------------------------------------------
               */}
               <a target="_blank" href="https://fontiran.com/license/MBTG7KVQ" className="inline-block hover:opacity-80 transition-opacity">
-                <div style={{ width: "123px", fontSize: "9.5px" }} className="bg-white/5 p-2 rounded-lg text-center">
+                <div style={{ width: "123px", fontSize: "9.5px" }} className="bg-white/5 p-2 rounded-lg flex flex-col items-center justify-center text-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="https://fontiran.com/storage/uploads/images/2025/11/badge2-minjcHOH8rKPv7J.png" width="100" height="100" alt="فونت گرامافون" className="mx-auto" />
-                  <br />
-                  <span className="text-white/70 inline-block leading-tight mt-1">مجله دات به صورت قانونی از فونت گرامافون استفاده میکند.</span>
+                  <img src="https://fontiran.com/storage/uploads/images/2025/11/badge2-minjcHOH8rKPv7J.png" width="100" height="100" alt="فونت گرامافون" />
+                  <span className="text-white/70 leading-tight mt-2">مجله دات به صورت قانونی از فونت گرامافون استفاده میکند.</span>
                 </div>
               </a>
             </div>
