@@ -90,9 +90,9 @@ export async function Footer() {
     <footer className="bg-deep-black text-white">
       <div className="container py-12 md:py-16">
         {/* Main Footer */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
-          <div className="lg:col-span-2">
+          <div>
             <Logo variant="white" className="mb-4" />
             <p className="text-white/70 max-w-md leading-relaxed mb-6">
               مجله دات را در شبکه‌های اجتماعی دنبال کنید.
