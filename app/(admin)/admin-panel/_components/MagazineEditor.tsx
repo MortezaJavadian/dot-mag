@@ -19,7 +19,7 @@ import {
   type UploadTaskState,
 } from "@/lib/clientUpload";
 import { getUploadUrl } from "@/lib/uploads";
-import LexicalEditor from "./LexicalEditor/LexicalEditor";
+import LexicalEditor from "./LexicalEditor";
 
 interface MagazineEditorProps {
   magazine: EditableMagazine | null;

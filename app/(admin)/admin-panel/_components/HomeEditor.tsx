@@ -15,7 +15,7 @@ import type {
   HomeHeroCtaMode,
   HomeHeroEffectPreset,
 } from "@/lib/homeHero";
-import LexicalEditor from "./LexicalEditor/LexicalEditor";
+import LexicalEditor from "./LexicalEditor";
 
 type HeroTargetOption = {
   id: string;
