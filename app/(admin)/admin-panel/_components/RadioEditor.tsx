@@ -906,7 +906,7 @@ export default function RadioEditor({
   };
 
   return (
-    <div className="space-y-6 max-w-4xl text-slate-900 dark:text-slate-100">
+    <div className="space-y-6 max-w-5xl text-slate-900 dark:text-slate-100">
       <h2 className="text-2xl font-bold">
         {isExistingRadio ? "ویرایش رادیودات" : "ایجاد رادیودات"}
       </h2>

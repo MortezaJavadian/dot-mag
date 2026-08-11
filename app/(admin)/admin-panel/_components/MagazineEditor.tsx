@@ -477,7 +477,7 @@ export default function MagazineEditor({
   };
 
   return (
-    <div className="space-y-6 max-w-3xl text-slate-900 dark:text-slate-100">
+    <div className="space-y-6 max-w-5xl text-slate-900 dark:text-slate-100">
       <h2 className="text-2xl font-bold">
         {isExistingMagazine ? "ویرایش مجله" : "ایجاد مجله"}
       </h2>

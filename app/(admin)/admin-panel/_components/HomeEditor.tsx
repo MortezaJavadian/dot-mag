@@ -458,7 +458,7 @@ export default function HomeEditor({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 max-w-4xl text-slate-900 dark:text-slate-100"
+      className="space-y-6 max-w-5xl text-slate-900 dark:text-slate-100"
     >
       <h2 className="text-2xl font-bold">تنظیمات صفحه خانه</h2>
 
