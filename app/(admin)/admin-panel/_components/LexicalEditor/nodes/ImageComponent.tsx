@@ -52,7 +52,7 @@ import {
 import {createWebsocketProvider} from '../collaboration';
 import {useSettings} from '../context/SettingsContext';
 import brokenImage from '../images/image-broken.svg';
-import TreeViewPlugin from '../plugins/TreeViewPlugin';
+
 import ImageResizer from '../ui/ImageResizer';
 import {$isCaptionEditorEmpty, $isImageNode} from './ImageNode';
 
@@ -499,7 +499,7 @@ export default function ImageComponent({
                   selectionHighlight={true}
                 />
               ) : null}
-              {showNestedEditorTreeView === true ? <TreeViewPlugin /> : null}
+
             </LexicalExtensionEditorComposer>
           </div>
         )}
