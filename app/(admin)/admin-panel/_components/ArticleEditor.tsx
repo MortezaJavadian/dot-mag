@@ -14,7 +14,7 @@ import {
   uploadAssetWithProgress,
 } from "@/lib/clientUpload";
 import { getUploadUrl } from "@/lib/uploads";
-import RichTextEditor from "./RichTextEditor";
+import LexicalEditor from "./LexicalEditor/LexicalEditor";
 
 type ArticleTag = {
   id: string;
@@ -236,7 +236,7 @@ export default function ArticleEditor({
 
         <div>
           <label className="block text-sm font-medium mb-1">متن</label>
-          <RichTextEditor
+          <LexicalEditor
             value={formData.content}
             onChange={(nextContent) =>
               setFormData({ ...formData, content: nextContent })

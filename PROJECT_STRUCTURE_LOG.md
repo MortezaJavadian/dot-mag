@@ -149,7 +149,7 @@ dot-mag/
 | `app/(admin)/admin-panel/_components/Dashboard.tsx`      | Dashboard with Home, Messaging, Articles, Radios, Magazines, Tags, and People tabs                                                                           |
 | `app/(admin)/admin-panel/_components/MessagingPanel.tsx` | Telegram-like text-only group chat UI with clickable room cards, tab-entry identity flow, grouped sender bubbles, and polling-based paginated history sync   |
 | `app/(admin)/admin-panel/_components/ArticleEditor.tsx`  | Article editor form                                                                                                                                          |
-| `app/(admin)/admin-panel/_components/RichTextEditor.tsx` | WYSIWYG article editor toolbar + contenteditable surface with quote-block toggle                                                                             |
+| `app/(admin)/admin-panel/_components/LexicalEditor/`     | Lexical editor framework with rich text features, HTML sync, and custom theme for Persian typography (replaces RichTextEditor)                               |
 | `app/(admin)/admin-panel/_components/HomeEditor.tsx`     | Home hero editor (badge, rich text, image, CTA target)                                                                                                       |
 | `app/(admin)/admin-panel/_components/MagazineEditor.tsx` | Magazine editor form                                                                                                                                         |
 | `app/(admin)/admin-panel/_components/RadioEditor.tsx`    | Radio admin editor with title/summary/rich-intro, 1-3 full-episode quality uploads, internal player quality selection, and auto-duration (editable fallback) |
@@ -713,6 +713,7 @@ See DEPLOYMENT_GUIDE.md for detailed deployment instructions.
 | `app/posts`, `app/archive`, `app/radio`              | Injected rich JSON-LD schemas (BlogPosting, PublicationIssue, PodcastEpisode, Breadcrumbs) into dynamic pages. Truncated descriptions for OpenGraph standards.           |
 | `public/sw.js`                                       | Updated precache manifest with new Arad font paths and incremented cache version to invalidate old client caches.                                                        |
 | `app/(admin)/admin-panel/_components/RichTextEditor.tsx` | Added a "Medium" (size 4) font size option to the admin panel's rich text editor to provide more flexibility in text formatting across the magazine ecosystem.             |
+| 2026-08-11 | Lexical editor migration                                 | Replaced legacy custom `RichTextEditor` with a robust `LexicalEditor` module, including custom toolbar, HTML import/export sync to preserve existing database records, and integration across Article, Magazine, Home, and Radio editors. |
 
 ## Reuse Decisions
 

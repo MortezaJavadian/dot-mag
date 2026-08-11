@@ -19,7 +19,7 @@ import {
   type UploadTaskState,
 } from "@/lib/clientUpload";
 import { getUploadUrl } from "@/lib/uploads";
-import RichTextEditor from "./RichTextEditor";
+import LexicalEditor from "./LexicalEditor/LexicalEditor";
 
 interface MagazineEditorProps {
   magazine: EditableMagazine | null;
@@ -516,7 +516,7 @@ export default function MagazineEditor({
 
         <div>
           <label className="block text-sm font-medium mb-1">توضیح</label>
-          <RichTextEditor
+          <LexicalEditor
             value={formData.description}
             onChange={(value) =>
               setFormData({ ...formData, description: value })

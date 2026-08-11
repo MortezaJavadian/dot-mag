@@ -15,7 +15,7 @@ import type {
   HomeHeroCtaMode,
   HomeHeroEffectPreset,
 } from "@/lib/homeHero";
-import RichTextEditor from "./RichTextEditor";
+import LexicalEditor from "./LexicalEditor/LexicalEditor";
 
 type HeroTargetOption = {
   id: string;
@@ -604,7 +604,7 @@ export default function HomeEditor({
               <label className="block text-sm font-medium mb-1">
                 محتوای متنی هدر
               </label>
-              <RichTextEditor
+              <LexicalEditor
                 value={activeBanner.heroHtml}
                 onChange={(nextContent) =>
                   updateActiveBanner((banner) => ({

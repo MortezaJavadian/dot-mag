@@ -19,7 +19,7 @@ import {
   type UploadTaskState,
 } from "@/lib/clientUpload";
 import { getUploadUrl } from "@/lib/uploads";
-import RichTextEditor from "./RichTextEditor";
+import LexicalEditor from "./LexicalEditor/LexicalEditor";
 
 type PlayerAudioQuality = "low" | "medium" | "high";
 
@@ -964,7 +964,7 @@ export default function RadioEditor({
 
         <div>
           <label className="block text-sm font-medium mb-1">متن معرفی</label>
-          <RichTextEditor
+          <LexicalEditor
             value={formData.intro}
             onChange={(nextIntro) =>
               setFormData((prev) => ({ ...prev, intro: nextIntro }))
@@ -1251,7 +1251,7 @@ export default function RadioEditor({
               <label className="block text-sm font-medium mb-1">
                 خلاصه بخش
               </label>
-              <RichTextEditor
+              <LexicalEditor
                 value={newSegmentSummary}
                 onChange={setNewSegmentSummary}
                 placeholder="خلاصه بخش برگزیده را بنویسید..."
@@ -1338,7 +1338,7 @@ export default function RadioEditor({
                       <label className="block text-sm font-medium mb-1">
                         خلاصه
                       </label>
-                      <RichTextEditor
+                      <LexicalEditor
                         value={segment.summary}
                         onChange={(nextSummary) =>
                           handleSegmentFieldChange(
