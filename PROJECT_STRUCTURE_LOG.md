@@ -714,6 +714,7 @@ See DEPLOYMENT_GUIDE.md for detailed deployment instructions.
 | `public/sw.js`                                       | Updated precache manifest with new Arad font paths and incremented cache version to invalidate old client caches.                                                        |
 | `app/(admin)/admin-panel/_components/RichTextEditor.tsx` | Added a "Medium" (size 4) font size option to the admin panel's rich text editor to provide more flexibility in text formatting across the magazine ecosystem.             |
 | 2026-08-11 | Lexical Playground Integration                       | Migrated the admin rich text editors to the full official Facebook Lexical Playground (`packages/lexical-playground`), enabling all plugins (Excalidraw, Tables, Code, Math). Next.js environment compatibility added. Custom `HtmlPlugin` handles parsing/serialization without changing database schema. |
+| 2026-11-07 | Dockerfile & offline-pkgs/swc                       | Extracted offline Next.js SWC binary (`@next/swc-linux-x64-musl` 16.2.0) directly into `node_modules/@next/swc-linux-x64-musl` during Docker build to prevent `ETIMEDOUT` online download attempts in air-gapped/intranet deployment environments. |
 
 ## Reuse Decisions
 
