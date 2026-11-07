@@ -29,6 +29,7 @@
   display: flex;
   flex-grow: 0px;
   background-color: #fff;
+  color: #222;
   flex-direction: column;
   position: relative;
   box-shadow: 0 0 20px 0 #444;

@@ -1644,19 +1644,18 @@ button.action-button:disabled {
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   margin-bottom: 1px;
   background: #fff;
   padding: 6px;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
   vertical-align: middle;
-  overflow: auto;
-  scrollbar-width: thin;
-  height: 36px;
+  min-height: 36px;
+  height: auto;
   position: sticky;
   top: 0;
   z-index: 20;
-  overflow-y: hidden; /* disable vertical scroll*/
 }
 
 .toolbar .toolbar-item:focus {
